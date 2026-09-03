@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -68,6 +70,10 @@ class RecordTimelineTile extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (record.imageList.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _thumbnails(record.imageList),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -121,6 +127,65 @@ class RecordTimelineTile extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// 记录配图缩略图：最多展示 3 张，超出以「+N」蒙层提示。
+  Widget _thumbnails(List<String> images) {
+    const maxShow = 3;
+    final show = images.take(maxShow).toList();
+    final extra = images.length - show.length;
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          for (int i = 0; i < show.length; i++) ...[
+            if (i > 0) const SizedBox(width: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Stack(
+                children: [
+                  Image(
+                    image: _imageProvider(show[i]),
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 56,
+                      height: 56,
+                      color: AppColors.line,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.image_not_supported_outlined,
+                          size: 20, color: AppColors.inkSoft),
+                    ),
+                  ),
+                  if (i == show.length - 1 && extra > 0)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.42),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '+$extra',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  ImageProvider _imageProvider(String path) {
+    if (path.startsWith('http')) return NetworkImage(path);
+    if (path.startsWith('assets/')) return AssetImage(path);
+    return FileImage(File(path));
   }
 
   Widget _mini(String text) => Container(

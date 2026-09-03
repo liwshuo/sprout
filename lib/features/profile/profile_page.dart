@@ -37,7 +37,7 @@ class ProfilePage extends ConsumerWidget {
   Widget _childCard(BuildContext context, ChildData? c) {
     final age = c?.birthDate == null ? null : _ageText(c!.birthDate!);
     return SoftCard(
-      radius: 24,
+      radius: 26,
       color: AppColors.primarySoft,
       onTap: () => context.go('/onboarding'),
       child: Row(

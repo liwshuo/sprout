@@ -9,11 +9,13 @@ class EmptyPlaceholder extends StatelessWidget {
     required this.message,
     this.emoji = '🌱',
     this.hint,
+    this.action,
   });
 
   final String message;
   final String emoji;
   final String? hint;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +52,10 @@ class EmptyPlaceholder extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
               ),
+            ],
+            if (action != null) ...[
+              const SizedBox(height: 18),
+              action!,
             ],
           ],
         ),

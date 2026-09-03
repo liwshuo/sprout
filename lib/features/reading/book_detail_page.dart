@@ -95,7 +95,7 @@ class BookDetailPage extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 90),
       children: [
         SoftCard(
-          radius: 24,
+          radius: 26,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

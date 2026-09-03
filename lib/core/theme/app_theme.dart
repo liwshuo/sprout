@@ -7,7 +7,7 @@ import 'app_colors.dart';
 class AppTheme {
   AppTheme._();
 
-  static const double radiusCard = 22;
+  static const double radiusCard = 26; // 对齐 Demo --r-lg:26px
   static const double radiusButton = 18;
   static const double radiusChip = 14;
 

@@ -30,7 +30,7 @@ class AppColors {
   static const Color line = Color(0xFFF0E7D8); // 分隔/描边
 
   // 阴影
-  static const Color shadow = Color(0x1FB48C46); // rgba(180,140,70,.12)
+  static const Color shadow = Color(0x26B48C46); // rgba(180,140,70,.15)
 
   /// 分类标签 → 主题色（日历圆点 / 时间轴图标底色）。
   /// 与需求文档的预置 tags 字典对齐；未知分类降级为暖橙。

@@ -9,6 +9,7 @@ import '../../core/utils/date_util.dart';
 import '../../core/utils/record_display.dart';
 import '../../data/local/app_database.dart';
 import '../../data/repositories/daily_repository.dart';
+import '../../data/repositories/child_repository.dart';
 import '../../shared/widgets/app_widgets.dart';
 import '../../shared/widgets/empty_placeholder.dart';
 import '../records/record_tile.dart';
@@ -29,29 +30,76 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   @override
   Widget build(BuildContext context) {
     final dailyStream = ref.watch(_allDailyProvider);
+    final child = ref.watch(_childProvider).valueOrNull;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('日历 · 成长足迹'),
-        actions: [
+      body: SafeArea(
+        bottom: false,
+        child: dailyStream.when(
+          data: (records) => _buildBody(records, child),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text('加载失败：$e')),
+        ),
+      ),
+    );
+  }
+
+  /// Demo 首页问候头部：Hi，{昵称}妈妈 👋 + 副标题 + 🐣 头像（对齐 Demo .greet）。
+  Widget _greetingHeader(ChildData? child) {
+    final name = child?.name.trim() ?? '';
+    final title = name.isEmpty ? 'Hi，你好呀 👋' : 'Hi，$name妈妈 👋';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 2, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  '今天想记点什么呀',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.inkSoft,
+                  ),
+                ),
+              ],
+            ),
+          ),
           IconButton(
-            icon: const Icon(Icons.today_rounded),
+            icon: const Icon(Icons.today_rounded, color: AppColors.primaryDeep),
             tooltip: '回到今天',
             onPressed: () => setState(() {
               _focusedDay = DateTime.now();
               _selectedDay = DateUtil.startOfDay(DateTime.now());
             }),
           ),
+          const SizedBox(width: 2),
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.primarySoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Text('🐣', style: TextStyle(fontSize: 24)),
+          ),
         ],
-      ),
-      body: dailyStream.when(
-        data: (records) => _buildBody(records),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('加载失败：$e')),
       ),
     );
   }
 
-  Widget _buildBody(List<DailyRecord> records) {
+  Widget _buildBody(List<DailyRecord> records, ChildData? child) {
     // 按天聚合，供 eventLoader / 圆点使用。
     final events = <DateTime, List<DailyRecord>>{};
     for (final r in records) {
@@ -61,12 +109,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     List<DailyRecord> loader(DateTime day) =>
         events[DateUtil.startOfDay(day)] ?? const [];
 
-    final dayRecords = loader(_selectedDay)
+    // loader 在无记录当天返回 const []（不可变），直接 ..sort 会抛
+    // "Cannot modify an unmodifiable list"。先拷贝成可变列表再排序。
+    final dayRecords = List<DailyRecord>.of(loader(_selectedDay))
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
       children: [
+        _greetingHeader(child),
+        const SizedBox(height: 12),
         _calendarCard(loader),
         const SizedBox(height: 14),
         _legend(),
@@ -105,7 +157,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   Widget _calendarCard(List<DailyRecord> Function(DateTime) loader) {
     return SoftCard(
-      radius: 24,
+      radius: 26,
       padding: const EdgeInsets.fromLTRB(10, 14, 10, 8),
       child: TableCalendar<DailyRecord>(
         locale: 'zh',
@@ -246,4 +298,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
 final _allDailyProvider = StreamProvider.autoDispose<List<DailyRecord>>(
   (ref) => ref.watch(dailyRepositoryProvider).watchAll(),
+);
+
+final _childProvider = StreamProvider.autoDispose<ChildData?>(
+  (ref) => ref.watch(childRepositoryProvider).watchFirst(),
 );

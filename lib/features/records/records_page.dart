@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -31,13 +30,6 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('记录'),
-        actions: [
-          IconButton(
-            tooltip: '活动计时器',
-            icon: const Icon(Icons.timer_outlined),
-            onPressed: () => context.go('/records/timer'),
-          ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: SizedBox(

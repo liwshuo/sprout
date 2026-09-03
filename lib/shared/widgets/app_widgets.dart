@@ -10,7 +10,7 @@ class SoftCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.margin = EdgeInsets.zero,
     this.color = AppColors.card,
-    this.radius = 22,
+    this.radius = 26,
     this.onTap,
     this.border,
   });

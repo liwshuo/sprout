@@ -42,11 +42,17 @@ class ReportDetailPage extends ConsumerWidget {
 
   Widget _body(BuildContext context, WeeklyReport r) {
     final end = r.weekEnd.subtract(const Duration(days: 1));
-    final text = (r.editedText?.isNotEmpty == true)
-        ? r.editedText!
-        : (r.aiText?.isNotEmpty == true)
-            ? r.aiText!
-            : '这一周还没有正文，先看看上面的概览吧 🌱';
+    final emptyWeek = r.dailyCount == 0 &&
+        r.readingCount == 0 &&
+        r.extraClassCount == 0 &&
+        r.activeDays == 0;
+    final text = emptyWeek
+        ? '本周还没有记录，下周继续加油～'
+        : (r.editedText?.isNotEmpty == true)
+            ? r.editedText!
+            : (r.aiText?.isNotEmpty == true)
+                ? r.aiText!
+                : '这一周还没有正文，先看看上面的概览吧 🌱';
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
       children: [

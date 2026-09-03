@@ -59,6 +59,9 @@ class BookShelfService {
         logs.bookId.equalsExp(books.id) & logs.isDeleted.equals(false),
       ),
     ])
+      // 聚合表达式必须显式加入 SELECT 列集，否则 r.read(agg) 会抛
+      // "This result set does not have a column for that expression."
+      ..addColumns([maxPage, maxChap, cnt, mins, last])
       ..where(books.isDeleted.equals(false))
       ..groupBy([books.id])
       ..orderBy([OrderingTerm.desc(last)]);
