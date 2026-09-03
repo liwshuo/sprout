@@ -78,7 +78,7 @@ class DailyRecords extends Table {
   TextColumn get tags => text().nullable()(); // JSON 数组
   TextColumn get imagePaths => text().nullable()(); // JSON 多图
   TextColumn get category =>
-      text().nullable()(); // evening / weekend / other
+      text().nullable()(); // 首要分类标签（取自 tags，用于日历/周报着色；无独立"记录类型"维度）
   TextColumn get mood => text().nullable()();
   TextColumn get source =>
       text().withDefault(const Constant('manual'))(); // manual / voice / timer
@@ -100,7 +100,7 @@ class ScheduleItems extends Table {
   TextColumn get teacher => text().nullable()();
   IntColumn get weekday => integer()(); // 1=Mon ... 7=Sun
   TextColumn get recurrence =>
-      text().withDefault(const Constant('weekly'))(); // weekly / biweekly / monthly
+      text().withDefault(const Constant('weekly'))(); // weekly / biweekly / monthly / once（once 为单次课，仅在 startDate 当天生成一次实例）
   TextColumn get startTime => text()(); // HH:mm
   TextColumn get endTime => text()(); // HH:mm
   DateTimeColumn get startDate => dateTime().nullable()();

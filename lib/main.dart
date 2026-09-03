@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -9,6 +10,9 @@ import 'domain/report/report_scheduler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化中文日期本地化（DateFormat 'zh' / TableCalendar 依赖）。
+  await initializeDateFormatting('zh');
 
   final prefs = await SharedPreferences.getInstance();
 
