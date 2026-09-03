@@ -2,40 +2,114 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/home/home_page.dart';
-import '../../features/daily/daily_page.dart';
-import '../../features/reading/reading_page.dart';
+import '../onboarding/onboarding_controller.dart';
+import '../../features/onboarding/onboarding_page.dart';
+import '../../features/calendar/calendar_page.dart';
+import '../../features/calendar/day_detail_page.dart';
+import '../../features/records/records_page.dart';
+import '../../features/timer/timer_page.dart';
+import '../../features/reading/bookshelf_page.dart';
+import '../../features/reading/book_detail_page.dart';
+import '../../features/profile/profile_page.dart';
 import '../../features/schedule/schedule_page.dart';
-import '../../features/report/report_page.dart';
+import '../../features/report/report_list_page.dart';
+import '../../features/report/report_detail_page.dart';
+import '../../features/settings/settings_page.dart';
+import 'main_shell.dart';
+
+final _rootKey = GlobalKey<NavigatorState>();
+final _calKey = GlobalKey<NavigatorState>();
+final _recKey = GlobalKey<NavigatorState>();
+final _readKey = GlobalKey<NavigatorState>();
+final _mineKey = GlobalKey<NavigatorState>();
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/',
+    navigatorKey: _rootKey,
+    initialLocation: '/calendar',
+    // onboarding 状态变化时驱动 redirect 重算（onboardedListenableProvider 暴露一个 Listenable）
+    refreshListenable: ref.watch(onboardedListenableProvider),
+    // 未建孩子档案 → 强制进 onboarding；已建档但停留在 onboarding → 放行到主界面
+    redirect: (context, state) {
+      final onboarded = ref.read(onboardedProvider); // bool，读 SharedPreferences/Child 表
+      final atOnboarding = state.matchedLocation == '/onboarding';
+      if (!onboarded) return atOnboarding ? null : '/onboarding';
+      if (atOnboarding) return '/calendar';
+      return null;
+    },
     routes: [
       GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (context, state) => const HomePage(),
+        path: '/onboarding',
+        parentNavigatorKey: _rootKey, // 顶层路由，无底部栏
+        builder: (c, s) => const OnboardingPage(),
       ),
-      GoRoute(
-        path: '/daily',
-        name: 'daily',
-        builder: (context, state) => const DailyPage(),
-      ),
-      GoRoute(
-        path: '/reading',
-        name: 'reading',
-        builder: (context, state) => const ReadingPage(),
-      ),
-      GoRoute(
-        path: '/schedule',
-        name: 'schedule',
-        builder: (context, state) => const SchedulePage(),
-      ),
-      GoRoute(
-        path: '/report',
-        name: 'report',
-        builder: (context, state) => const ReportPage(),
+      StatefulShellRoute.indexedStack(
+        builder: (c, s, shell) => MainShell(shell: shell), // 底部 4 Tab 骨架
+        branches: [
+          StatefulShellBranch(navigatorKey: _calKey, routes: [
+            GoRoute(
+              path: '/calendar',
+              builder: (c, s) => const CalendarPage(),
+              routes: [
+                GoRoute(
+                  path: 'day/:date',
+                  builder: (c, s) =>
+                      DayDetailPage(date: s.pathParameters['date']!),
+                ),
+              ],
+            ),
+          ]),
+          StatefulShellBranch(navigatorKey: _recKey, routes: [
+            GoRoute(
+              path: '/records',
+              builder: (c, s) => const RecordsPage(),
+              routes: [
+                GoRoute(path: 'timer', builder: (c, s) => const TimerPage()),
+              ],
+            ),
+          ]),
+          StatefulShellBranch(navigatorKey: _readKey, routes: [
+            GoRoute(
+              path: '/reading',
+              builder: (c, s) => const BookshelfPage(),
+              routes: [
+                GoRoute(
+                  path: 'book/:id',
+                  builder: (c, s) =>
+                      BookDetailPage(id: int.parse(s.pathParameters['id']!)),
+                ),
+              ],
+            ),
+          ]),
+          StatefulShellBranch(navigatorKey: _mineKey, routes: [
+            GoRoute(
+              path: '/mine',
+              builder: (c, s) => const ProfilePage(),
+              routes: [
+                GoRoute(
+                  path: 'schedule',
+                  builder: (c, s) => const SchedulePage(),
+                ),
+                GoRoute(
+                  path: 'reports',
+                  builder: (c, s) => const ReportListPage(),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      builder: (c, s) => ReportDetailPage(
+                        id: int.parse(s.pathParameters['id']!),
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'settings',
+                  builder: (c, s) => const SettingsPage(),
+                ),
+              ],
+            ),
+          ]),
+        ],
       ),
     ],
   );
