@@ -76,14 +76,19 @@ Page({
       });
   },
 
-  // 手机号快速验证按钮回调
+  // 手机号快速验证按钮回调（新版返回 code，旧版返回 cloudID）
   onGetPhone(e) {
-    if (!e.detail || !e.detail.cloudID) return;
+    const d = e.detail || {};
+    // 用户拒绝授权
+    if (d.errMsg && d.errMsg.indexOf('ok') === -1) return;
+    const payload = d.code ? { code: d.code } : d.cloudID ? { cloudID: d.cloudID } : null;
+    if (!payload) return;
     auth
-      .bindPhone(e.detail.cloudID)
+      .bindPhone(payload)
       .then(() => {
         wx.showToast({ title: '已绑定手机号', icon: 'success' });
         this.setData({ user: auth.currentUser() });
+        this.refresh();
       })
       .catch(() => wx.showToast({ title: '绑定失败', icon: 'none' }));
   },
@@ -131,6 +136,6 @@ Page({
   },
 
   goReport() {
-    wx.showToast({ title: '周报生成开发中', icon: 'none' });
+    wx.navigateTo({ url: '/pages/report/report' });
   },
 });

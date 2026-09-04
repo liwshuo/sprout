@@ -14,11 +14,76 @@ Page({
     eventDate: '', // 'YYYY-MM-DD'
     localImages: [], // 本地临时路径
     submitting: false,
+    // 编辑模式
+    recordId: '', // 非空表示编辑已有记录
+    isEdit: false,
+    existingImageIds: [], // 编辑模式下保留的云端图片 fileID
+    existingImageUrls: [], // 与 existingImageIds 一一对应的临时预览链接
+    loading: false,
   },
 
   onLoad(query) {
-    const date = query.date || dateUtil.ymd(new Date());
-    this.setData({ eventDate: date });
+    const recordId = query.recordId || '';
+    if (recordId) {
+      // 编辑模式：加载已有记录填入表单
+      this.setData({ recordId, isEdit: true, loading: true });
+      wx.setNavigationBarTitle({ title: '编辑记录' });
+      this._loadRecord(recordId);
+    } else {
+      const date = query.date || dateUtil.ymd(new Date());
+      this.setData({ eventDate: date });
+    }
+  },
+
+  async _loadRecord(recordId) {
+    wx.showLoading({ title: '加载中...', mask: true });
+    try {
+      const rec = await db.getByUuid(db.COLLECTIONS.dailyRecords, recordId);
+      if (!rec) {
+        wx.hideLoading();
+        wx.showToast({ title: '记录不存在', icon: 'none' });
+        this.setData({ loading: false });
+        return;
+      }
+      const existingImageIds = rec.imageFileIds || [];
+      this.setData({
+        title: rec.title || '',
+        note: rec.note || '',
+        category: rec.category || '日常',
+        mood: rec.mood || '',
+        eventDate: dateUtil.ymd(rec.eventDate ? new Date(rec.eventDate) : new Date()),
+        existingImageIds,
+        loading: false,
+      });
+      wx.hideLoading();
+      // 换取云端图片临时预览链接
+      if (existingImageIds.length) {
+        const map = await db.getTempUrls(existingImageIds);
+        this.setData({
+          existingImageUrls: existingImageIds.map((f) => map[f]).filter(Boolean),
+        });
+      }
+    } catch (err) {
+      wx.hideLoading();
+      console.error('[add] 加载记录失败', err);
+      wx.showToast({ title: '加载失败', icon: 'none' });
+      this.setData({ loading: false });
+    }
+  },
+
+  // 移除一张已存在的云端图片（仅从本次保存的列表中剔除）
+  removeExistingImage(e) {
+    const idx = e.currentTarget.dataset.idx;
+    const existingImageIds = this.data.existingImageIds.slice();
+    const existingImageUrls = this.data.existingImageUrls.slice();
+    existingImageIds.splice(idx, 1);
+    existingImageUrls.splice(idx, 1);
+    this.setData({ existingImageIds, existingImageUrls });
+  },
+
+  previewExisting(e) {
+    const url = e.currentTarget.dataset.url;
+    wx.previewImage({ urls: this.data.existingImageUrls, current: url });
   },
 
   onTitleInput(e) {
@@ -70,7 +135,10 @@ Page({
   },
 
   async onSubmit() {
-    const { title, note, category, mood, eventDate, localImages, submitting } = this.data;
+    const {
+      title, note, category, mood, eventDate, localImages, submitting,
+      isEdit, recordId, existingImageIds,
+    } = this.data;
     if (submitting) return;
     if (!title.trim()) {
       wx.showToast({ title: '请填写标题', icon: 'none' });
@@ -79,21 +147,35 @@ Page({
     this.setData({ submitting: true });
     wx.showLoading({ title: '保存中...', mask: true });
     try {
-      let imageFileIds = [];
+      let newImageIds = [];
       if (localImages.length) {
-        imageFileIds = await db.uploadFiles(localImages);
+        newImageIds = await db.uploadFiles(localImages);
       }
       const eventTs = dateUtil.startOfDay(new Date(eventDate.replace(/-/g, '/')));
-      await db.records.create({
-        title: title.trim(),
-        note: note.trim() || null,
-        tags: category ? [category] : [],
-        category: category || null,
-        mood: mood || null,
-        imageFileIds,
-        eventDate: eventTs,
-        source: 'manual',
-      });
+      if (isEdit) {
+        // 编辑模式：保留未删除的云端图片 + 新上传图片，调用 update
+        const imageFileIds = (existingImageIds || []).concat(newImageIds);
+        await db.records.update(recordId, {
+          title: title.trim(),
+          note: note.trim() || null,
+          tags: category ? [category] : [],
+          category: category || null,
+          mood: mood || null,
+          imageFileIds,
+          eventDate: eventTs,
+        });
+      } else {
+        await db.records.create({
+          title: title.trim(),
+          note: note.trim() || null,
+          tags: category ? [category] : [],
+          category: category || null,
+          mood: mood || null,
+          imageFileIds: newImageIds,
+          eventDate: eventTs,
+          source: 'manual',
+        });
+      }
       wx.hideLoading();
       wx.showToast({ title: '已保存', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 600);

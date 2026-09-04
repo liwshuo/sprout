@@ -63,6 +63,11 @@ Page({
     wx.navigateTo({ url: '/pages/records/add/add' });
   },
 
+  onEdit(e) {
+    const uuid = e.currentTarget.dataset.uuid;
+    wx.navigateTo({ url: `/pages/records/add/add?recordId=${uuid}` });
+  },
+
   onDelete(e) {
     const uuid = e.currentTarget.dataset.uuid;
     wx.showModal({

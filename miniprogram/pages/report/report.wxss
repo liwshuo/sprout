@@ -1,0 +1,141 @@
+/* pages/report/report.wxss —— 成长周报 */
+.week-switch {
+  display: flex;
+  background: var(--primary-soft);
+  border-radius: var(--radius-pill);
+  padding: 6rpx;
+  margin-bottom: 16rpx;
+}
+.switch-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: var(--ink-sub);
+  border-radius: var(--radius-pill);
+}
+.switch-item.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.range-label {
+  text-align: center;
+  font-size: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 概览 */
+.overview-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 36rpx 0;
+}
+.ov-item {
+  flex: 1;
+  text-align: center;
+}
+.ov-num {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+.ov-emoji {
+  font-size: 48rpx;
+}
+.ov-label {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+.ov-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: var(--line);
+}
+
+/* 小结 */
+.summary-card .summary-text {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: var(--ink-sub);
+}
+
+/* 心情分布 */
+.mood-row {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+.mood-head {
+  width: 140rpx;
+  display: flex;
+  align-items: center;
+}
+.mood-emoji {
+  font-size: 36rpx;
+  margin-right: 10rpx;
+}
+.mood-label {
+  font-size: 26rpx;
+  color: var(--ink-sub);
+}
+.bar-track {
+  flex: 1;
+  height: 20rpx;
+  background: var(--bg);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin: 0 16rpx;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: var(--radius-pill);
+}
+.mood-count {
+  width: 90rpx;
+  text-align: right;
+  font-size: 24rpx;
+}
+
+/* 分类 */
+.cat-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 16rpx;
+}
+.cat-chip {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  background: var(--bg);
+  border-radius: var(--radius-pill);
+  font-size: 26rpx;
+  color: var(--ink-sub);
+  margin: 0 16rpx 16rpx 0;
+}
+.cat-dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+}
+.cat-count {
+  margin-left: 12rpx;
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+/* 书籍 */
+.book-item {
+  font-size: 28rpx;
+  color: var(--ink-sub);
+  padding: 12rpx 0;
+  border-bottom: 2rpx solid var(--line);
+}
+.book-item:last-child {
+  border-bottom: none;
+}

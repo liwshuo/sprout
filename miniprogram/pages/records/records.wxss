@@ -17,6 +17,12 @@
 .record-mood {
   font-size: 36rpx;
 }
+.edit-btn {
+  font-size: 30rpx;
+  color: var(--primary);
+  margin-left: 16rpx;
+  padding: 4rpx 12rpx;
+}
 .record-note {
   font-size: 28rpx;
   color: var(--ink-sub);

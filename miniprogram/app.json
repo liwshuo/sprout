@@ -1,11 +1,13 @@
 {
+  "cloudfunctionRoot": "cloudfunctions/",
   "pages": [
     "pages/index/index",
     "pages/records/records",
     "pages/records/add/add",
     "pages/reading/reading",
     "pages/schedule/index",
-    "pages/mine/mine"
+    "pages/mine/mine",
+    "pages/report/report"
   ],
   "window": {
     "backgroundTextStyle": "dark",

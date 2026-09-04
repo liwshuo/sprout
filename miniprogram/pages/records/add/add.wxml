@@ -25,6 +25,11 @@
   <view class="card">
     <view class="field-label">照片</view>
     <view class="img-grid">
+      <!-- 编辑模式下已有的云端图片 -->
+      <view class="grid-item" wx:for="{{existingImageUrls}}" wx:key="*this" wx:for-index="eidx">
+        <image class="grid-img" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewExisting" />
+        <view class="remove-badge" data-idx="{{eidx}}" catchtap="removeExistingImage">×</view>
+      </view>
       <view class="grid-item" wx:for="{{localImages}}" wx:key="*this">
         <image class="grid-img" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewLocal" />
         <view class="remove-badge" data-idx="{{index}}" catchtap="removeImage">×</view>
@@ -74,5 +79,5 @@
     </picker>
   </view>
 
-  <button class="btn-primary btn-block submit-btn" bindtap="onSubmit" loading="{{submitting}}">保存记录</button>
+  <button class="btn-primary btn-block submit-btn" bindtap="onSubmit" loading="{{submitting}}">{{isEdit ? '保存修改' : '保存记录'}}</button>
 </view>

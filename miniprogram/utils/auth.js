@@ -62,12 +62,14 @@ async function upsertUser({ ownerId, openid, unionid }) {
 }
 
 /**
- * 绑定手机号：将「手机号快速验证」按钮的 cloudID 交给 bindPhone 云函数解密。
- * @param {string} cloudID e.detail.cloudID
+ * 绑定手机号：将 getPhoneNumber 返回的 code（新版）或 cloudID（旧版快速验证）
+ * 交给 bindPhone 云函数换取手机号。
+ * @param {object|string} payload { code } | { cloudID } | cloudID 字符串
  */
-function bindPhone(cloudID) {
+function bindPhone(payload) {
+  const data = typeof payload === 'string' ? { cloudID: payload } : payload || {};
   return wx.cloud
-    .callFunction({ name: 'bindPhone', data: { cloudID } })
+    .callFunction({ name: 'bindPhone', data })
     .then((res) => (res && res.result) || {});
 }
 

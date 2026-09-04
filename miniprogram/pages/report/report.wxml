@@ -1,0 +1,73 @@
+<!-- pages/report/report.wxml —— 成长周报 -->
+<view class="container">
+  <!-- 周切换 -->
+  <view class="week-switch">
+    <view class="switch-item {{weekOffset === 0 ? 'active' : ''}}" data-offset="0" bindtap="switchWeek">本周</view>
+    <view class="switch-item {{weekOffset === -1 ? 'active' : ''}}" data-offset="-1" bindtap="switchWeek">上周</view>
+  </view>
+
+  <view class="range-label text-sub">{{rangeLabel}}</view>
+
+  <!-- 概览 -->
+  <view class="card overview-card">
+    <view class="ov-item">
+      <view class="ov-num">{{recordCount}}</view>
+      <view class="ov-label text-sub">成长记录</view>
+    </view>
+    <view class="ov-divider"></view>
+    <view class="ov-item">
+      <view class="ov-num">{{books.length}}</view>
+      <view class="ov-label text-sub">本周绘本</view>
+    </view>
+    <view class="ov-divider"></view>
+    <view class="ov-item">
+      <view class="ov-num ov-emoji">{{topMood ? topMood.emoji : '—'}}</view>
+      <view class="ov-label text-sub">主要心情</view>
+    </view>
+  </view>
+
+  <!-- 一句话总结 -->
+  <view class="card summary-card">
+    <view class="section-title">✨ 本周小结</view>
+    <view class="summary-text">{{summary}}</view>
+  </view>
+
+  <!-- 心情分布 -->
+  <view class="card" wx:if="{{moodStats.length > 0}}">
+    <view class="section-title">心情分布</view>
+    <view class="mood-row" wx:for="{{moodStats}}" wx:key="key">
+      <view class="mood-head">
+        <text class="mood-emoji">{{item.emoji}}</text>
+        <text class="mood-label">{{item.label}}</text>
+      </view>
+      <view class="bar-track">
+        <view class="bar-fill" style="width:{{item.percent}}%"></view>
+      </view>
+      <view class="mood-count text-sub">{{item.count}} 次</view>
+    </view>
+  </view>
+
+  <!-- 分类分布 -->
+  <view class="card" wx:if="{{categoryStats.length > 0}}">
+    <view class="section-title">记录分类</view>
+    <view class="cat-wrap">
+      <view class="cat-chip" wx:for="{{categoryStats}}" wx:key="name">
+        <view class="cat-dot" style="background:{{item.color}}"></view>
+        <text>{{item.name}}</text>
+        <text class="cat-count">{{item.count}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 本周书籍 -->
+  <view class="card" wx:if="{{books.length > 0}}">
+    <view class="section-title">本周共读</view>
+    <view class="book-item" wx:for="{{books}}" wx:key="*this">📚 {{item}}</view>
+  </view>
+
+  <!-- 空态 -->
+  <view class="empty card" wx:if="{{!loading && recordCount === 0}}">
+    <text class="empty-emoji">🌱</text>
+    <view class="empty-text">{{weekTitle}}还没有记录，快去记录宝贝的成长瞬间吧</view>
+  </view>
+</view>

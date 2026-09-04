@@ -15,6 +15,7 @@
         <view class="record-title ellipsis">{{item.title}}</view>
       </view>
       <view class="record-mood" wx:if="{{item.moodIcon}}">{{item.moodIcon}}</view>
+      <view class="edit-btn" data-uuid="{{item.uuid}}" catchtap="onEdit">✎</view>
     </view>
 
     <view class="record-note" wx:if="{{item.note}}">{{item.note}}</view>

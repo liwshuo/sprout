@@ -1,0 +1,6 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "成长周报",
+  "backgroundColor": "#FFF8F3",
+  "enablePullDownRefresh": false
+}
