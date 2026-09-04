@@ -1,6 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "课程表",
+  "navigationBarTitleText": "成长记录",
   "enablePullDownRefresh": true,
   "backgroundColorTop": "#FFF8F3"
 }

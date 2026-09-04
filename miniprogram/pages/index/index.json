@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "日历记录"
+  "navigationBarTitleText": "萌芽日历",
+  "enablePullDownRefresh": true,
+  "backgroundColorTop": "#FFF8F3"
 }

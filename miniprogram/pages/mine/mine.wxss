@@ -1,0 +1,189 @@
+/* pages/mine/mine.wxss —— 我的 */
+.user-card {
+  display: flex;
+  align-items: center;
+  padding: 32rpx 28rpx;
+}
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  font-size: 52rpx;
+  line-height: 96rpx;
+  text-align: center;
+  margin-right: 24rpx;
+}
+.user-name {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+.user-sub {
+  font-size: 24rpx;
+  margin-top: 6rpx;
+}
+.login-btn {
+  min-width: 140rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  font-size: 28rpx;
+  padding: 0 28rpx;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+.add-link {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.child-scroll {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 24rpx;
+}
+.child-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120rpx;
+  padding: 16rpx 0;
+  border-radius: var(--radius);
+  margin: 0 20rpx 12rpx 0;
+  border: 2rpx solid var(--line);
+}
+.child-chip.active {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.child-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 40rpx;
+}
+.child-name {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+  max-width: 110rpx;
+}
+.no-child {
+  font-size: 26rpx;
+  margin-top: 20rpx;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+}
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+.stat-num {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: var(--primary);
+}
+.stat-label {
+  font-size: 24rpx;
+  margin-top: 6rpx;
+}
+.stat-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: var(--line);
+}
+
+.menu-card {
+  padding: 8rpx 28rpx;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 0;
+}
+.menu-icon {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+.menu-text {
+  font-size: 30rpx;
+}
+.menu-arrow {
+  color: var(--ink-weak);
+  font-size: 40rpx;
+}
+.menu-divider {
+  height: 2rpx;
+  background: var(--line);
+}
+
+.footer {
+  text-align: center;
+  font-size: 24rpx;
+  margin-top: 40rpx;
+}
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 31;
+}
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-bottom: 28rpx;
+}
+.sheet-input {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 24rpx;
+  font-size: 30rpx;
+  margin-bottom: 20rpx;
+}
+.ph {
+  color: var(--ink-weak);
+}
+.sheet-field {
+  padding: 20rpx 8rpx;
+  border-bottom: 2rpx solid var(--line);
+}
+.sheet-field-label {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.picker-val {
+  font-size: 30rpx;
+  color: var(--primary-dark);
+}
+.sheet-actions {
+  margin-top: 32rpx;
+}
+.sheet-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+}
+.sheet-btn:first-child {
+  margin-right: 20rpx;
+}

@@ -1,0 +1,78 @@
+<!-- pages/records/add/add.wxml —— 添加记录 -->
+<view class="container">
+  <!-- 标题 -->
+  <view class="card">
+    <input
+      class="title-input"
+      placeholder="记录一个成长瞬间…"
+      placeholder-class="ph"
+      value="{{title}}"
+      bindinput="onTitleInput"
+      maxlength="40"
+    />
+    <textarea
+      class="note-input"
+      placeholder="展开说说这一刻的细节～（选填）"
+      placeholder-class="ph"
+      value="{{note}}"
+      bindinput="onNoteInput"
+      maxlength="500"
+      auto-height
+    />
+  </view>
+
+  <!-- 图片 -->
+  <view class="card">
+    <view class="field-label">照片</view>
+    <view class="img-grid">
+      <view class="grid-item" wx:for="{{localImages}}" wx:key="*this">
+        <image class="grid-img" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewLocal" />
+        <view class="remove-badge" data-idx="{{index}}" catchtap="removeImage">×</view>
+      </view>
+      <view class="add-img" wx:if="{{localImages.length < 9}}" bindtap="chooseImage">＋</view>
+    </view>
+  </view>
+
+  <!-- 分类 -->
+  <view class="card">
+    <view class="field-label">分类</view>
+    <view class="chip-wrap">
+      <view
+        class="chip {{category === item ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="*this"
+        data-cat="{{item}}"
+        bindtap="selectCategory"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <!-- 心情 -->
+  <view class="card">
+    <view class="field-label">心情</view>
+    <view class="mood-wrap">
+      <view
+        class="mood-item {{mood === item.key ? 'active' : ''}}"
+        wx:for="{{moods}}"
+        wx:key="key"
+        data-mood="{{item.key}}"
+        bindtap="selectMood"
+      >
+        <view class="mood-emoji">{{item.emoji}}</view>
+        <view class="mood-label">{{item.label}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 日期 -->
+  <view class="card">
+    <picker mode="date" value="{{eventDate}}" bindchange="onDateChange">
+      <view class="row-between date-picker">
+        <view class="field-label" style="margin:0">日期</view>
+        <view class="text-primary">{{eventDate}} ›</view>
+      </view>
+    </picker>
+  </view>
+
+  <button class="btn-primary btn-block submit-btn" bindtap="onSubmit" loading="{{submitting}}">保存记录</button>
+</view>

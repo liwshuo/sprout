@@ -1,8 +1,57 @@
-<!-- pages/index/index.wxml - 首页（日历记录） -->
+<!-- pages/index/index.wxml —— 日历首页 -->
 <view class="container">
-  <view class="page-title">日历记录</view>
-  <view class="card">
-    <view class="today">今天：{{today}}</view>
-    <view class="hint">在这里查看和添加每日成长记录</view>
+  <view class="row-between header">
+    <view class="page-title">{{monthLabel}}</view>
+    <view class="row month-switch">
+      <view class="switch-btn" bindtap="prevMonth">‹</view>
+      <view class="switch-btn" bindtap="nextMonth">›</view>
+    </view>
+  </view>
+
+  <!-- 月历卡片 -->
+  <view class="card calendar-card">
+    <view class="week-row">
+      <view class="week-cell text-sub" wx:for="{{weekHeaders}}" wx:key="*this">{{item}}</view>
+    </view>
+    <view class="day-grid">
+      <view
+        class="day-cell {{item.inMonth ? '' : 'muted'}} {{item.date === selectedDate ? 'selected' : ''}}"
+        wx:for="{{cells}}"
+        wx:key="date"
+        data-date="{{item.date}}"
+        bindtap="onTapDay"
+      >
+        <view class="day-num {{item.isToday ? 'today' : ''}}">{{item.day}}</view>
+        <view class="dot" wx:if="{{item.dotColor}}" style="background:{{item.dotColor}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日记录 -->
+  <view class="row-between section-head">
+    <view class="section-title">{{selectedLabel}} · 记录</view>
+    <view class="text-primary add-link" bindtap="goAdd">+ 记一笔</view>
+  </view>
+
+  <view class="empty card" wx:if="{{dayRecords.length === 0}}">
+    <text class="empty-emoji">🌱</text>
+    <view class="empty-text">这一天还没有记录，点上方「记一笔」开始吧</view>
+  </view>
+
+  <view class="card record-item" wx:for="{{dayRecords}}" wx:key="uuid">
+    <view class="color-bar" style="background:{{item.color}}"></view>
+    <view class="flex-1">
+      <view class="row-between">
+        <view class="record-title ellipsis">{{item.title}}</view>
+        <view class="record-mood" wx:if="{{item.moodIcon}}">{{item.moodIcon}}</view>
+      </view>
+      <view class="record-note text-sub" wx:if="{{item.note}}">{{item.note}}</view>
+      <view class="row tag-row" wx:if="{{item.category}}">
+        <view class="tag">{{item.category}}</view>
+      </view>
+    </view>
+    <image class="record-cover" wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" />
   </view>
 </view>
+
+<view class="fab" bindtap="goAdd">＋</view>

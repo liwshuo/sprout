@@ -1,0 +1,94 @@
+<!-- pages/mine/mine.wxml —— 我的 -->
+<view class="container">
+  <!-- 用户 / 登录卡 -->
+  <view class="card user-card">
+    <view class="avatar">{{user ? '🙂' : '👶'}}</view>
+    <view class="flex-1">
+      <view class="user-name" wx:if="{{user}}">{{user.nickname || '成长记录家长'}}</view>
+      <view class="user-name" wx:else>未登录</view>
+      <view class="user-sub text-sub" wx:if="{{user}}">{{user.phone ? user.phone : '点击右侧绑定手机号'}}</view>
+      <view class="user-sub text-sub" wx:else>登录后云端同步，多设备共享</view>
+    </view>
+    <button wx:if="{{!user}}" class="btn-primary login-btn" bindtap="doLogin">登录</button>
+    <button
+      wx:elif="{{!user.phone}}"
+      class="btn-ghost login-btn"
+      open-type="getPhoneNumber"
+      bindgetphonenumber="onGetPhone"
+    >绑手机</button>
+  </view>
+
+  <!-- 孩子切换器 -->
+  <view class="card">
+    <view class="row-between">
+      <view class="section-title">我的宝宝</view>
+      <view class="text-primary add-link" bindtap="openAddChild">+ 添加</view>
+    </view>
+    <view class="child-scroll" wx:if="{{children.length > 0}}">
+      <view
+        class="child-chip {{activeChildId === item.uuid ? 'active' : ''}}"
+        wx:for="{{children}}"
+        wx:key="uuid"
+        data-uuid="{{item.uuid}}"
+        bindtap="switchChild"
+      >
+        <view class="child-avatar">👶</view>
+        <view class="child-name ellipsis">{{item.name}}</view>
+      </view>
+    </view>
+    <view class="text-sub no-child" wx:else>还没有添加宝宝，点「添加」创建档案</view>
+  </view>
+
+  <!-- 统计 -->
+  <view class="card stat-card">
+    <view class="stat-item">
+      <view class="stat-num">{{stats.records}}</view>
+      <view class="stat-label text-sub">成长记录</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-num">{{stats.books}}</view>
+      <view class="stat-label text-sub">共读绘本</view>
+    </view>
+  </view>
+
+  <!-- 功能入口 -->
+  <view class="card menu-card">
+    <view class="menu-item" bindtap="goReport">
+      <view class="menu-icon">📊</view>
+      <view class="flex-1 menu-text">本周成长周报</view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-divider"></view>
+    <view class="menu-item">
+      <view class="menu-icon">☁️</view>
+      <view class="flex-1 menu-text">云同步 · 与 App 打通</view>
+      <view class="menu-arrow">›</view>
+    </view>
+    <view class="menu-divider"></view>
+    <view class="menu-item">
+      <view class="menu-icon">⚙️</view>
+      <view class="flex-1 menu-text">设置</view>
+      <view class="menu-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="footer text-sub">萌芽成长册 · 记录每一次成长</view>
+</view>
+
+<!-- 添加孩子弹层 -->
+<view class="mask" wx:if="{{showAddChild}}" bindtap="closeAddChild"></view>
+<view class="sheet" wx:if="{{showAddChild}}" catchtap>
+  <view class="sheet-title">添加宝宝</view>
+  <input class="sheet-input" placeholder="宝宝昵称" placeholder-class="ph" bindinput="onChildInput" />
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">出生日期</view>
+    <picker mode="date" value="{{childForm.birthDate}}" bindchange="onBirthChange">
+      <view class="picker-val">{{childForm.birthDate || '请选择'}} ›</view>
+    </picker>
+  </view>
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeAddChild">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveChild">保存</view>
+  </view>
+</view>

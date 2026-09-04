@@ -1,0 +1,126 @@
+/* pages/reading/reading.wxss —— 阅读书架 */
+.tab-bar {
+  display: flex;
+  background: #fff;
+  border-radius: var(--radius-pill);
+  padding: 8rpx;
+  margin-bottom: 28rpx;
+  box-shadow: var(--shadow);
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: var(--ink-sub);
+  border-radius: var(--radius-pill);
+}
+.tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  font-weight: 600;
+}
+
+.book-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.book-card {
+  width: 31%;
+  margin-bottom: 32rpx;
+}
+.cover {
+  position: relative;
+  width: 100%;
+  height: 300rpx;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--primary-soft);
+}
+.cover-img {
+  width: 100%;
+  height: 100%;
+}
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16rpx;
+  box-sizing: border-box;
+  font-size: 26rpx;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+.status-badge {
+  position: absolute;
+  left: 12rpx;
+  top: 12rpx;
+  padding: 4rpx 16rpx;
+  border-radius: var(--radius-pill);
+  font-size: 20rpx;
+  color: #fff;
+}
+.status-want { background: var(--sky); }
+.status-reading { background: var(--primary); }
+.status-done { background: var(--mint); }
+
+.book-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-top: 12rpx;
+}
+.book-author {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+}
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 31;
+}
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-bottom: 28rpx;
+}
+.sheet-input {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 24rpx;
+  font-size: 30rpx;
+  margin-bottom: 20rpx;
+}
+.ph {
+  color: var(--ink-weak);
+}
+.sheet-actions {
+  margin-top: 12rpx;
+}
+.sheet-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+}
+.sheet-btn:first-child {
+  margin-right: 20rpx;
+}

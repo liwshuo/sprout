@@ -1,10 +1,64 @@
-<!-- pages/schedule/index.wxml - 课表 -->
+<!-- pages/schedule/index.wxml —— 课表 -->
 <view class="container">
-  <view class="page-title">课表管理</view>
-  <view class="card" wx:if="{{courses.length === 0}}">
-    <view class="empty">还没有课程安排，点击添加孩子的课表～</view>
+  <view class="page-title">课程表</view>
+  <view class="page-subtitle">孩子每周的课程与兴趣班安排</view>
+
+  <view class="day-block" wx:for="{{grouped}}" wx:key="weekday">
+    <view class="day-head">
+      <view class="day-label">{{item.label}}</view>
+      <view class="day-line"></view>
+    </view>
+
+    <view class="empty-day text-sub" wx:if="{{item.items.length === 0}}">这天没有安排～</view>
+
+    <view class="course-card card" wx:for="{{item.items}}" wx:for-item="course" wx:key="uuid">
+      <view class="time-col">
+        <view class="time-start">{{course.startTime}}</view>
+        <view class="time-end text-sub">{{course.endTime}}</view>
+      </view>
+      <view class="course-line" style="background:{{course.type === 'school' ? '#8FC7F0' : '#FF8C42'}}"></view>
+      <view class="flex-1">
+        <view class="course-name ellipsis">{{course.courseName}}</view>
+        <view class="course-meta text-sub">
+          <text class="type-tag">{{course.type === 'school' ? '校内' : '兴趣班'}}</text>
+          <text wx:if="{{course.location}}"> · {{course.location}}</text>
+        </view>
+      </view>
+      <view class="del-btn" data-uuid="{{course.uuid}}" catchtap="onDelete">删除</view>
+    </view>
   </view>
-  <view class="card" wx:for="{{courses}}" wx:key="id">
-    <view>{{item.name}}</view>
+</view>
+
+<view class="fab" bindtap="openAdd">＋</view>
+
+<!-- 新增课程弹层 -->
+<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
+<view class="sheet" wx:if="{{showAdd}}" catchtap>
+  <view class="sheet-title">添加课程</view>
+  <input class="sheet-input" placeholder="课程名称" placeholder-class="ph" data-field="courseName" bindinput="onFormInput" />
+  <input class="sheet-input" placeholder="地点（选填）" placeholder-class="ph" data-field="location" bindinput="onFormInput" />
+
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">星期</view>
+    <picker mode="selector" range="{{weekdays}}" bindchange="onWeekdayChange">
+      <view class="picker-val">周{{weekdays[form.weekday - 1]}} ›</view>
+    </picker>
+  </view>
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">时间</view>
+    <view class="row">
+      <picker mode="time" value="{{form.startTime}}" bindchange="onStartChange">
+        <view class="picker-val">{{form.startTime}}</view>
+      </picker>
+      <text class="text-sub time-sep">—</text>
+      <picker mode="time" value="{{form.endTime}}" bindchange="onEndChange">
+        <view class="picker-val">{{form.endTime}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveCourse">保存</view>
   </view>
 </view>

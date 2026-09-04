@@ -1,0 +1,115 @@
+/* pages/records/add/add.wxss —— 添加记录 */
+.title-input {
+  font-size: 34rpx;
+  font-weight: 600;
+  padding: 8rpx 0;
+}
+.note-input {
+  font-size: 28rpx;
+  width: 100%;
+  margin-top: 16rpx;
+  padding: 12rpx 0;
+  min-height: 120rpx;
+  line-height: 1.7;
+}
+.ph {
+  color: var(--ink-weak);
+}
+
+.field-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 20rpx;
+}
+
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.grid-item {
+  position: relative;
+  margin: 0 16rpx 16rpx 0;
+}
+.grid-img {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 16rpx;
+}
+.remove-badge {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 30rpx;
+}
+.add-img {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 16rpx;
+  border: 2rpx dashed var(--primary-light);
+  color: var(--primary);
+  font-size: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-soft);
+}
+
+.chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+.chip {
+  padding: 12rpx 28rpx;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--ink-sub);
+  font-size: 26rpx;
+  margin: 0 16rpx 16rpx 0;
+  border: 2rpx solid var(--line);
+}
+.chip.active {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: var(--primary-light);
+  font-weight: 600;
+}
+
+.mood-wrap {
+  display: flex;
+  justify-content: space-between;
+}
+.mood-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 16rpx;
+  border-radius: var(--radius);
+  opacity: 0.5;
+}
+.mood-item.active {
+  opacity: 1;
+  background: var(--primary-soft);
+}
+.mood-emoji {
+  font-size: 52rpx;
+}
+.mood-label {
+  font-size: 22rpx;
+  color: var(--ink-sub);
+  margin-top: 6rpx;
+}
+
+.date-picker {
+  padding: 4rpx 0;
+}
+
+.submit-btn {
+  margin-top: 12rpx;
+}

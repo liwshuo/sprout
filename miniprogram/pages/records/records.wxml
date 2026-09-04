@@ -1,0 +1,46 @@
+<!-- pages/records/records.wxml —— 记录列表 -->
+<view class="container">
+  <view class="page-title">成长记录</view>
+  <view class="page-subtitle">用文字和照片，留住每一个小小的成长瞬间</view>
+
+  <view class="empty card" wx:if="{{!loading && records.length === 0}}">
+    <text class="empty-emoji">📖</text>
+    <view class="empty-text">还没有记录，点右下角开始记录第一条吧</view>
+  </view>
+
+  <view class="card record-card" wx:for="{{records}}" wx:key="uuid">
+    <view class="row-between">
+      <view class="row">
+        <view class="cat-dot" style="background:{{item.color}}"></view>
+        <view class="record-title ellipsis">{{item.title}}</view>
+      </view>
+      <view class="record-mood" wx:if="{{item.moodIcon}}">{{item.moodIcon}}</view>
+    </view>
+
+    <view class="record-note" wx:if="{{item.note}}">{{item.note}}</view>
+
+    <view class="img-grid" wx:if="{{item.imageUrls.length > 0}}">
+      <image
+        class="grid-img"
+        wx:for="{{item.imageUrls}}"
+        wx:for-item="url"
+        wx:key="*this"
+        src="{{url}}"
+        mode="aspectFill"
+        data-urls="{{item.imageUrls}}"
+        data-current="{{url}}"
+        catchtap="previewImage"
+      />
+    </view>
+
+    <view class="row-between meta-row">
+      <view class="row">
+        <view class="tag" wx:if="{{item.category}}">{{item.category}}</view>
+        <view class="text-sub date-label">{{item.dateLabel}}</view>
+      </view>
+      <view class="del-btn" data-uuid="{{item.uuid}}" catchtap="onDelete">删除</view>
+    </view>
+  </view>
+</view>
+
+<view class="fab" bindtap="goAdd">＋</view>

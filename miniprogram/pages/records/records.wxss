@@ -1,0 +1,48 @@
+/* pages/records/records.wxss —— 记录列表 */
+.record-card {
+  padding: 28rpx;
+}
+.cat-dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+.record-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  max-width: 460rpx;
+}
+.record-mood {
+  font-size: 36rpx;
+}
+.record-note {
+  font-size: 28rpx;
+  color: var(--ink-sub);
+  margin-top: 16rpx;
+  line-height: 1.7;
+}
+.img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20rpx;
+}
+.grid-img {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  margin: 0 12rpx 12rpx 0;
+}
+.meta-row {
+  margin-top: 20rpx;
+}
+.date-label {
+  font-size: 24rpx;
+  margin-left: 8rpx;
+}
+.del-btn {
+  font-size: 24rpx;
+  color: var(--ink-weak);
+  padding: 4rpx 12rpx;
+}

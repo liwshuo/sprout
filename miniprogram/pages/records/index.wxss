@@ -1,6 +1,0 @@
-/* pages/records/index.wxss */
-.empty {
-  color: var(--text-sub);
-  text-align: center;
-  padding: 40rpx 0;
-}

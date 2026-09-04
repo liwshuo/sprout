@@ -1,6 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "课程表",
+  "navigationBarTitleText": "阅读书架",
   "enablePullDownRefresh": true,
   "backgroundColorTop": "#FFF8F3"
 }

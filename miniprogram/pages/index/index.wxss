@@ -1,10 +1,114 @@
-/* pages/index/index.wxss */
-.today {
-  font-size: 32rpx;
-  color: var(--primary-color);
-  font-weight: 600;
-  margin-bottom: 12rpx;
+/* pages/index/index.wxss —— 日历首页 */
+.header {
+  margin-bottom: 20rpx;
 }
-.hint {
-  color: var(--text-sub);
+.month-switch .switch-btn {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 60rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 44rpx;
+  margin-left: 16rpx;
+}
+
+.calendar-card {
+  padding: 24rpx 16rpx;
+}
+.week-row {
+  display: flex;
+}
+.week-cell {
+  flex: 1;
+  text-align: center;
+  font-size: 24rpx;
+  padding-bottom: 12rpx;
+}
+.day-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+.day-cell {
+  width: 14.28%;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.day-num {
+  width: 60rpx;
+  height: 60rpx;
+  line-height: 60rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 30rpx;
+}
+.day-cell.muted .day-num {
+  color: var(--ink-weak);
+}
+.day-num.today {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+.day-cell.selected .day-num {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  font-weight: 700;
+}
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-top: 6rpx;
+}
+
+.section-head {
+  margin: 8rpx 4rpx 20rpx;
+}
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+.add-link {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.record-item {
+  display: flex;
+  align-items: stretch;
+  padding: 24rpx;
+}
+.color-bar {
+  width: 8rpx;
+  border-radius: 8rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+.record-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  max-width: 420rpx;
+}
+.record-mood {
+  font-size: 36rpx;
+}
+.record-note {
+  font-size: 26rpx;
+  margin-top: 8rpx;
+}
+.tag-row {
+  margin-top: 16rpx;
+}
+.record-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 16rpx;
+  margin-left: 20rpx;
+  flex-shrink: 0;
 }

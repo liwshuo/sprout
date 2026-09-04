@@ -1,0 +1,48 @@
+<!-- pages/reading/reading.wxml —— 阅读书架 -->
+<view class="container">
+  <view class="page-title">阅读书架</view>
+  <view class="page-subtitle">陪孩子一起读过的每一本好书</view>
+
+  <!-- 状态筛选 -->
+  <view class="tab-bar">
+    <view
+      class="tab {{activeTab === item.key ? 'active' : ''}}"
+      wx:for="{{tabs}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="switchTab"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="empty card" wx:if="{{!loading && books.length === 0}}">
+    <text class="empty-emoji">📚</text>
+    <view class="empty-text">书架还空着，点右下角添加第一本书</view>
+  </view>
+
+  <!-- 书籍网格 -->
+  <view class="book-grid">
+    <view class="book-card" wx:for="{{books}}" wx:key="uuid">
+      <view class="cover" data-uuid="{{item.uuid}}" bindtap="cycleStatus">
+        <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" />
+        <view wx:else class="cover-placeholder">{{item.title}}</view>
+        <view class="status-badge status-{{item.status}}">{{item.statusLabel}}</view>
+      </view>
+      <view class="book-title ellipsis">{{item.title}}</view>
+      <view class="book-author ellipsis text-sub" wx:if="{{item.author}}">{{item.author}}</view>
+    </view>
+  </view>
+</view>
+
+<view class="fab" bindtap="openAdd">＋</view>
+
+<!-- 新增书籍弹层 -->
+<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
+<view class="sheet {{showAdd ? 'sheet-show' : ''}}" wx:if="{{showAdd}}" catchtap>
+  <view class="sheet-title">添加书籍</view>
+  <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" bindinput="onFormInput" />
+  <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" bindinput="onFormInput" />
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveBook">加入书架</view>
+  </view>
+</view>
