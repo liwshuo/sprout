@@ -5,6 +5,25 @@
 
 ## [Unreleased]
 
+### 2026-09-04 · 书架：扫码录入 + 系列书面板
+
+#### 新增
+- **扫码录入书籍**：阅读书架「＋」改为「添加方式」选择弹层（手动录入 / 扫码添加 / 新建系列）。扫码走 `wx.scanCode`（仅相机、条码模式），校验 13 位 + 978/979 前缀后调用新增云函数 `cloudfunctions/bookLookup`（探数 tanshu 主源 + Google Books 兜底，`axios` 请求，字段归一 `{ found, title, author, cover, totalPages, isbn }`，封面 `http→https`），命中后弹「扫码确认弹层」预填并可编辑书名/作者/总页数，保存时封面以外链 `coverExternalUrl` 落库（不占云存储）。非法条码或查询失败自动转手填。
+- **系列书面板（套书）**：新增 `services/series-service.js`（`groupBySeries` / `buildPanelVM` / `deriveProgress` / `nextSeriesIndex`）把书籍按 `seriesUuid` 聚合为「系列卡片 + 单本书」。书架系列卡片含三层叠层封面伪装、右上「系列」橙色徽标、底部「已读 x/y」暖橙进度条；点开系列面板按 `seriesIndex` 升序列出各分册（册序 · 书名 · 状态角标 · 打卡），面板内可直接打卡（打卡后保持面板打开并刷新）与「＋ 添加分册」。
+- **`db.series` 业务方法**：`utils/db.js` 新增 `series`（`listAll` / `getByUuid` / `create` / `update` / `remove`），与 `books` 风格一致，均走 `listAllPaged` + 权限/软删/ownerId 三件套。
+- **新建系列**：书架「新建系列」弹层填写系列名 + 总册数，写入 `series` 集合。
+
+#### 变更
+- **`books.create` 透传新字段**：`isbn` / `seriesUuid` / `seriesIndex` / `coverExternalUrl` 随书籍整体写入。
+- **书架取数与渲染**：`reading.refresh()` 同时拉 `db.books.listAll` + `db.series.listAll`，先水合封面（`coverExternalUrl` 优先，否则 fileID 换临时链接）再分组渲染 `renderList`（系列卡片在前、单本在后）。
+- **弹层层级规范**：打卡 sheet（z-index 51）> 系列面板（41）> 普通/系列 mask（50/40），保证系列面板内打卡时层级正确。
+- **文档同步**：更新 `docs/PRODUCT_SPEC.md` §4.3（书架功能）、§5（扫码状态）、§8.2（`books`/`series` 集合）、§8.4（迭代待办勾销）。
+
+#### 说明
+- **需手动部署**：`cloudfunctions/bookLookup` 为新增云函数，须在「微信开发者工具」右键该目录「上传并部署（云端安装依赖）」后扫码查书才可用；未部署时扫码会提示「bookLookup 云函数未部署」并可转手填。
+- **可选环境变量**：`bookLookup` 支持 `TANSHU_KEY`（探数 appKey），未配置时自动跳过主源直接走 Google Books 兜底。
+- **需新建集合**：首次使用系列功能需在云开发控制台新建集合 `series`（权限「仅创建者可读写」）。
+
 ### 新增
 - **小程序服务层落地**：新增 `services/calendar-service.js`（日历三源聚合：成长记录 + 课表周展开 + 阅读打卡，归一为统一 `CalendarEvent`）与 `services/reading-service.js`（阅读打卡写入 + 书籍状态跃迁 + 进度派生）。
 - **日历三源聚合 + 多彩点**：首页月历接入 `calendar-service`，每天最多 3 个彩色圆点（橙=成长记录、蓝=课外班、绿=阅读打卡）并补充图例；点击某天在下方以统一事件卡片展示当天全部安排（成长记录 + 课外班 + 阅读打卡）。

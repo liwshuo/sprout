@@ -88,7 +88,10 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 
 - **三分区**：在读 / 想读 / 已读，分段切换并显示各区数量。
 - **书籍卡片**：书脊渐变封面 + 书名 + 作者 + 状态徽章 + 打卡次数/时长 + 进度环。进度全部由 `BookShelfService` 聚合派生，页面不直接读书籍进度字段。
-- **添加书籍**：底部弹层手填书名（必填）+ 作者（选填）；扫码识别为次要入口，V1 默认手填，套书按独立书处理。
+- **添加书籍**：右下角「＋」弹出**添加方式选择**（手动录入 / 扫码添加 / 新建系列）。
+  - **手动录入**：底部弹层手填书名（必填）+ 作者（选填）。
+  - **扫码录入**（小程序端已落地）：`wx.scanCode` 扫图书条码 → 校验 13 位 + 978/979 前缀 → 调云函数 `bookLookup`（探数 tanshu 主源 + Google Books 兜底）→ 弹出「扫码确认弹层」预填书名/作者/封面/总页数，可编辑后保存；封面走外链 `coverExternalUrl`（不落云存储）。非法条码或查询失败自动转手填。
+- **系列书面板**（套书，已落地）：书架把同一 `seriesUuid` 的书聚合为**系列卡片**（三层叠层封面 + 右上「系列」徽标 + 底部「已读 x/y」进度条）；点开进入系列面板，按 `seriesIndex` 升序列出各分册（册序 · 书名 · 状态角标 · 打卡），面板内可直接打卡（打卡后面板保持打开并刷新）与「＋ 添加分册」。
 - **阅读打卡**：`ReadingCheckinSheet` 记录章节/页码、时长、心情、备注；状态自动跃迁（want → reading → done）在写侧判定。
 - **书籍详情**：`/reading/book/:id` 展示单本书打卡历史与进度。
 - **空态兜底**：各分区独立空态文案。
@@ -131,7 +134,7 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 | --- | --- | --- |
 | 活动计时器（TimerPage） | **入口已移除，路由保留** | `/records/timer` 路由与页面仍在，UI 入口已下线；`DailyRecords`/`ReadingLogs` 保留 `source='timer'` 口径 |
 | 语音识别记录 | **待开发** | speech_to_text 依赖已引入，`source='voice'` 口径已预留，功能未落地 |
-| 扫码识别书籍 | **待开发（次要入口）** | mobile_scanner + ISBN 工具已备，V1 默认手填书名 |
+| 扫码识别书籍 | **小程序端已落地** | `wx.scanCode` + 云函数 `bookLookup`（探数 + Google Books）；Flutter 端 mobile_scanner 待落地 |
 | 调课 / 停课 | **待开发** | 课表当前仅支持增删整门课，暂无单次调课/停课 |
 | AI 周报文案 | **预留接口** | 无 API Key 时走本地模板降级 |
 | 通知提醒 | **部分预留** | flutter_local_notifications 已引入，围绕周报/提醒场景待完善 |
@@ -243,9 +246,9 @@ lib/
 | `children` | ownerId | 孩子档案（多孩子） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
 | `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
-| `books` | ownerId+childId | 书架（status 由打卡派生跃迁） | ✅ 已实现 |
+| `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl` 字段） | ✅ 已实现 |
 | `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
-| `series` | ownerId+childId | 套书 | ⏳ 预留 |
+| `series` | ownerId+childId | 套书元信息（`name`/`totalVolumes`；已读册数由 books 聚合派生，不冗余存储） | ✅ 已实现（`series-service` 分组聚合 + 系列面板） |
 | `weekly_reports` | ownerId+childId | 周报快照 | ⏳ 后续（云函数聚合） |
 
 字段与索引明细见架构文档 §2.3。权限统一「仅创建者可读写」。
@@ -266,8 +269,9 @@ lib/
 1. ~~**日历聚合展示**（成长记录 + 课外班 + 阅读日志）— P0~~ ✅ 已落地（`calendar-service` 三源聚合 + 多彩点 + `event-card` 事件卡片）
 2. ~~**书架 → 阅读打卡闭环**（补 `reading_logs` 写入 + 状态跃迁 + 进度派生）— P1~~ ✅ 已落地（`reading-service.addReadingLog` + 书架打卡弹层）
 3. ~~**课外班日历推算**（weekday + recurrence 展开日期）— P0~~ ✅ 已落地（`date.expandWeeklySchedule`，weekly）
-4. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
-5. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
+4. ~~**书架扫码录入**（`wx.scanCode` + `bookLookup` 云函数 ISBN 查书）+ **系列书面板**（`series` 集合 + `series-service` 聚合 + 叠层卡片/面板）— P1~~ ✅ 已落地
+5. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
+6. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
 
 ### 8.5 编码规范要点
 

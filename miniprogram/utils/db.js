@@ -228,7 +228,10 @@ const books = {
     return getByUuid(COLLECTIONS.books, uuid);
   },
   create(book) {
-    // book: { title, author, cover, isbn, status, totalPages, totalChapters, seriesUuid, seriesIndex }
+    // book: { title, author, cover, coverExternalUrl, isbn, status, totalPages,
+    //         totalChapters, seriesUuid, seriesIndex }
+    // 说明：coverExternalUrl（扫码外链封面）/ isbn / seriesUuid / seriesIndex 均随
+    //       book 透传写入，无需在此逐字段列举（generic create 会整体展开）。
     return create(COLLECTIONS.books, Object.assign({ status: 'want' }, book));
   },
   update(uuid, patch) {
@@ -314,6 +317,29 @@ const readingLogs = {
   },
 };
 
+// 套书/系列：一套书的元信息（已读册数不冗余存储，由 books 聚合派生）
+// 与 books 风格一致：listAll / getByUuid / create / update / remove，
+// 均走 listAllPaged（破 20 条上限）+ 权限/软删/ownerId 三件套（由通用层保障）。
+const series = {
+  /** 当前孩子的全部系列（按创建时间升序，分页拉全） */
+  listAll() {
+    return listAllPaged(COLLECTIONS.series, { orderBy: ['createdAt', 'asc'] });
+  },
+  getByUuid(uuid) {
+    return getByUuid(COLLECTIONS.series, uuid);
+  },
+  create(item) {
+    // item: { name, totalVolumes }
+    return create(COLLECTIONS.series, Object.assign({ totalVolumes: 0 }, item));
+  },
+  update(uuid, patch) {
+    return updateByUuid(COLLECTIONS.series, uuid, patch);
+  },
+  remove(uuid) {
+    return softDelete(COLLECTIONS.series, uuid);
+  },
+};
+
 // ============================================================
 // 媒体：选图 → 上传云存储 → 存 fileID；批量换临时链接
 // ============================================================
@@ -385,6 +411,7 @@ module.exports = {
   children,
   scheduleItems,
   readingLogs,
+  series,
   // 媒体
   uploadFile,
   uploadFiles,

@@ -1,0 +1,10 @@
+{
+  "name": "bookLookup",
+  "version": "1.0.0",
+  "description": "ISBN 查书云函数：探数 tanshu 主源 + Google Books 兜底",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.8"
+  }
+}

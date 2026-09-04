@@ -14,39 +14,127 @@
     >{{item.label}}</view>
   </view>
 
-  <view class="empty card" wx:if="{{!loading && books.length === 0}}">
+  <view class="empty card" wx:if="{{!loading && renderList.length === 0}}">
     <text class="empty-emoji">📚</text>
     <view class="empty-text">书架还空着，点右下角添加第一本书</view>
   </view>
 
-  <!-- 书籍网格 -->
+  <!-- 书籍/系列网格 -->
   <view class="book-grid">
-    <view class="book-card" wx:for="{{books}}" wx:key="uuid">
-      <view class="cover" data-uuid="{{item.uuid}}" bindtap="cycleStatus">
-        <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" />
-        <view wx:else class="cover-placeholder">{{item.title}}</view>
-        <view class="status-badge status-{{item.status}}">{{item.statusLabel}}</view>
+    <block wx:for="{{renderList}}" wx:key="key">
+      <!-- 系列卡片 -->
+      <view wx:if="{{item.isSeries}}" class="book-card" data-uuid="{{item.seriesUuid}}" bindtap="openSeries">
+        <view class="cover series-stack">
+          <view class="stack-layer stack-3"></view>
+          <view class="stack-layer stack-2"></view>
+          <view class="stack-layer stack-1">
+            <image wx:if="{{item.covers[0]}}" class="cover-img" src="{{item.covers[0]}}" mode="aspectFill" />
+            <view wx:else class="cover-placeholder">{{item.name}}</view>
+          </view>
+          <view class="series-badge">系列</view>
+        </view>
+        <view class="book-title ellipsis">{{item.name}}</view>
+        <view class="series-progress">
+          <view class="progress-track">
+            <view class="progress-fill" style="width:{{item.progress.total ? (item.progress.done * 100 / item.progress.total) : 0}}%"></view>
+          </view>
+          <view class="progress-text text-sub">已读 {{item.progress.done}}/{{item.progress.total}}</view>
+        </view>
       </view>
-      <view class="book-title ellipsis">{{item.title}}</view>
-      <view class="book-author ellipsis text-sub" wx:if="{{item.author}}">{{item.author}}</view>
-      <!-- 打卡按钮 -->
-      <view class="checkin-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" catchtap="openCheckin">📖 打卡</view>
-    </view>
+
+      <!-- 单本书卡片 -->
+      <view wx:else class="book-card">
+        <view class="cover" data-uuid="{{item.uuid}}" bindtap="cycleStatus">
+          <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" />
+          <view wx:else class="cover-placeholder">{{item.title}}</view>
+          <view class="status-badge status-{{item.status}}">{{item.statusLabel}}</view>
+        </view>
+        <view class="book-title ellipsis">{{item.title}}</view>
+        <view class="book-author ellipsis text-sub" wx:if="{{item.author}}">{{item.author}}</view>
+        <view class="checkin-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" catchtap="openCheckin">📖 打卡</view>
+      </view>
+    </block>
   </view>
 </view>
 
-<view class="fab" bindtap="openAdd">＋</view>
+<view class="fab" bindtap="openAddChoice">＋</view>
 
-<!-- 新增书籍弹层 -->
-<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
-<view class="sheet {{showAdd ? 'sheet-show' : ''}}" wx:if="{{showAdd}}" catchtap>
+<!-- 添加方式选择弹层 -->
+<view class="mask" wx:if="{{showAddChoice}}" bindtap="closeAddChoice"></view>
+<view class="sheet" wx:if="{{showAddChoice}}" catchtap>
   <view class="sheet-title">添加书籍</view>
-  <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" bindinput="onFormInput" />
-  <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" bindinput="onFormInput" />
+  <view class="choice-item" bindtap="chooseManual">✍️ 手动录入</view>
+  <view class="choice-item" bindtap="chooseScan">📷 扫码添加</view>
+  <view class="choice-item" bindtap="chooseCreateSeries">📚 新建系列</view>
+  <view class="choice-item choice-cancel" bindtap="closeAddChoice">取消</view>
+</view>
+
+<!-- 手动新增书籍弹层 -->
+<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
+<view class="sheet" wx:if="{{showAdd}}" catchtap>
+  <view class="sheet-title">添加书籍</view>
+  <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{form.title}}" bindinput="onFormInput" />
+  <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{form.author}}" bindinput="onFormInput" />
   <view class="row sheet-actions">
     <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
     <view class="btn-primary sheet-btn" bindtap="saveBook">加入书架</view>
   </view>
+</view>
+
+<!-- 扫码确认弹层 -->
+<view class="mask" wx:if="{{showScanConfirm}}" bindtap="closeScanConfirm"></view>
+<view class="sheet" wx:if="{{showScanConfirm}}" catchtap>
+  <view class="sheet-title">确认书籍信息</view>
+  <view class="scan-preview">
+    <image wx:if="{{scanForm.cover}}" class="scan-cover" src="{{scanForm.cover}}" mode="aspectFill" />
+    <view wx:else class="scan-cover scan-cover-ph">无封面</view>
+    <view class="scan-isbn text-sub">ISBN：{{scanForm.isbn}}</view>
+  </view>
+  <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{scanForm.title}}" bindinput="onScanInput" />
+  <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{scanForm.author}}" bindinput="onScanInput" />
+  <input class="sheet-input" type="number" placeholder="总页数（选填）" placeholder-class="ph" data-field="totalPages" value="{{scanForm.totalPages}}" bindinput="onScanInput" />
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeScanConfirm">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveScanBook">保存</view>
+  </view>
+</view>
+
+<!-- 新建系列弹层 -->
+<view class="mask" wx:if="{{showCreateSeries}}" bindtap="closeCreateSeries"></view>
+<view class="sheet" wx:if="{{showCreateSeries}}" catchtap>
+  <view class="sheet-title">新建系列</view>
+  <input class="sheet-input" placeholder="系列名（如 神奇校车）" placeholder-class="ph" data-field="name" value="{{seriesForm.name}}" bindinput="onSeriesFormInput" />
+  <input class="sheet-input" type="number" placeholder="总册数（选填）" placeholder-class="ph" data-field="totalVolumes" value="{{seriesForm.totalVolumes}}" bindinput="onSeriesFormInput" />
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeCreateSeries">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveCreateSeries">创建</view>
+  </view>
+</view>
+
+<!-- 系列面板 -->
+<view class="series-mask" wx:if="{{showSeriesPanel}}" bindtap="closeSeries"></view>
+<view class="series-sheet" wx:if="{{showSeriesPanel}}" catchtap>
+  <view class="series-panel-head">
+    <view class="series-panel-title ellipsis">{{seriesPanel.name}}</view>
+    <view class="series-panel-progress">
+      <view class="progress-track">
+        <view class="progress-fill" style="width:{{seriesPanel.progress.total ? (seriesPanel.progress.done * 100 / seriesPanel.progress.total) : 0}}%"></view>
+      </view>
+      <view class="progress-text text-sub">已读 {{seriesPanel.progress.done}}/{{seriesPanel.progress.total}}</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="volume-list">
+    <view class="volume-row" wx:for="{{seriesPanel.volumes}}" wx:key="uuid">
+      <view class="volume-index">{{item.indexLabel}}</view>
+      <view class="volume-title ellipsis flex-1">{{item.title}}</view>
+      <view class="volume-status status-{{item.status}}">{{item.statusLabel}}</view>
+      <view class="volume-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" data-from="series" catchtap="openCheckin">打卡</view>
+    </view>
+    <view class="volume-empty text-sub" wx:if="{{seriesPanel.volumes.length === 0}}">还没有分册，点下方添加</view>
+  </scroll-view>
+
+  <view class="btn-primary btn-block series-add-btn" data-uuid="{{seriesPanel.seriesUuid}}" bindtap="addVolume">＋ 添加分册</view>
 </view>
 
 <!-- 阅读打卡弹层 -->
