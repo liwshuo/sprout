@@ -45,3 +45,13 @@ app.*.map.json
 # Generated files
 *.g.dart
 *.freezed.dart
+
+# Monorepo: Flutter app artifacts under app/
+/app/build/
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+
+# WeChat MiniProgram
+miniprogram/node_modules/
+miniprogram/miniprogram_npm/

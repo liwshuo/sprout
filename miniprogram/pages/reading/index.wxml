@@ -1,0 +1,10 @@
+<!-- pages/reading/index.wxml - 阅读书架 -->
+<view class="container">
+  <view class="page-title">阅读书架</view>
+  <view class="card" wx:if="{{books.length === 0}}">
+    <view class="empty">书架空空，添加孩子读过的绘本吧～</view>
+  </view>
+  <view class="card" wx:for="{{books}}" wx:key="id">
+    <view>{{item.name}}</view>
+  </view>
+</view>

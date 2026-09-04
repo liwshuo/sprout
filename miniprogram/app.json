@@ -1,0 +1,46 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/records/index",
+    "pages/reading/index",
+    "pages/schedule/index",
+    "pages/mine/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#FF8C42",
+    "navigationBarTitleText": "萌芽成长册",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#FFF7F0"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#FF8C42",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "日历"
+      },
+      {
+        "pagePath": "pages/records/index",
+        "text": "记录"
+      },
+      {
+        "pagePath": "pages/reading/index",
+        "text": "阅读"
+      },
+      {
+        "pagePath": "pages/schedule/index",
+        "text": "课表"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

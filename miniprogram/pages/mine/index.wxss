@@ -1,0 +1,10 @@
+/* pages/mine/index.wxss */
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 12rpx;
+}
+.hint {
+  color: var(--text-sub);
+}

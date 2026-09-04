@@ -1,0 +1,10 @@
+/* pages/index/index.wxss */
+.today {
+  font-size: 32rpx;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+.hint {
+  color: var(--text-sub);
+}

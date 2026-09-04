@@ -1,0 +1,12 @@
+<!-- pages/mine/index.wxml - 我的/周报 -->
+<view class="container">
+  <view class="page-title">我的</view>
+  <view class="card">
+    <view class="section-title">本周成长周报</view>
+    <view class="hint">查看孩子本周的记录、阅读与课程汇总</view>
+  </view>
+  <view class="card">
+    <view class="section-title">设置</view>
+    <view class="hint">账号、宝宝信息与云同步设置</view>
+  </view>
+</view>

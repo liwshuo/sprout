@@ -1,0 +1,21 @@
+{
+  "miniprogramRoot": "./",
+  "projectname": "萌芽成长册",
+  "description": "萌芽成长册 - 孩子成长记录微信小程序",
+  "appid": "YOUR_APPID_PLACEHOLDER",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "nodeModules": true,
+    "packNpmManually": false,
+    "coverView": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "condition": {}
+}

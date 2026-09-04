@@ -1,0 +1,8 @@
+<!-- pages/index/index.wxml - 首页（日历记录） -->
+<view class="container">
+  <view class="page-title">日历记录</view>
+  <view class="card">
+    <view class="today">今天：{{today}}</view>
+    <view class="hint">在这里查看和添加每日成长记录</view>
+  </view>
+</view>

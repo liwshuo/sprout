@@ -4,6 +4,23 @@
 
 Sprout 是一款帮助家长记录孩子日常成长的移动应用，涵盖日常事项记录、阅读打卡、课表管理以及自动周报生成，让孩子的每一步成长都清晰可见、值得回味。
 
+## 📦 Monorepo 结构
+
+本仓库采用 Monorepo 组织多端代码：
+
+```
+sprout/
+├── app/            # Flutter App（iOS + Android 双端，原有全部代码）
+├── miniprogram/    # 微信小程序「萌芽成长册」脚手架
+├── docs/           # 产品文档
+├── CHANGELOG.md    # 变更记录
+└── README.md       # 本文件
+```
+
+- **`app/`** → Flutter App。所有 Flutter 命令（`flutter pub get`、`flutter run` 等）均需在 `app/` 子目录下执行。
+- **`miniprogram/`** → 微信小程序。使用「微信开发者工具」导入时，请打开 `miniprogram/` 子目录作为项目根目录，并在 `project.config.json` 中填入真实 AppID、在 `app.js` 中替换 `YOUR_ENV_ID` 为实际云开发环境 ID。
+- **`docs/`** → 产品文档与技术设计。
+
 ## ✨ 功能列表
 
 - **首页日历视图**：以日历为核心，快速回顾每日记录与功能入口。
@@ -25,11 +42,12 @@ Sprout 是一款帮助家长记录孩子日常成长的移动应用，涵盖日�
 | 其他 | path_provider、shared_preferences、image_picker、intl |
 | 平台 | iOS + Android 双端 |
 
-## 📂 项目结构
+## 📂 Flutter 项目结构（`app/`）
 
 ```
-lib/
-  main.dart              # 应用入口
+app/
+  lib/
+    main.dart              # 应用入口
   app.dart               # MaterialApp 配置
   core/
     router/              # go_router 路由配置
@@ -56,7 +74,7 @@ lib/
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/liwshuo/sprout.git
-cd sprout
+cd sprout/app
 
 # 2. 获取依赖
 flutter pub get
@@ -68,7 +86,7 @@ dart run build_runner build --delete-conflicting-outputs
 flutter run
 ```
 
-> 说明：`lib/data/local/app_database.g.dart` 为 drift 生成文件，需执行第 3 步 build_runner 后生成，未生成前 IDE 会提示缺失该 part 文件，属正常现象。
+> 说明：`app/lib/data/local/app_database.g.dart` 为 drift 生成文件，需执行第 3 步 build_runner 后生成，未生成前 IDE 会提示缺失该 part 文件，属正常现象。
 
 ## 📄 License
 

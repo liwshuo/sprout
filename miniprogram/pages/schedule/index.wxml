@@ -1,0 +1,10 @@
+<!-- pages/schedule/index.wxml - 课表 -->
+<view class="container">
+  <view class="page-title">课表管理</view>
+  <view class="card" wx:if="{{courses.length === 0}}">
+    <view class="empty">还没有课程安排，点击添加孩子的课表～</view>
+  </view>
+  <view class="card" wx:for="{{courses}}" wx:key="id">
+    <view>{{item.name}}</view>
+  </view>
+</view>
