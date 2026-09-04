@@ -3,7 +3,7 @@ const auth = require('./utils/auth');
 
 // 云开发环境 ID：部署时替换为真实环境 ID；
 // 留空时使用「当前所属环境」，便于本地未配置环境也能编译运行。
-const CLOUD_ENV = ''; // e.g. 'sprout-prod-xxxx'
+const CLOUD_ENV = 'cloud1-d3gh6o81f2ba198c9'; // e.g. 'sprout-prod-xxxx'
 
 App({
   globalData: {
