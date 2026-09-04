@@ -46,70 +46,71 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       StatefulShellRoute.indexedStack(
         builder: (c, s, shell) => MainShell(shell: shell), // 底部 4 Tab 骨架
         branches: [
+          // 四个分支仅保留根页面，二级页面已提升为顶层全屏路由（脱离 Shell）。
           StatefulShellBranch(navigatorKey: _calKey, routes: [
             GoRoute(
               path: '/calendar',
               builder: (c, s) => const CalendarPage(),
-              routes: [
-                GoRoute(
-                  path: 'day/:date',
-                  builder: (c, s) =>
-                      DayDetailPage(date: s.pathParameters['date']!),
-                ),
-              ],
             ),
           ]),
           StatefulShellBranch(navigatorKey: _recKey, routes: [
             GoRoute(
               path: '/records',
               builder: (c, s) => const RecordsPage(),
-              routes: [
-                GoRoute(path: 'timer', builder: (c, s) => const TimerPage()),
-              ],
             ),
           ]),
           StatefulShellBranch(navigatorKey: _readKey, routes: [
             GoRoute(
               path: '/reading',
               builder: (c, s) => const BookshelfPage(),
-              routes: [
-                GoRoute(
-                  path: 'book/:id',
-                  builder: (c, s) =>
-                      BookDetailPage(id: int.parse(s.pathParameters['id']!)),
-                ),
-              ],
             ),
           ]),
           StatefulShellBranch(navigatorKey: _mineKey, routes: [
             GoRoute(
               path: '/mine',
               builder: (c, s) => const ProfilePage(),
-              routes: [
-                GoRoute(
-                  path: 'schedule',
-                  builder: (c, s) => const SchedulePage(),
-                ),
-                GoRoute(
-                  path: 'reports',
-                  builder: (c, s) => const ReportListPage(),
-                  routes: [
-                    GoRoute(
-                      path: ':id',
-                      builder: (c, s) => ReportDetailPage(
-                        id: int.parse(s.pathParameters['id']!),
-                      ),
-                    ),
-                  ],
-                ),
-                GoRoute(
-                  path: 'settings',
-                  builder: (c, s) => const SettingsPage(),
-                ),
-              ],
             ),
           ]),
         ],
+      ),
+      // ===== 二级页面：顶层全屏路由（root navigator，无底部 Tab）=====
+      // 完整路径与原嵌套路径保持一致，调用方 context.push/go 无需改动。
+      GoRoute(
+        path: '/calendar/day/:date',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => DayDetailPage(date: s.pathParameters['date']!),
+      ),
+      GoRoute(
+        path: '/records/timer',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const TimerPage(),
+      ),
+      GoRoute(
+        path: '/reading/book/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) =>
+            BookDetailPage(id: int.parse(s.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/mine/schedule',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const SchedulePage(),
+      ),
+      GoRoute(
+        path: '/mine/reports',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const ReportListPage(),
+      ),
+      GoRoute(
+        path: '/mine/reports/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) =>
+            ReportDetailPage(id: int.parse(s.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/mine/settings',
+        parentNavigatorKey: _rootKey,
+        builder: (c, s) => const SettingsPage(),
       ),
     ],
   );
