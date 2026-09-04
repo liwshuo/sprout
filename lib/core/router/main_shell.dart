@@ -97,9 +97,12 @@ class MainShell extends StatelessWidget {
       listenable: router.routerDelegate,
       builder: (context, _) {
         final path = router.routerDelegate.currentConfiguration.uri.path;
-        // 基于当前完整路径精确判断：仅 /calendar、/records 根页面显示，
-        // 子页面（/records/xxx、/calendar/day/xxx 等）一律隐藏。
-        final showFab = _fabRoots.contains(path);
+        // 基于当前完整路径精确判断：仅 4 个 Tab 根页面（/calendar、/records、
+        // /reading、/mine）展示底部栏与 FAB；二级页面（/records/timer、
+        // /calendar/day/xxx 等）视觉上隐藏底部栏，但页面仍在 Shell 分支栈内，
+        // 返回时由分支 Navigator 承接，可正常回到上级页面（不会退出 App）。
+        final isRoot = _fabRoots.contains(path);
+        final showFab = isRoot;
         return Scaffold(
           body: shell,
           floatingActionButtonLocation:
@@ -119,7 +122,8 @@ class MainShell extends StatelessWidget {
                   ),
                 )
               : null,
-          bottomNavigationBar: BottomAppBar(
+          bottomNavigationBar: isRoot
+              ? BottomAppBar(
             color: AppColors.card,
             elevation: 10,
             shadowColor: AppColors.shadow,
@@ -158,7 +162,8 @@ class MainShell extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+          )
+              : null,
         );
       },
     );
