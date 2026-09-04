@@ -1,8 +1,9 @@
-// pages/index/index.js —— 日历首页：月历视图 + 有记录日期打点 + 今日记录列表
+// pages/index/index.js —— 日历首页：月历「三源聚合」打点 + 当天事件卡片列表
+// 数据来自 services/calendar-service（成长记录 + 课表周展开 + 阅读打卡），
+// 每天最多 3 个彩色圆点，点击某天在下方展示统一事件卡片（record/schedule/reading）。
 const app = getApp();
-const db = require('../../utils/db');
 const dateUtil = require('../../utils/date');
-const { categoryColor, moodEmoji } = require('../../utils/constants');
+const calendarService = require('../../services/calendar-service');
 
 Page({
   data: {
@@ -10,11 +11,17 @@ Page({
     month: 0, // 0-based
     monthLabel: '',
     weekHeaders: ['一', '二', '三', '四', '五', '六', '日'],
-    cells: [], // 42 格，含 dotColor
+    cells: [], // 42 格，含 dots:[color,...]（最多 3）
     selectedDate: '', // 'YYYY-MM-DD'
     selectedLabel: '',
-    dayRecords: [],
+    dayEvents: [], // 当天三源事件（CalendarEvent[]）
     loading: false,
+    // 图例：橙=成长记录 / 蓝=课外班 / 绿=阅读打卡
+    legend: [
+      { color: '#FF8C42', label: '成长记录' },
+      { color: '#8FC7F0', label: '课外班' },
+      { color: '#7ED9C3', label: '阅读打卡' },
+    ],
   },
 
   onLoad() {
@@ -48,71 +55,49 @@ Page({
     });
   },
 
-  // 拉取当月记录 → 打点 + 今日列表
+  // 拉取当月三源事件 → 多彩打点 + 当天事件列表
   async refresh() {
     const { year, month } = this.data;
     this.setData({ loading: true });
-    const [start, end] = dateUtil.monthRange(year, month);
-    const monthRecords = await db.records.listByRange(start, end);
+    const childId = app.globalData.activeChildId;
+    const events = await calendarService.fetchMonthEvents(childId, year, month);
+    this._events = events;
+    this._byDay = calendarService.groupByDay(events);
 
-    // 按天聚合首个分类色做打点
-    const dotMap = {};
-    monthRecords.forEach((r) => {
-      const key = dateUtil.ymd(r.eventDate);
-      if (!dotMap[key]) dotMap[key] = categoryColor(r.category);
-    });
+    // 每格最多 3 个彩色圆点（record→schedule→reading 去重）
     const cells = this.data.cells.map((c) => ({
       ...c,
-      dotColor: dotMap[c.date] || '',
+      dots: calendarService.dotsForDay(this._byDay[c.date]),
     }));
-
     this.setData({ cells, loading: false });
-    this._loadDay(this.data.selectedDate || dateUtil.ymd(new Date()), monthRecords);
+
+    this._loadDay(this.data.selectedDate || dateUtil.ymd(new Date()));
   },
 
-  // 选中某天的记录列表
-  _loadDay(date, monthRecords) {
-    const items = (monthRecords || [])
-      .filter((r) => dateUtil.ymd(r.eventDate) === date)
-      .map((r) => ({
-        ...r,
-        color: categoryColor(r.category),
-        moodIcon: moodEmoji(r.mood),
-        cover: (r.imageFileIds && r.imageFileIds[0]) || '',
-      }));
+  // 选中某天：直接取缓存的分组事件（课表 + 成长记录 + 阅读打卡）
+  _loadDay(date) {
+    const dayEvents = (this._byDay && this._byDay[date]) || [];
     const d = new Date(date.replace(/-/g, '/'));
     this.setData({
       selectedDate: date,
       selectedLabel: dateUtil.mdCn(d),
-      dayRecords: items,
+      dayEvents,
     });
-    this._hydrateCovers(items);
-  },
-
-  // 首图 fileID → 临时链接
-  async _hydrateCovers(items) {
-    const ids = items.map((i) => i.cover).filter(Boolean);
-    if (!ids.length) return;
-    const map = await db.getTempUrls(ids);
-    const dayRecords = this.data.dayRecords.map((i) => ({
-      ...i,
-      coverUrl: map[i.cover] || '',
-    }));
-    this.setData({ dayRecords });
   },
 
   onTapDay(e) {
     const date = e.currentTarget.dataset.date;
     if (!date) return;
-    const { year, month } = this.data;
-    const [start, end] = dateUtil.monthRange(year, month);
-    db.records.listByRange(start, end).then((recs) => this._loadDay(date, recs));
+    this._loadDay(date);
   },
 
   prevMonth() {
     let { year, month } = this.data;
     month -= 1;
-    if (month < 0) { month = 11; year -= 1; }
+    if (month < 0) {
+      month = 11;
+      year -= 1;
+    }
     this._buildMonth(year, month, this.data.selectedDate);
     this.refresh();
   },
@@ -120,7 +105,10 @@ Page({
   nextMonth() {
     let { year, month } = this.data;
     month += 1;
-    if (month > 11) { month = 0; year += 1; }
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
     this._buildMonth(year, month, this.data.selectedDate);
     this.refresh();
   },

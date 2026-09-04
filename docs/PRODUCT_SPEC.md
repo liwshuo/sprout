@@ -2,6 +2,8 @@
 
 > 孩子成长记录 App —— 记录日常、阅读打卡、课表管理与周报生成。
 > 本文档记录当前功能全貌，作为后续开发的**唯一真相源**（Single Source of Truth）。任何功能变动都应同步更新本文档与 `CHANGELOG.md`。
+>
+> **端说明**：本项目含两端实现 —— ①「大端」Flutter App（下文 §2~§7 的技术栈/结构/目录均指 Flutter 端）；②微信小程序端（`miniprogram/`，与 App 经 CloudBase 打通）。**小程序端的分层架构、集合设计、服务/组件规范见 §8 及独立文档 [`miniprogram_architecture_design.md`](./miniprogram_architecture_design.md)**（架构唯一真相源）。
 
 ---
 
@@ -207,3 +209,70 @@ lib/
 │   ├── schedule/    profile/   report/   settings/  timer/
 └── shared/widgets/                   通用组件（SoftCard / EmptyPlaceholder / 输入组件等）
 ```
+
+
+---
+
+## 8. 微信小程序端架构（分层规范）
+
+> 小程序端与 Flutter App 是**各自独立端**，经 CloudBase（云数据库/云存储/云函数）打通共享同一份云数据。完整设计见 [`miniprogram_architecture_design.md`](./miniprogram_architecture_design.md)，本节为摘要索引。
+
+### 8.1 分层模型
+
+```
+样式令牌层  app.wxss（CSS 变量：色/圆角/阴影）
+页面层      pages/*         只做 UI 编排 + 交互，取数调 service
+组件层      components/*    可复用 UI（month-calendar / event-card / bottom-sheet ...）
+服务层      services/*      业务聚合/领域逻辑（calendar / reading / schedule / report）
+工具层      utils/*         纯工具（db 纯 CRUD / date / constants / format）
+全局层      app.js + store  globalData 规范 + 事件总线
+云函数层    cloudfunctions/* login / bindPhone（+ 后续 generateWeeklyReport）
+```
+
+依赖方向单向：`pages → components / services → utils → wx.cloud`。禁止 services 依赖 pages、utils 依赖 services。
+
+### 8.2 云数据库集合（8 个，CloudBase 文档型）
+
+- 归属体系：`ownerId`（unionid 优先否则 openid）+ 业务集合加 `childId`（指向 `children.uuid`）。
+- 同步三件套：`uuid`（跨端业务主键）/ `updatedAt`（毫秒时间戳）/ `isDeleted`（软删）。
+- 关系引用存被引 `uuid`（`books.seriesUuid`、`reading_logs.bookUuid`）。
+
+| 集合 | 归属 | 用途 | 状态 |
+| --- | --- | --- | --- |
+| `users` | ownerId | 账号 | ✅ 已实现 |
+| `children` | ownerId | 孩子档案（多孩子） | ✅ 已实现 |
+| `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
+| `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
+| `books` | ownerId+childId | 书架（status 由打卡派生跃迁） | ✅ 已实现 |
+| `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
+| `series` | ownerId+childId | 套书 | ⏳ 预留 |
+| `weekly_reports` | ownerId+childId | 周报快照 | ⏳ 后续（云函数聚合） |
+
+字段与索引明细见架构文档 §2.3。权限统一「仅创建者可读写」。
+
+### 8.3 日历聚合口径（核心业务）
+
+日历（`pages/index`）通过 `calendar-service` 把三类数据归一为统一 `CalendarEvent`（`{ date, type, title, color, sourceId, raw }`，`type: record/schedule/reading`）后按天分组、多彩点展示（每天最多 3 个圆点：橙=成长记录、蓝=课外班、绿=阅读打卡）：
+- **成长记录**：`daily_records` 按 `eventDate` 直接落点。
+- **课外班**：`schedule_items` 的周期规则（当前落地 weekly；biweekly/monthly/once 属 P1/P2）按展示月份**动态推算成具体日期，不落库**（`date.expandWeeklySchedule`）。
+- **阅读日志**：`reading_logs` 按 `readDate` 落点，join `books` 取书名。
+
+> **wx.cloud 硬约束**：小程序端 `collection.get()` 单次最多返回 20 条。日历三源聚合、记录/书籍/打卡等列表一律走 `db.listAllPaged`（`skip/limit(20)` 循环，默认 cap 200）破除该上限，保证数据完整；`getTempFileURL` 单次上限 50，`db.getTempUrls` 已自动分批。
+
+周报（`pages/report`）统计口径与 service 共用聚合方法，避免重复实现与口径漂移。
+
+### 8.4 当前迭代待办
+
+1. ~~**日历聚合展示**（成长记录 + 课外班 + 阅读日志）— P0~~ ✅ 已落地（`calendar-service` 三源聚合 + 多彩点 + `event-card` 事件卡片）
+2. ~~**书架 → 阅读打卡闭环**（补 `reading_logs` 写入 + 状态跃迁 + 进度派生）— P1~~ ✅ 已落地（`reading-service.addReadingLog` + 书架打卡弹层）
+3. ~~**课外班日历推算**（weekday + recurrence 展开日期）— P0~~ ✅ 已落地（`date.expandWeeklySchedule`，weekly）
+4. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
+5. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
+
+### 8.5 编码规范要点
+
+- 命名：集合 `snake_case` 复数；页面统一 `pages/<domain>/index`；service 方法动词开头。
+- 错误处理：读操作兜底空集合保证空态渲染；写操作必给 `wx.showToast` 反馈 + `console.error` 详情；写前预检 `auth.ownerId()`。
+- 异步：统一 `async/await`；并行取数用 `Promise.all`。
+- 状态：`globalData` 集中约定；事件名收敛为常量；不引入 MobX/Redux 等重方案。
+- 视觉：一律走 `app.wxss` CSS 变量与 `constants.js` 令牌，禁止内联硬编码色值。

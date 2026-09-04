@@ -1,0 +1,23 @@
+<!-- components/event-card/event-card.wxml —— 可复用事件卡片（record/schedule/reading） -->
+<view class="event-card evt-{{event.type}}">
+  <!-- 类型色条 -->
+  <view class="evt-bar" style="background:{{event.color}}"></view>
+
+  <view class="evt-body">
+    <view class="evt-head">
+      <text class="evt-title ellipsis">{{event.title}}</text>
+      <text class="evt-mood" wx:if="{{event.mood}}">{{event.mood}}</text>
+      <text
+        class="evt-tag"
+        wx:if="{{showTag && event.typeLabel}}"
+        style="color:{{event.color}};background:{{event.color}}22"
+      >{{event.typeLabel}}</text>
+    </view>
+
+    <view class="evt-meta" wx:if="{{event.time || event.category || event.subtitle}}">
+      <text class="evt-time" wx:if="{{event.time}}" style="color:{{event.color}}">{{event.time}}</text>
+      <text class="evt-chip" wx:if="{{event.category}}">{{event.category}}</text>
+      <text class="evt-sub ellipsis" wx:if="{{event.subtitle}}">{{event.subtitle}}</text>
+    </view>
+  </view>
+</view>

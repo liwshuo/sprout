@@ -29,6 +29,8 @@
       </view>
       <view class="book-title ellipsis">{{item.title}}</view>
       <view class="book-author ellipsis text-sub" wx:if="{{item.author}}">{{item.author}}</view>
+      <!-- 打卡按钮 -->
+      <view class="checkin-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" catchtap="openCheckin">📖 打卡</view>
     </view>
   </view>
 </view>
@@ -44,5 +46,61 @@
   <view class="row sheet-actions">
     <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
     <view class="btn-primary sheet-btn" bindtap="saveBook">加入书架</view>
+  </view>
+</view>
+
+<!-- 阅读打卡弹层 -->
+<view class="mask" wx:if="{{showCheckin}}" bindtap="closeCheckin"></view>
+<view class="sheet {{showCheckin ? 'sheet-show' : ''}}" wx:if="{{showCheckin}}" catchtap>
+  <view class="sheet-title">阅读打卡 · {{checkinBookTitle}}</view>
+
+  <view class="row checkin-row">
+    <input
+      class="sheet-input flex-1 checkin-half"
+      type="number"
+      placeholder="起始页（选填）"
+      placeholder-class="ph"
+      data-field="pageFrom"
+      bindinput="onCheckinInput"
+      value="{{checkinForm.pageFrom}}"
+    />
+    <input
+      class="sheet-input flex-1 checkin-half"
+      type="number"
+      placeholder="结束页（选填）"
+      placeholder-class="ph"
+      data-field="pageTo"
+      bindinput="onCheckinInput"
+      value="{{checkinForm.pageTo}}"
+    />
+  </view>
+  <input
+    class="sheet-input"
+    placeholder="章节（选填，如 第 3 章）"
+    placeholder-class="ph"
+    data-field="chapter"
+    bindinput="onCheckinInput"
+    value="{{checkinForm.chapter}}"
+  />
+  <textarea
+    class="sheet-input checkin-note"
+    placeholder="读书心得（选填）"
+    placeholder-class="ph"
+    data-field="note"
+    bindinput="onCheckinInput"
+    value="{{checkinForm.note}}"
+    auto-height
+  />
+
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">日期</view>
+    <picker mode="date" value="{{checkinForm.date}}" bindchange="onCheckinDateChange">
+      <view class="picker-val">{{checkinForm.date}} ›</view>
+    </picker>
+  </view>
+
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="closeCheckin">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="saveCheckin">保存打卡</view>
   </view>
 </view>

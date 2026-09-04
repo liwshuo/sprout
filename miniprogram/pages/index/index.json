@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "event-card": "/components/event-card/event-card"
+  },
   "navigationBarTitleText": "萌芽日历",
   "enablePullDownRefresh": true,
   "backgroundColorTop": "#FFF8F3"

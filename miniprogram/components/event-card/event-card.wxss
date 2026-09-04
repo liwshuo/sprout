@@ -1,0 +1,70 @@
+/* components/event-card/event-card.wxss —— 可复用事件卡片 */
+.event-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22rpx 24rpx;
+  margin-bottom: 16rpx;
+}
+.evt-bar {
+  width: 8rpx;
+  border-radius: 8rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+.evt-body {
+  flex: 1;
+  min-width: 0;
+}
+.evt-head {
+  display: flex;
+  align-items: center;
+}
+.evt-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+}
+.evt-mood {
+  font-size: 32rpx;
+  margin-left: 12rpx;
+}
+.evt-tag {
+  font-size: 20rpx;
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-pill);
+  margin-left: 12rpx;
+  flex-shrink: 0;
+}
+.evt-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--ink-sub);
+}
+.evt-time {
+  font-weight: 600;
+  margin-right: 12rpx;
+}
+.evt-chip {
+  padding: 2rpx 12rpx;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--ink-sub);
+  margin-right: 12rpx;
+}
+.evt-sub {
+  flex: 1;
+  min-width: 0;
+}
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

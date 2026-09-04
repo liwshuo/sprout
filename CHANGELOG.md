@@ -6,6 +6,28 @@
 ## [Unreleased]
 
 ### 新增
+- **小程序服务层落地**：新增 `services/calendar-service.js`（日历三源聚合：成长记录 + 课表周展开 + 阅读打卡，归一为统一 `CalendarEvent`）与 `services/reading-service.js`（阅读打卡写入 + 书籍状态跃迁 + 进度派生）。
+- **日历三源聚合 + 多彩点**：首页月历接入 `calendar-service`，每天最多 3 个彩色圆点（橙=成长记录、蓝=课外班、绿=阅读打卡）并补充图例；点击某天在下方以统一事件卡片展示当天全部安排（成长记录 + 课外班 + 阅读打卡）。
+- **可复用事件卡片组件**：新增 `components/event-card/`，支持 record/schedule/reading 三种类型样式，按类型分色。
+- **阅读打卡闭环**：阅读书架书籍卡片新增「打卡」按钮，弹层录入页数/章节/心得（日期默认今天）；打卡自动派生书籍状态（想读→在读、读完）与进度快照。
+- **分页能力（破 20 条上限）**：`utils/db.js` 新增 `listAllPaged(collection, opts, cap)`，以 `skip/limit(20)` 循环拉全，破除小程序端单次查询 20 条硬上限；新增 `scheduleItems` / `readingLogs` 集合的增删改查方法。
+- **日期工具**：`utils/date.js` 新增 `expandWeeklySchedule(items, year, month)`（weekly 课表按月展开为具体日期，支持 startDate/endDate 生效区间）与 `weekdayOf`。
+- **事件类型令牌**：`utils/constants.js` 新增 `EVENT_TYPE_COLORS` / `EVENT_TYPE_LABELS` / `eventTypeColor`。
+
+### 变更
+- **列表查询统一走分页**：`db.records` / `db.books` / `db.children` 的列表方法改用 `listAllPaged`，保证记录/书籍等 >20 条时数据完整。
+- **`getTempUrls` 自动分批**：`getTempFileURL` 单次上限 50，超出时自动去重分批请求后合并。
+- **`date.endOfDay` 语义修正**：明确其返回「次日 0 点」（右开区间端点），新增语义清晰的 `startOfNextDay`，`endOfDay` 保留为兼容别名。
+- **文档同步**：更新 `docs/PRODUCT_SPEC.md` §8（三源聚合口径、20 条上限对策、迭代待办勾销）。
+
+### 说明
+- 首次上线阅读打卡需在云开发控制台新建集合 `reading_logs`（权限「仅创建者可读写」），否则打卡写入会失败。
+
+---
+
+## [1.0.0-mvp-docs] - 2026-09-04
+
+### 新增
 - 初始化产品需求文档 `docs/PRODUCT_SPEC.md`（唯一真相源）与本变更日志 `CHANGELOG.md`。
 
 ---

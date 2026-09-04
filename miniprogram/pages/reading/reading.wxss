@@ -78,6 +78,20 @@
   font-size: 22rpx;
   margin-top: 4rpx;
 }
+/* 打卡按钮 */
+.checkin-btn {
+  margin-top: 12rpx;
+  text-align: center;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-radius: var(--radius-pill);
+  padding: 10rpx 0;
+}
+.checkin-btn:active {
+  opacity: 0.75;
+}
 
 /* 弹层 */
 .mask {
@@ -123,4 +137,28 @@
 }
 .sheet-btn:first-child {
   margin-right: 20rpx;
+}
+
+/* 打卡弹层专用 */
+.checkin-row {
+  display: flex;
+}
+.checkin-half:first-child {
+  margin-right: 20rpx;
+}
+.checkin-note {
+  min-height: 120rpx;
+}
+.sheet-field {
+  padding: 20rpx 8rpx;
+  border-bottom: 2rpx solid var(--line);
+  margin-bottom: 12rpx;
+}
+.sheet-field-label {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.picker-val {
+  font-size: 30rpx;
+  color: var(--primary-dark);
 }

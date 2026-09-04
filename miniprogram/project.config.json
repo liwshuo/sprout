@@ -32,6 +32,7 @@
   "compileType": "miniprogram",
   "libVersion": "latest",
   "cloudfunctionRoot": "cloudfunctions/",
+  "cloudbaseEnv": "cloud1-d3gh6o81f2ba198c9",
   "condition": {},
   "simulatorPluginLibVersion": {},
   "packOptions": {

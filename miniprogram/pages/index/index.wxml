@@ -1,4 +1,4 @@
-<!-- pages/index/index.wxml —— 日历首页 -->
+<!-- pages/index/index.wxml —— 日历首页（三源聚合） -->
 <view class="container">
   <view class="row-between header">
     <view class="page-title">{{monthLabel}}</view>
@@ -22,36 +22,35 @@
         bindtap="onTapDay"
       >
         <view class="day-num {{item.isToday ? 'today' : ''}}">{{item.day}}</view>
-        <view class="dot" wx:if="{{item.dotColor}}" style="background:{{item.dotColor}}"></view>
+        <!-- 每天最多 3 个彩色圆点 -->
+        <view class="dot-row">
+          <view class="dot" wx:for="{{item.dots}}" wx:for-item="c" wx:key="*this" style="background:{{c}}"></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 图例 -->
+    <view class="legend">
+      <view class="legend-item" wx:for="{{legend}}" wx:key="label">
+        <view class="legend-dot" style="background:{{item.color}}"></view>
+        <text class="legend-text text-sub">{{item.label}}</text>
       </view>
     </view>
   </view>
 
-  <!-- 今日记录 -->
+  <!-- 当天事件 -->
   <view class="row-between section-head">
-    <view class="section-title">{{selectedLabel}} · 记录</view>
+    <view class="section-title">{{selectedLabel}} · 当天安排</view>
     <view class="text-primary add-link" bindtap="goAdd">+ 记一笔</view>
   </view>
 
-  <view class="empty card" wx:if="{{dayRecords.length === 0}}">
+  <view class="empty card" wx:if="{{dayEvents.length === 0}}">
     <text class="empty-emoji">🌱</text>
-    <view class="empty-text">这一天还没有记录，点上方「记一笔」开始吧</view>
+    <view class="empty-text">这一天还没有安排，点上方「记一笔」开始吧</view>
   </view>
 
-  <view class="card record-item" wx:for="{{dayRecords}}" wx:key="uuid">
-    <view class="color-bar" style="background:{{item.color}}"></view>
-    <view class="flex-1">
-      <view class="row-between">
-        <view class="record-title ellipsis">{{item.title}}</view>
-        <view class="record-mood" wx:if="{{item.moodIcon}}">{{item.moodIcon}}</view>
-      </view>
-      <view class="record-note text-sub" wx:if="{{item.note}}">{{item.note}}</view>
-      <view class="row tag-row" wx:if="{{item.category}}">
-        <view class="tag">{{item.category}}</view>
-      </view>
-    </view>
-    <image class="record-cover" wx:if="{{item.coverUrl}}" src="{{item.coverUrl}}" mode="aspectFill" />
-  </view>
+  <!-- 统一事件卡片列表（record / schedule / reading，按类型分色） -->
+  <event-card wx:for="{{dayEvents}}" wx:key="sourceId" event="{{item}}" />
 </view>
 
 <view class="fab" bindtap="goAdd">＋</view>

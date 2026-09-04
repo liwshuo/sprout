@@ -1,6 +1,8 @@
-// pages/reading/reading.js —— 阅读书架：书籍卡片网格，按状态分组
+// pages/reading/reading.js —— 阅读书架：书籍卡片网格，按状态分组 + 阅读打卡
 const app = getApp();
 const db = require('../../utils/db');
+const dateUtil = require('../../utils/date');
+const readingService = require('../../services/reading-service');
 const { BOOK_STATUS } = require('../../utils/constants');
 
 Page({
@@ -17,6 +19,11 @@ Page({
     // 新增书籍弹层
     showAdd: false,
     form: { title: '', author: '' },
+    // 阅读打卡弹层
+    showCheckin: false,
+    checkinBookId: '',
+    checkinBookTitle: '',
+    checkinForm: { pageFrom: '', pageTo: '', chapter: '', note: '', date: '' },
   },
 
   onLoad() {
@@ -109,5 +116,64 @@ Page({
     if (!book) return;
     const next = book.status === 'want' ? 'reading' : book.status === 'reading' ? 'done' : 'want';
     db.books.update(uuid, { status: next }).then(() => this.refresh());
+  },
+
+  // ---- 阅读打卡 ----
+  openCheckin(e) {
+    const { uuid, title } = e.currentTarget.dataset;
+    this.setData({
+      showCheckin: true,
+      checkinBookId: uuid,
+      checkinBookTitle: title || '',
+      checkinForm: {
+        pageFrom: '',
+        pageTo: '',
+        chapter: '',
+        note: '',
+        date: dateUtil.ymd(new Date()), // 默认今天
+      },
+    });
+  },
+  closeCheckin() {
+    this.setData({ showCheckin: false });
+  },
+  onCheckinInput(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [`checkinForm.${field}`]: e.detail.value });
+  },
+  onCheckinDateChange(e) {
+    this.setData({ 'checkinForm.date': e.detail.value });
+  },
+  async saveCheckin() {
+    const { checkinBookId, checkinForm } = this.data;
+    if (!checkinBookId) return;
+    const hasContent =
+      checkinForm.pageFrom || checkinForm.pageTo || checkinForm.chapter || checkinForm.note;
+    if (!hasContent) {
+      wx.showToast({ title: '填点内容再打卡吧～', icon: 'none' });
+      return;
+    }
+    wx.showLoading({ title: '打卡中...', mask: true });
+    try {
+      const readDate = dateUtil.startOfDay(
+        new Date((checkinForm.date || dateUtil.ymd(new Date())).replace(/-/g, '/'))
+      );
+      await readingService.addReadingLog(app.globalData.activeChildId, checkinBookId, {
+        readDate,
+        pageFrom: checkinForm.pageFrom,
+        pageTo: checkinForm.pageTo,
+        chapter: checkinForm.chapter.trim() || null,
+        note: checkinForm.note.trim() || null,
+      });
+      wx.hideLoading();
+      this.setData({ showCheckin: false });
+      wx.showToast({ title: '打卡成功', icon: 'success' });
+      // 打卡会派生书籍状态（want→reading / 读完），刷新书架
+      this.refresh();
+    } catch (err) {
+      wx.hideLoading();
+      console.error('[reading] 打卡失败', err);
+      wx.showToast({ title: '打卡失败，请重试', icon: 'none' });
+    }
   },
 });

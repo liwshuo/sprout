@@ -60,11 +60,44 @@
   color: #fff;
   font-weight: 700;
 }
+/* 每天最多 3 个彩色圆点 */
+.dot-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16rpx;
+  margin-top: 6rpx;
+}
 .dot {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  margin-top: 6rpx;
+  margin: 0 3rpx;
+}
+
+/* 图例 */
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20rpx;
+  padding-top: 16rpx;
+  border-top: 2rpx solid var(--line);
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0 18rpx;
+}
+.legend-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+}
+.legend-text {
+  font-size: 22rpx;
 }
 
 .section-head {
