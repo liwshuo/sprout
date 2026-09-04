@@ -48,6 +48,7 @@ app.*.map.json
 
 # Monorepo: Flutter app artifacts under app/
 /app/build/
+app/build/
 app/.dart_tool/
 app/.flutter-plugins
 app/.flutter-plugins-dependencies
@@ -55,3 +56,7 @@ app/.flutter-plugins-dependencies
 # WeChat MiniProgram
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/
+miniprogram/project.private.config.json
+
+# ADK Mobile local config
+.adk-mobile/

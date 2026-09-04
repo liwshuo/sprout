@@ -2,7 +2,7 @@
   "miniprogramRoot": "./",
   "projectname": "萌芽成长册",
   "description": "萌芽成长册 - 孩子成长记录微信小程序",
-  "appid": "YOUR_APPID_PLACEHOLDER",
+  "appid": "wx201875e8494d9577",
   "setting": {
     "urlCheck": true,
     "es6": true,
@@ -12,10 +12,31 @@
     "newFeature": true,
     "nodeModules": true,
     "packNpmManually": false,
-    "coverView": true
+    "coverView": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
   "libVersion": "latest",
   "cloudfunctionRoot": "cloudfunctions/",
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }
