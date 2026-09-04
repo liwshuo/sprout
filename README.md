@@ -18,7 +18,7 @@ sprout/
 ```
 
 - **`app/`** → Flutter App。所有 Flutter 命令（`flutter pub get`、`flutter run` 等）均需在 `app/` 子目录下执行。
-- **`miniprogram/`** → 微信小程序。使用「微信开发者工具」导入时，请打开 `miniprogram/` 子目录作为项目根目录，并在 `project.config.json` 中填入真实 AppID、在 `app.js` 中替换 `YOUR_ENV_ID` 为实际云开发环境 ID。
+- **`miniprogram/`** → 微信小程序。使用「微信开发者工具」导入时，请打开 `miniprogram/` 子目录作为项目根目录。云开发环境 ID 已在 `app.js` 的 `CLOUD_ENV`（`cloud1-d3gh6o81f2ba198c9`）中配置；首次使用需按下文「小程序云开发部署」章节上传部署 `login` / `bindPhone` 云函数。
 - **`docs/`** → 产品文档与技术设计。
 
 ## ✨ 功能列表
@@ -87,6 +87,25 @@ flutter run
 ```
 
 > 说明：`app/lib/data/local/app_database.g.dart` 为 drift 生成文件，需执行第 3 步 build_runner 后生成，未生成前 IDE 会提示缺失该 part 文件，属正常现象。
+
+## ☁️ 小程序云开发部署（重要）
+
+> ⚠️ **登录失败 / 添加记录失败，绝大多数是因为云函数还没部署到云端。**
+> `login`、`bindPhone` 云函数只是本地代码，必须在「微信开发者工具」中手动上传部署后才能被 `wx.cloud.callFunction` 调用，否则会报 `FunctionName Not Found`（errCode `-501000`），进而导致 `ownerId` 为空、记录无法写入。
+
+**部署步骤（每次修改云函数后都要重做）：**
+
+1. 用「微信开发者工具」打开 `miniprogram/` 目录作为项目根目录。
+2. 顶部工具栏点击「云开发」，确认已开通并选中云环境 `cloud1-d3gh6o81f2ba198c9`（已在 `app.js` 的 `CLOUD_ENV` 中写死）。
+3. 在左侧资源管理器展开 `cloudfunctions/`，分别右键：
+   - `cloudfunctions/login` →「**上传并部署：云端安装依赖（不上传 node_modules）**」
+   - `cloudfunctions/bindPhone` →「**上传并部署：云端安装依赖（不上传 node_modules）**」
+4. 等待右下角提示「上传成功」。
+5. 在「云开发控制台 → 数据库」中创建以下集合（若不存在），并将权限设为「仅创建者可读写」：
+   `users`、`children`、`daily_records`、`series`、`books`、`reading_logs`、`schedule_items`、`weekly_reports`。
+6. 重新编译小程序，进入「我的」页点击登录；登录成功后即可正常添加记录。
+
+**自检：** 若「我的」页 toast 提示「请先在开发者工具部署 login 云函数」，或添加记录提示「请先到我的登录」，说明云函数仍未部署或登录未成功。
 
 ## 📄 License
 

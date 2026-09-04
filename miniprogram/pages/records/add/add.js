@@ -1,5 +1,6 @@
 // pages/records/add/add.js —— 添加记录：文字输入 + 图片上传 + 分类/心情
 const db = require('../../../utils/db');
+const auth = require('../../../utils/auth');
 const dateUtil = require('../../../utils/date');
 const { CATEGORIES, MOODS } = require('../../../utils/constants');
 
@@ -144,6 +145,13 @@ Page({
       wx.showToast({ title: '请填写标题', icon: 'none' });
       return;
     }
+    // 预检登录态：ownerId 为空说明未登录（通常是 login 云函数未部署导致），
+    // 提前拦截并给出明确指引，避免走到写库时抛「未登录，无法写入」的模糊错误。
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录后再保存', icon: 'none' });
+      console.warn('[add] 未登录（ownerId 为空），无法保存。请确认 login 云函数已部署并登录成功');
+      return;
+    }
     this.setData({ submitting: true });
     wx.showLoading({ title: '保存中...', mask: true });
     try {
@@ -181,8 +189,18 @@ Page({
       setTimeout(() => wx.navigateBack(), 600);
     } catch (err) {
       wx.hideLoading();
-      console.error('[add] 保存失败', err);
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+      // 打印完整错误对象，便于定位（如上传失败、写库权限、集合不存在等）
+      console.error('[add] 保存失败，详细错误：', err, JSON.stringify(err && (err.errMsg || err.message) || err));
+      const msg = `${(err && (err.errMsg || err.message)) || err}`;
+      let title = '保存失败，请重试';
+      if (/未登录/.test(msg)) {
+        title = '未登录，请先到「我的」登录';
+      } else if (/upload|uploadFile|存储/i.test(msg)) {
+        title = '图片上传失败，请重试';
+      } else if (/permission|denied|权限/i.test(msg)) {
+        title = '无写入权限，请检查数据库权限设置';
+      }
+      wx.showToast({ title, icon: 'none' });
       this.setData({ submitting: false });
     }
   },

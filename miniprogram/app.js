@@ -32,7 +32,14 @@ App({
           this._emit('userChanged', user);
         })
         .catch((err) => {
-          console.warn('[app] 静默登录失败（可稍后在「我的」重试）', err);
+          if (auth.isCloudFunctionMissing && auth.isCloudFunctionMissing(err)) {
+            console.warn(
+              '[app] 静默登录失败：login 云函数未部署。请在微信开发者工具中右键 cloudfunctions/login →「上传并部署（云端安装依赖）」，bindPhone 同理。',
+              err
+            );
+          } else {
+            console.warn('[app] 静默登录失败（可稍后在「我的」重试）', err);
+          }
         });
     }
   },

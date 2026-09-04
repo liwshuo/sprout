@@ -70,9 +70,13 @@ Page({
         this.refresh();
         wx.showToast({ title: '登录成功', icon: 'success' });
       })
-      .catch(() => {
+      .catch((err) => {
         wx.hideLoading();
-        wx.showToast({ title: '登录失败，请部署 login 云函数', icon: 'none' });
+        console.error('[mine] 登录失败', err);
+        const tip = auth.isCloudFunctionMissing(err)
+          ? '登录失败：请先在开发者工具部署 login 云函数'
+          : '登录失败，请稍后重试';
+        wx.showToast({ title: tip, icon: 'none' });
       });
   },
 
