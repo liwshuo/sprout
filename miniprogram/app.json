@@ -5,6 +5,7 @@
     "pages/records/records",
     "pages/records/add/add",
     "pages/reading/reading",
+    "pages/library/library",
     "pages/schedule/index",
     "pages/mine/mine",
     "pages/report/report"

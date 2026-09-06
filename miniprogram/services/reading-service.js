@@ -69,6 +69,10 @@ async function _syncBookProgress(bookUuid) {
     if (book.totalPages && maxPage >= book.totalPages) status = 'done';
     if (book.totalChapters && maxChapter >= book.totalChapters) status = 'done';
 
+    // TODO P1: 读完时同步 book_library.readFinishCount +1（若 book.libraryUuid 存在）
+    //   触发点：status 由非 done 跃迁为 done 时，对 book.libraryUuid 对应书库文档 inc(+1)。
+    //   注意做幂等（避免重复打卡最后一页重复计数），实现见 docs/BOOK_LIBRARY_BACKLOG.md。
+
     const patch = { status };
     if (lastReadDate) patch.lastReadDate = lastReadDate;
     if (maxPage) patch.currentPage = maxPage;

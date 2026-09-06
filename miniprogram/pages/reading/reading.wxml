@@ -63,6 +63,7 @@
 <view class="mask" wx:if="{{showAddChoice}}" bindtap="closeAddChoice"></view>
 <view class="sheet" wx:if="{{showAddChoice}}" catchtap>
   <view class="sheet-title">添加书籍</view>
+  <view class="choice-item" bindtap="goLibrary">📚 精选书库</view>
   <view class="choice-item" bindtap="chooseManual">✍️ 手动录入</view>
   <view class="choice-item" bindtap="chooseScan">📷 扫码添加</view>
   <view class="choice-item" bindtap="chooseCreateSeries">📚 新建系列</view>

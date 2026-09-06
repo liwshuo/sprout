@@ -15,6 +15,8 @@ const COLLECTIONS = {
   readingLogs: 'reading_logs',
   scheduleItems: 'schedule_items',
   weeklyReports: 'weekly_reports',
+  // 公共只读集合：官方/共建精选书库（无 ownerId/childId 归属，所有人可读）
+  bookLibrary: 'book_library',
 };
 
 function db() {
@@ -116,6 +118,41 @@ async function listAllPaged(col, opts = {}, cap = PAGE_CAP) {
     return out;
   } catch (err) {
     console.warn(`[db] listAllPaged(${col}) 失败，返回空`, err);
+    return [];
+  }
+}
+
+/**
+ * 公共集合分页全量拉取（**不做 ownerId/childId 归属过滤**）。
+ * 用于 book_library 等「所有人可读」的公共只读集合，破除单次 20 条上限。
+ * @param {string} col 集合名
+ * @param {object} where 查询条件（可为空对象，表示不加过滤）
+ * @param {Array} orderBy [field, 'asc'|'desc']，可选
+ * @param {number} cap 总条数上限（默认 500，公共集合体量更大）
+ * @returns {Promise<Array>} 全量结果（异常返回空数组保证空态可渲染）
+ */
+async function listAllPublic(col, where = {}, orderBy = null, cap = 500) {
+  try {
+    const hasWhere = where && Object.keys(where).length > 0;
+    const out = [];
+    let skip = 0;
+    while (skip < cap) {
+      let q = db().collection(col);
+      if (hasWhere) q = q.where(where);
+      if (orderBy) q = q.orderBy(orderBy[0], orderBy[1] || 'asc');
+      // eslint-disable-next-line no-await-in-loop
+      const { data } = await q.skip(skip).limit(PAGE_SIZE).get();
+      const batch = data || [];
+      out.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      skip += PAGE_SIZE;
+    }
+    if (out.length >= cap) {
+      console.warn(`[db] listAllPublic(${col}) 达到 cap=${cap} 上限，可能仍有更多数据未拉取`);
+    }
+    return out;
+  } catch (err) {
+    console.warn(`[db] listAllPublic(${col}) 失败，返回空`, err);
     return [];
   }
 }
@@ -340,6 +377,36 @@ const series = {
   },
 };
 
+// 精选书库：官方/共建公共只读集合（无 ownerId/childId 归属）。
+// 与 books/series 不同，**不走 _buildWhere 归属过滤**，走 listAllPublic 分页拉全。
+// 权限约定：云开发控制台建集合时设「所有人可读」（写入由后台/导入完成）。
+const bookLibrary = {
+  /**
+   * 全量拉取书库（分页破 20 条上限，无归属过滤）。
+   * @param {object} filter 可选过滤 { ageRange, isOfficial }
+   */
+  listAll(filter = {}) {
+    const where = {};
+    if (filter && filter.ageRange) where.ageRange = filter.ageRange;
+    if (filter && filter.isOfficial != null) where.isOfficial = filter.isOfficial;
+    return listAllPublic(COLLECTIONS.bookLibrary, where, ['createdAt', 'desc'], 500);
+  },
+  /** 按 uuid 取单条书库条目（无归属过滤） */
+  async getByUuid(uuid) {
+    try {
+      const { data } = await db()
+        .collection(COLLECTIONS.bookLibrary)
+        .where({ uuid })
+        .limit(1)
+        .get();
+      return (data && data[0]) || null;
+    } catch (err) {
+      console.warn('[db] bookLibrary.getByUuid 失败', err);
+      return null;
+    }
+  },
+};
+
 // ============================================================
 // 媒体：选图 → 上传云存储 → 存 fileID；批量换临时链接
 // ============================================================
@@ -401,6 +468,7 @@ module.exports = {
   // 通用
   list,
   listAllPaged,
+  listAllPublic,
   getByUuid,
   create,
   updateByUuid,
@@ -412,6 +480,7 @@ module.exports = {
   scheduleItems,
   readingLogs,
   series,
+  bookLibrary,
   // 媒体
   uploadFile,
   uploadFiles,

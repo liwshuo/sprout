@@ -1,0 +1,136 @@
+<!-- pages/library/library.wxml —— 精选书库 -->
+<view class="container">
+  <view class="page-title">精选书库</view>
+  <view class="page-subtitle">分龄挑好书，一键加入孩子书架</view>
+
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <text class="search-icon">🔍</text>
+    <input
+      class="search-input"
+      value="{{searchKeyword}}"
+      placeholder="搜索书名 / 作者"
+      placeholder-class="search-ph"
+      confirm-type="search"
+      bindinput="onSearch"
+    />
+    <text wx:if="{{searchKeyword}}" class="search-clear" bindtap="clearSearch">✕</text>
+  </view>
+
+  <!-- 年龄段 Tab（横向滚动） -->
+  <scroll-view class="age-tabs" scroll-x="true" enhanced="true" show-scrollbar="false">
+    <view
+      class="age-tab {{selectedAge === item.key ? 'active' : ''}}"
+      wx:for="{{ageTabs}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="onAgeTabChange"
+    >{{item.label}}</view>
+  </scroll-view>
+
+  <!-- 骨架屏 -->
+  <view class="book-grid" wx:if="{{loading}}">
+    <view class="book-card skeleton" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+      <view class="sk-cover"></view>
+      <view class="sk-line"></view>
+      <view class="sk-line short"></view>
+    </view>
+  </view>
+
+  <!-- 空态 -->
+  <view class="empty card" wx:if="{{!loading && displayBooks.length === 0}}">
+    <text class="empty-emoji">🔎</text>
+    <view class="empty-text">没有找到相关书籍，换个关键词试试～</view>
+  </view>
+
+  <!-- 书卡网格（两列） -->
+  <view class="book-grid" wx:if="{{!loading && displayBooks.length > 0}}">
+    <view
+      class="book-card"
+      wx:for="{{displayBooks}}"
+      wx:key="uuid"
+      data-uuid="{{item.uuid}}"
+      bindtap="onBookTap"
+    >
+      <view class="cover">
+        <image
+          wx:if="{{item.coverUrl}}"
+          class="cover-img"
+          src="{{item.coverUrl}}"
+          mode="aspectFill"
+          data-uuid="{{item.uuid}}"
+          binderror="onCoverError"
+        />
+        <view wx:else class="cover-fallback {{item.ageBadgeCls}}">
+          <text class="cover-char">{{item.firstChar}}</text>
+        </view>
+        <!-- 系列角标 -->
+        <view wx:if="{{item.isSeries}}" class="series-flag">系列 · {{item.volumeCount}}册</view>
+      </view>
+      <view class="book-title">{{item.title}}</view>
+      <view class="book-author" wx:if="{{item.author}}">{{item.author}}</view>
+      <view class="badge-row">
+        <text wx:if="{{item.ageBadge}}" class="badge {{item.ageBadgeCls}}">{{item.ageBadge}}</text>
+        <text wx:if="{{item.typeLabel}}" class="badge badge-type">{{item.typeLabel}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- ============ 单本「加入书架」面板 ============ -->
+<view class="mask {{showAddPanel ? 'show' : ''}}" bindtap="closeAddPanel">
+  <view class="sheet" catchtap="noop" wx:if="{{activeBook}}">
+    <view class="sheet-handle"></view>
+    <view class="detail">
+      <view class="detail-cover">
+        <image
+          wx:if="{{activeBook.coverUrl}}"
+          class="cover-img"
+          src="{{activeBook.coverUrl}}"
+          mode="aspectFill"
+        />
+        <view wx:else class="cover-fallback {{activeBook.ageBadgeCls}}">
+          <text class="cover-char">{{activeBook.firstChar}}</text>
+        </view>
+      </view>
+      <view class="detail-main">
+        <view class="detail-title">{{activeBook.title}}</view>
+        <view class="detail-author" wx:if="{{activeBook.author}}">{{activeBook.author}}</view>
+        <view class="badge-row">
+          <text wx:if="{{activeBook.ageBadge}}" class="badge {{activeBook.ageBadgeCls}}">{{activeBook.ageBadge}}</text>
+          <text wx:if="{{activeBook.typeLabel}}" class="badge badge-type">{{activeBook.typeLabel}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="detail-desc" wx:if="{{activeBook.description}}">{{activeBook.description}}</view>
+    <button class="btn-primary" bindtap="onAddSingle">加入书架</button>
+  </view>
+</view>
+
+<!-- ============ 系列分册面板 ============ -->
+<view class="mask {{showSeriesPanel ? 'show' : ''}}" bindtap="closeSeriesPanel">
+  <view class="sheet" catchtap="noop" wx:if="{{seriesPanel}}">
+    <view class="sheet-handle"></view>
+    <view class="series-head">
+      <view class="series-title">{{seriesPanel.title}}</view>
+      <view class="series-sub">
+        <text wx:if="{{seriesPanel.author}}">{{seriesPanel.author}} · </text>共 {{seriesPanel.volumes.length}} 册
+      </view>
+    </view>
+    <scroll-view class="vol-list" scroll-y="true">
+      <view class="vol-item" wx:for="{{seriesPanel.volumes}}" wx:key="index">
+        <view class="vol-info">
+          <text class="vol-idx">第{{item.index}}册</text>
+          <text class="vol-name">{{item.title}}</text>
+        </view>
+        <view
+          class="vol-add"
+          data-uuid="{{seriesPanel.libraryUuid}}"
+          data-index="{{item.index}}"
+          catchtap="onAddVolume"
+        >加入</view>
+      </view>
+    </scroll-view>
+    <button class="btn-primary" bindtap="onAddWholeSeries">加入整套 📚</button>
+  </view>
+</view>

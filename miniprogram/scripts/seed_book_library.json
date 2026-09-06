@@ -1,0 +1,2373 @@
+[
+  {
+    "uuid": "bl-001",
+    "title": "好饿的毛毛虫",
+    "author": "艾瑞·卡尔",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "一条毛毛虫吃穿各种食物，最终破茧成蝶的启蒙经典。",
+    "tags": [
+      "经典",
+      "自然",
+      "数数"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-002",
+    "title": "猜猜我有多爱你",
+    "author": "山姆·麦克布雷尼",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "大小兔子比赛谁更爱对方，温暖的睡前亲子绘本。",
+    "tags": [
+      "亲情",
+      "睡前"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-003",
+    "title": "棕色的熊、棕色的熊，你在看什么？",
+    "author": "比尔·马丁",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "韵律重复的颜色与动物认知绘本。",
+    "tags": [
+      "认知",
+      "颜色",
+      "韵律"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-004",
+    "title": "好饿的小蛇",
+    "author": "宫西达也",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 24,
+    "description": "小蛇吞下各种水果变成有趣形状，节奏轻快。",
+    "tags": [
+      "幽默",
+      "认知"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-005",
+    "title": "抱抱",
+    "author": "杰兹·阿波罗",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "小猩猩找妈妈抱抱，用最简单的话讲亲情。",
+    "tags": [
+      "亲情",
+      "情绪"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-006",
+    "title": "小黄和小蓝",
+    "author": "李欧·李奥尼",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "两个色点的友谊故事，色彩启蒙经典。",
+    "tags": [
+      "颜色",
+      "友谊"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-007",
+    "title": "晚安，月亮",
+    "author": "玛格丽特·怀兹·布朗",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "睡前和房间里的一切轻声道晚安。",
+    "tags": [
+      "睡前"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-008",
+    "title": "点点点",
+    "author": "埃尔维·杜莱",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "互动游戏书，点一点摇一摇魔法就发生。",
+    "tags": [
+      "互动",
+      "游戏"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-009",
+    "title": "亲爱的动物园",
+    "author": "罗德·坎贝尔",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 20,
+    "description": "翻翻书，动物园寄来一只只小动物。",
+    "tags": [
+      "翻翻书",
+      "认知",
+      "动物"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-010",
+    "title": "蹦！",
+    "author": "松冈达英",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 24,
+    "description": "各种小动物一起蹦，动感十足的低幼绘本。",
+    "tags": [
+      "动物",
+      "律动"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-011",
+    "title": "小金鱼逃走了",
+    "author": "五味太郎",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 28,
+    "description": "找一找逃走的小金鱼，观察力游戏绘本。",
+    "tags": [
+      "观察",
+      "游戏"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-012",
+    "title": "我妈妈",
+    "author": "安东尼·布朗",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "用孩子的口吻夸赞了不起的妈妈。",
+    "tags": [
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-013",
+    "title": "月亮的味道",
+    "author": "麦克·格雷涅茨",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 36,
+    "description": "动物们叠罗汉去够月亮尝味道。",
+    "tags": [
+      "想象",
+      "合作"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-014",
+    "title": "谁藏起来了",
+    "author": "大森裕子",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "记忆观察小游戏，猜猜谁不见了？",
+    "tags": [
+      "观察",
+      "记忆"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-015",
+    "title": "小熊宝宝绘本",
+    "author": "佐佐木洋子",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "你好",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "拉巴巴",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "睡觉",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "刷牙",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "吃饭",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "尿床了",
+        "totalPages": null
+      },
+      {
+        "index": 7,
+        "title": "散步",
+        "totalPages": null
+      },
+      {
+        "index": 8,
+        "title": "收起来",
+        "totalPages": null
+      },
+      {
+        "index": 9,
+        "title": "好朋友",
+        "totalPages": null
+      },
+      {
+        "index": 10,
+        "title": "我要洗澡",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "日本经典低幼生活习惯养成套书。",
+    "tags": [
+      "生活习惯",
+      "套书"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-016",
+    "title": "拔萝卜",
+    "author": "民间故事",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 24,
+    "description": "大家一起拔大萝卜，重复句式适合亲子共读。",
+    "tags": [
+      "民间",
+      "合作"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-017",
+    "title": "逃家小兔",
+    "author": "玛格丽特·怀兹·布朗",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "无论小兔怎么逃，妈妈总会找到它。",
+    "tags": [
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-018",
+    "title": "我爸爸",
+    "author": "安东尼·布朗",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "无所不能的爸爸，充满爱与幽默。",
+    "tags": [
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-019",
+    "title": "是谁嗯嗯在我的头上",
+    "author": "维尔纳·霍尔茨瓦特",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 28,
+    "description": "小鼹鼠寻找肇事者的幽默认知绘本。",
+    "tags": [
+      "幽默",
+      "认知"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-020",
+    "title": "鼠小弟的小背心",
+    "author": "中江嘉男",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 28,
+    "description": "鼠小弟的背心被越撑越大，简单又幽默。",
+    "tags": [
+      "幽默"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-021",
+    "title": "田鼠阿佛",
+    "author": "李欧·李奥尼",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "收集阳光与色彩的小田鼠，诗意十足。",
+    "tags": [
+      "想象",
+      "四季"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-022",
+    "title": "三只小猪",
+    "author": "经典童话",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "三只小猪盖房子对抗大灰狼的经典童话。",
+    "tags": [
+      "童话"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-023",
+    "title": "咕噜牛",
+    "author": "朱莉娅·唐纳森",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "小老鼠用智慧吓退森林里的动物。",
+    "tags": [
+      "智慧",
+      "韵律"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-024",
+    "title": "蚂蚁和西瓜",
+    "author": "田村茂",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "蚂蚁搬西瓜的欢乐夏日故事。",
+    "tags": [
+      "幽默",
+      "合作"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-025",
+    "title": "小蓝和小黄的朋友们",
+    "author": "李欧·李奥尼",
+    "coverExternalUrl": "",
+    "ageRange": "0-3",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "延续色彩启蒙，讲述分享与友爱。",
+    "tags": [
+      "颜色",
+      "友谊"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-026",
+    "title": "大卫，不可以",
+    "author": "大卫·香农",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "调皮的大卫和妈妈的爱，幽默又温情。",
+    "tags": [
+      "情绪",
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-027",
+    "title": "不一样的卡梅拉",
+    "author": "克利斯提昂·约里波瓦",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "我想去看海",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "我想有个弟弟",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "我想有颗星星",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "我能打败怪兽",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "我要救出贝里奥",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "我爱平底锅",
+        "totalPages": null
+      },
+      {
+        "index": 7,
+        "title": "我不要被吃掉",
+        "totalPages": null
+      },
+      {
+        "index": 8,
+        "title": "我好喜欢她",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "勇敢好奇的小鸡卡梅拉冒险系列。",
+    "tags": [
+      "冒险",
+      "套书",
+      "勇气"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-028",
+    "title": "爷爷一定有办法",
+    "author": "菲比·吉尔曼",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "一块旧毯子一变再变的温情故事。",
+    "tags": [
+      "亲情",
+      "创意"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-029",
+    "title": "花婆婆",
+    "author": "芭芭拉·库尼",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "做一件让世界变得更美丽的事。",
+    "tags": [
+      "成长",
+      "梦想"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-030",
+    "title": "母鸡萝丝去散步",
+    "author": "佩特·哈群斯",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "母鸡悠闲散步，狐狸屡屡碰壁的幽默无字剧。",
+    "tags": [
+      "幽默",
+      "观察"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-031",
+    "title": "我的连衣裙",
+    "author": "西卷茅子",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "小兔子的连衣裙随场景不断变换花样。",
+    "tags": [
+      "想象",
+      "色彩"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-032",
+    "title": "阿罗有支彩色笔",
+    "author": "克罗格特·约翰逊",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 64,
+    "description": "阿罗用一支笔画出整个奇妙世界。",
+    "tags": [
+      "想象",
+      "创意"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-033",
+    "title": "云朵面包",
+    "author": "白希那",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "吃了云朵面包就能飞起来的温暖幻想。",
+    "tags": [
+      "想象",
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-034",
+    "title": "石头汤",
+    "author": "琼·穆特",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "三个和尚用石头煮汤，教会村民分享。",
+    "tags": [
+      "分享",
+      "智慧"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-035",
+    "title": "犟龟",
+    "author": "米切尔·恩德",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "小乌龟坚持赶路，只要上路就会遇到庆典。",
+    "tags": [
+      "坚持",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-036",
+    "title": "让路给小鸭子",
+    "author": "罗伯特·麦克洛斯基",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 64,
+    "description": "鸭妈妈带小鸭穿过城市的经典温情故事。",
+    "tags": [
+      "动物",
+      "城市"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-037",
+    "title": "三只山羊嘎啦嘎啦",
+    "author": "北欧童话",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "三只山羊智斗桥下巨怪的北欧童话。",
+    "tags": [
+      "童话",
+      "勇气"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-038",
+    "title": "小房子",
+    "author": "维吉尼亚·李·伯顿",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "一座小房子见证乡村变城市的时光流转。",
+    "tags": [
+      "时间",
+      "环境"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-039",
+    "title": "100层的房子",
+    "author": "岩井俊雄",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "竖翻页一层层往上爬，认识各种小动物的家。",
+    "tags": [
+      "数数",
+      "认知"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-040",
+    "title": "蚯蚓的日记",
+    "author": "朵琳·克罗宁",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "以蚯蚓视角写的搞笑成长日记。",
+    "tags": [
+      "幽默",
+      "自然"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-041",
+    "title": "我绝对绝对不吃番茄",
+    "author": "罗伦·乔尔德",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "哥哥用想象力哄妹妹吃下不爱吃的蔬菜。",
+    "tags": [
+      "幽默",
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-042",
+    "title": "大脚丫跳芭蕾",
+    "author": "埃米·扬",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "被嘲笑大脚的女孩坚持追逐芭蕾梦。",
+    "tags": [
+      "梦想",
+      "自信"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-043",
+    "title": "苏斯博士经典系列",
+    "author": "苏斯博士",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "戴高帽子的猫",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "绿鸡蛋和火腿",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "穿袜子的狐狸",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "一条鱼两条鱼红色的鱼蓝色的鱼",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "英文启蒙押韵桥梁书中文版，朗朗上口。",
+    "tags": [
+      "韵律",
+      "套书",
+      "启蒙"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-044",
+    "title": "团圆",
+    "author": "余丽琼",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "中国原创，讲述过年一家团聚的温情。",
+    "tags": [
+      "亲情",
+      "原创",
+      "传统"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-045",
+    "title": "一园青菜成了精",
+    "author": "周翔",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 36,
+    "description": "改编自北方童谣的热闹蔬菜大战。",
+    "tags": [
+      "童谣",
+      "原创"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-046",
+    "title": "安的种子",
+    "author": "黄丽",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "关于等待与顺其自然的东方智慧绘本。",
+    "tags": [
+      "成长",
+      "智慧"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-047",
+    "title": "打瞌睡的房子",
+    "author": "奥黛莉·伍德",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "层层叠加的睡意，趣味十足的累积式故事。",
+    "tags": [
+      "睡前",
+      "幽默"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-048",
+    "title": "鳄鱼怕怕牙医怕怕",
+    "author": "五味太郎",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 28,
+    "description": "鳄鱼和牙医互相害怕的对照式幽默绘本。",
+    "tags": [
+      "幽默",
+      "习惯"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-049",
+    "title": "生气的亚瑟",
+    "author": "哈韦·奥利弗",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "帮助孩子认识并接纳自己愤怒情绪。",
+    "tags": [
+      "情绪"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-050",
+    "title": "菲菲生气了",
+    "author": "莫莉·卞",
+    "coverExternalUrl": "",
+    "ageRange": "3-6",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 32,
+    "description": "菲菲愤怒后自我平复，温柔的情绪管理绘本。",
+    "tags": [
+      "情绪"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-051",
+    "title": "神奇树屋",
+    "author": "玛丽·波·奥斯本",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "恐龙谷大冒险",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "黑衣骑士出没的城堡",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "木乃伊之谜",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "海盗的藏宝图",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "雨林深处的树屋",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "冰河时期的猛犸象",
+        "totalPages": null
+      },
+      {
+        "index": 7,
+        "title": "月光下的忍者",
+        "totalPages": null
+      },
+      {
+        "index": 8,
+        "title": "暴龙谷历险",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "杰克与安妮乘魔法树屋穿越时空探险。",
+    "tags": [
+      "冒险",
+      "套书",
+      "历史"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-052",
+    "title": "神奇校车",
+    "author": "乔安娜·柯尔",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "在人体中游览",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "迷失在太阳系",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "水的故事",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "地球内部探秘",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "穿越飓风",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "追寻恐龙",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "卷毛老师带全班开校车探索科学世界。",
+    "tags": [
+      "科普",
+      "套书",
+      "探索"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-053",
+    "title": "夏洛的网",
+    "author": "E.B.怀特",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "蜘蛛夏洛用蛛网拯救小猪的友谊故事。",
+    "tags": [
+      "友谊",
+      "经典"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-054",
+    "title": "小王子",
+    "author": "圣埃克苏佩里",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 120,
+    "description": "关于爱与责任的永恒寓言。",
+    "tags": [
+      "经典",
+      "哲思"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-055",
+    "title": "活了100万次的猫",
+    "author": "佐野洋子",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "picture",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 40,
+    "description": "关于生命与爱的深刻寓言绘本。",
+    "tags": [
+      "生命",
+      "哲思"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-056",
+    "title": "长袜子皮皮",
+    "author": "阿斯特丽德·林格伦",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 220,
+    "description": "力大无穷、自由不羁的红发女孩皮皮。",
+    "tags": [
+      "幽默",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-057",
+    "title": "小猪唏哩呼噜",
+    "author": "孙幼军",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 160,
+    "description": "中国原创善良憨厚的小猪成长故事。",
+    "tags": [
+      "原创",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-058",
+    "title": "没头脑和不高兴",
+    "author": "任溶溶",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 96,
+    "description": "两个孩子毛病放大的幽默教育故事。",
+    "tags": [
+      "原创",
+      "幽默"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-059",
+    "title": "舒克和贝塔",
+    "author": "郑渊洁",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 240,
+    "description": "开飞机的老鼠舒克与开坦克的贝塔历险记。",
+    "tags": [
+      "原创",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-060",
+    "title": "大头儿子和小头爸爸",
+    "author": "郑春华",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 150,
+    "description": "温馨幽默的家庭亲子故事集。",
+    "tags": [
+      "原创",
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-061",
+    "title": "青蛙和蟾蜍",
+    "author": "艾诺·洛贝尔",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "好朋友",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "好伙伴",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "快乐时光",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "一年四季",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "一对好朋友四季相伴的经典桥梁书。",
+    "tags": [
+      "友谊",
+      "套书"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-062",
+    "title": "电话里的童话",
+    "author": "贾尼·罗大里",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "爸爸每晚在电话里讲的奇思妙想短故事。",
+    "tags": [
+      "想象",
+      "幽默"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-063",
+    "title": "了不起的狐狸爸爸",
+    "author": "罗尔德·达尔",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 120,
+    "description": "机智的狐狸爸爸对抗三个坏农场主。",
+    "tags": [
+      "冒险",
+      "智慧"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-064",
+    "title": "女巫",
+    "author": "罗尔德·达尔",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "男孩识破女巫阴谋的惊险奇幻故事。",
+    "tags": [
+      "奇幻",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-065",
+    "title": "时代广场的蟋蟀",
+    "author": "乔治·塞尔登",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 180,
+    "description": "会拉琴的蟋蟀在纽约地铁站的友谊传奇。",
+    "tags": [
+      "友谊",
+      "音乐"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-066",
+    "title": "中国古代神话故事",
+    "author": "民间",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "盘古开天、女娲补天等经典神话合集。",
+    "tags": [
+      "神话",
+      "传统"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-067",
+    "title": "昆虫记（少儿版）",
+    "author": "法布尔",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 220,
+    "description": "法布尔笔下奇妙的昆虫世界少儿改写。",
+    "tags": [
+      "科普",
+      "自然"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-068",
+    "title": "第一次发现丛书",
+    "author": "伽利玛少儿",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "蝴蝶",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "瓢虫",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "树",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "水果",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "花",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "透明胶片翻页的经典幼儿科普探索套书。",
+    "tags": [
+      "科普",
+      "套书",
+      "自然"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-069",
+    "title": "屁屁侦探",
+    "author": "Troll",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 120,
+    "description": "沉着冷静的屁屁侦探破解层出不穷的谜题。",
+    "tags": [
+      "推理",
+      "幽默"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-070",
+    "title": "米小圈上学记",
+    "author": "北猫",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "bridge",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "我是小学生",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "好朋友争夺战",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "耗子叔叔来做客",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "瞧这一家子",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "小学生米小圈爆笑又真实的校园日记。",
+    "tags": [
+      "原创",
+      "校园",
+      "套书"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-071",
+    "title": "神奇的收费亭",
+    "author": "诺顿·贾斯特",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "无聊男孩穿过收费亭进入奇幻语言王国。",
+    "tags": [
+      "奇幻",
+      "想象"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-072",
+    "title": "淘气包埃米尔",
+    "author": "阿斯特丽德·林格伦",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "瑞典农庄淘气男孩埃米尔的爆笑闯祸集。",
+    "tags": [
+      "幽默",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-073",
+    "title": "木偶奇遇记",
+    "author": "科洛迪",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "小木偶匹诺曹历经波折变成真孩子。",
+    "tags": [
+      "经典",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-074",
+    "title": "亲爱的汉修先生",
+    "author": "贝芙莉·克莱瑞",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 160,
+    "description": "以书信和日记讲述男孩成长的温暖故事。",
+    "tags": [
+      "成长",
+      "书信"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-075",
+    "title": "海底两万里（少儿版）",
+    "author": "儒勒·凡尔纳",
+    "coverExternalUrl": "",
+    "ageRange": "6-9",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 240,
+    "description": "跟随鹦鹉螺号潜艇畅游神秘海底世界。",
+    "tags": [
+      "科幻",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-076",
+    "title": "哈利·波特",
+    "author": "J.K.罗琳",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "神秘的魔法石",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "消失的密室",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "阿兹卡班的囚徒",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "火焰杯",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "凤凰社",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "混血王子",
+        "totalPages": null
+      },
+      {
+        "index": 7,
+        "title": "死亡圣器",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "少年巫师哈利在霍格沃茨的魔法冒险史诗。",
+    "tags": [
+      "奇幻",
+      "套书",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-077",
+    "title": "西游记（少儿版）",
+    "author": "吴承恩 原著",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 320,
+    "description": "师徒四人西天取经历九九八十一难。",
+    "tags": [
+      "经典",
+      "神话"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-078",
+    "title": "三体（少儿版）",
+    "author": "刘慈欣",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 280,
+    "description": "刘慈欣科幻巨著的少儿改写版本。",
+    "tags": [
+      "科幻",
+      "科普"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-079",
+    "title": "城南旧事",
+    "author": "林海音",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "以英子视角追忆老北京城南的童年往事。",
+    "tags": [
+      "经典",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-080",
+    "title": "草房子",
+    "author": "曹文轩",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 280,
+    "description": "油麻地少年桑桑纯净而忧伤的成长记忆。",
+    "tags": [
+      "原创",
+      "成长"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-081",
+    "title": "青铜葵花",
+    "author": "曹文轩",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "哑巴男孩青铜与城市女孩葵花的苦难与温情。",
+    "tags": [
+      "原创",
+      "亲情"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-082",
+    "title": "窗边的小豆豆",
+    "author": "黑柳彻子",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "巴学园里被爱与自由滋养的小豆豆。",
+    "tags": [
+      "成长",
+      "教育"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-083",
+    "title": "假如给我三天光明",
+    "author": "海伦·凯勒",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 220,
+    "description": "海伦·凯勒战胜黑暗与寂静的励志自传。",
+    "tags": [
+      "励志",
+      "传记"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-084",
+    "title": "鲁滨逊漂流记",
+    "author": "笛福",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 280,
+    "description": "荒岛求生二十八年的冒险与坚韧。",
+    "tags": [
+      "冒险",
+      "经典"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-085",
+    "title": "汤姆·索亚历险记",
+    "author": "马克·吐温",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "机灵顽皮的汤姆在密西西比河畔的冒险。",
+    "tags": [
+      "冒险",
+      "经典"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-086",
+    "title": "爱的教育",
+    "author": "亚米契斯",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 240,
+    "description": "以日记记录的关于爱与善良的成长课。",
+    "tags": [
+      "成长",
+      "品格"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-087",
+    "title": "绿野仙踪",
+    "author": "莱曼·鲍姆",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 220,
+    "description": "多萝西与伙伴沿黄砖路寻找回家之路。",
+    "tags": [
+      "奇幻",
+      "冒险"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-088",
+    "title": "尼尔斯骑鹅旅行记",
+    "author": "塞尔玛·拉格洛夫",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 300,
+    "description": "变小的男孩骑鹅飞越瑞典的地理奇旅。",
+    "tags": [
+      "冒险",
+      "自然"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-089",
+    "title": "苏菲的世界",
+    "author": "乔斯坦·贾德",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 400,
+    "description": "以小说形式展开的西方哲学启蒙之旅。",
+    "tags": [
+      "哲学",
+      "启蒙"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-090",
+    "title": "十万个为什么（新世纪版）",
+    "author": "少年儿童出版社",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "动物",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "植物",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "人体",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "宇宙",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "地球",
+        "totalPages": null
+      },
+      {
+        "index": 6,
+        "title": "数学",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "覆盖多学科的经典少儿科普问答套书。",
+    "tags": [
+      "科普",
+      "套书"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-091",
+    "title": "DK儿童百科全书",
+    "author": "DK",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 360,
+    "description": "图文并茂的权威儿童综合百科。",
+    "tags": [
+      "科普",
+      "百科"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-092",
+    "title": "写给儿童的中国历史",
+    "author": "陈卫平",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "上古—夏商",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "西周—春秋",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "战国—秦",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "汉朝",
+        "totalPages": null
+      },
+      {
+        "index": 5,
+        "title": "三国—两晋",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "深入浅出、贯通古今的中国历史读本。",
+    "tags": [
+      "历史",
+      "套书",
+      "传统"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-093",
+    "title": "中国少年儿童百科全书",
+    "author": "浙江少儿",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 340,
+    "description": "面向少年儿童的综合性百科读物。",
+    "tags": [
+      "科普",
+      "百科"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-094",
+    "title": "时间简史（少儿版）",
+    "author": "史蒂芬·霍金",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "霍金写给孩子的宇宙与时间入门。",
+    "tags": [
+      "科普",
+      "宇宙"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-095",
+    "title": "万物简史（少儿版）",
+    "author": "比尔·布莱森",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "从宇宙起源到生命演化的趣味科学史。",
+    "tags": [
+      "科普",
+      "科学史"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-096",
+    "title": "神秘岛",
+    "author": "儒勒·凡尔纳",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 320,
+    "description": "五人流落荒岛用智慧重建文明的冒险。",
+    "tags": [
+      "冒险",
+      "科幻"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-097",
+    "title": "名侦探福尔摩斯（少儿版）",
+    "author": "柯南·道尔",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [
+      {
+        "index": 1,
+        "title": "血字的研究",
+        "totalPages": null
+      },
+      {
+        "index": 2,
+        "title": "四签名",
+        "totalPages": null
+      },
+      {
+        "index": 3,
+        "title": "巴斯克维尔的猎犬",
+        "totalPages": null
+      },
+      {
+        "index": 4,
+        "title": "归来记",
+        "totalPages": null
+      }
+    ],
+    "totalPages": null,
+    "description": "经典推理名篇的少儿改写侦探套书。",
+    "tags": [
+      "推理",
+      "套书"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-098",
+    "title": "小海蒂",
+    "author": "约翰娜·斯比丽",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 260,
+    "description": "阿尔卑斯山下天真女孩海蒂的温暖故事。",
+    "tags": [
+      "成长",
+      "经典"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-099",
+    "title": "我的野生动物朋友",
+    "author": "蒂皮·德格雷",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "science",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 160,
+    "description": "在非洲与野生动物为伴的女孩真实记录。",
+    "tags": [
+      "自然",
+      "科普"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  },
+  {
+    "uuid": "bl-100",
+    "title": "手斧男孩",
+    "author": "盖瑞·伯森",
+    "coverExternalUrl": "",
+    "ageRange": "9-12",
+    "type": "chapter",
+    "isOfficial": true,
+    "volumes": [],
+    "totalPages": 200,
+    "description": "少年布莱恩坠机荒野凭一把手斧求生。",
+    "tags": [
+      "冒险",
+      "生存"
+    ],
+    "addCount": 0,
+    "likeCount": 0,
+    "readFinishCount": 0,
+    "createdAt": "2026-09-06T00:00:00.000Z"
+  }
+]

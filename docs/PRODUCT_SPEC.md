@@ -88,7 +88,8 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 
 - **三分区**：在读 / 想读 / 已读，分段切换并显示各区数量。
 - **书籍卡片**：书脊渐变封面 + 书名 + 作者 + 状态徽章 + 打卡次数/时长 + 进度环。进度全部由 `BookShelfService` 聚合派生，页面不直接读书籍进度字段。
-- **添加书籍**：右下角「＋」弹出**添加方式选择**（手动录入 / 扫码添加 / 新建系列）。
+- **添加书籍**：右下角「＋」弹出**添加方式选择**（精选书库 / 手动录入 / 扫码添加 / 新建系列）。
+  - **精选书库**（已落地）：点「📚 精选书库」进入书库浏览页，分龄挑书一键加入书架，详见 §4.8。
   - **手动录入**：底部弹层手填书名（必填）+ 作者（选填）。
   - **扫码录入**（小程序端已落地）：`wx.scanCode` 扫图书条码 → 校验 13 位 + 978/979 前缀 → 调云函数 `bookLookup`（探数 tanshu 主源 + Google Books 兜底）→ 弹出「扫码确认弹层」预填书名/作者/封面/总页数，可编辑后保存；封面走外链 `coverExternalUrl`（不落云存储）。非法条码或查询失败自动转手填。
 - **系列书面板**（套书，已落地）：书架把同一 `seriesUuid` 的书聚合为**系列卡片**（三层叠层封面 + 右上「系列」徽标 + 底部「已读 x/y」进度条）；点开进入系列面板，按 `seriesIndex` 升序列出各分册（册序 · 书名 · 状态角标 · 打卡），面板内可直接打卡（打卡后面板保持打开并刷新）与「＋ 添加分册」。
@@ -125,6 +126,21 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 ### 4.7 建档引导（Onboarding）— 已实现
 
 - 首次启动强制建立孩子档案（昵称、生日等），完成后放行主界面。
+
+### 4.8 精选书库（阅读 → 精选书库）— 已实现（P0）
+
+- **定位**：官方/共建的公共分龄书单，降低「不知道给孩子读什么」的选书成本，一键加入孩子书架。
+- **数据源**：公共只读集合 `book_library`（无 `ownerId`/`childId` 归属），前端 `db.bookLibrary.listAll()` 走 `listAllPublic` 分页拉全，**不做归属过滤**；种子数据见 `miniprogram/scripts/seed_book_library.json`（100 本，`0-3`/`3-6`/`6-9`/`9-12` 各 25 本，覆盖绘本/桥梁书/章节书/科普）。
+- **浏览页 `pages/library/`**：
+  - **搜索栏**：按书名 / 作者实时前缀过滤。
+  - **年龄段 Tab**：全部 / 0-3岁 / 3-6岁 / 6-9岁 / 9-12岁 / 官方精选（横向滚动）。
+  - **两列书卡**：封面（无图走「色块 + 书名首字」兜底，按年龄段变色）、书名、作者、年龄段徽标（0-3 粉 / 3-6 橙 / 6-9 绿 / 9-12 蓝）+ 类型徽标；系列书右上角「系列 · N册」角标。含 loading 骨架屏与搜索空态。
+- **加入书架**：
+  - **单本**：点书卡弹「加入书架」面板 → 拉孩子列表（多孩子弹选择器）→ 写入用户私有 `books`（回填 `libraryUuid` + 书库快照字段），按 `libraryUuid` 去重。
+  - **系列书**（归属**方案 A**）：点书卡弹分册列表面板，可「加入某一分册」或「加入整套」；加入时在用户私有 `series` 新建一条并回填 `libraryUuid`（同孩子按 `libraryUuid` 复用，不重复建系列），分册以 `seriesUuid` + `seriesIndex` 落 `books`，天然复用书架 `series-service` 分组与系列面板。
+  - `books.status` 沿用现有 `want/reading/done` 枚举，加入默认 `want`。
+- **书架 join 水合**：书架 `refresh()` 在 `groupBySeries` 之前调用 `_hydrateFromLibrary(books)`——对带 `libraryUuid` 的书一次性从 `book_library` 回填 `title/author/coverExternalUrl/ageRange/type/description`（**书自身已有手动值则保留、不覆盖**），书库改动可反哺书架展示。
+- **热度计数（P1 预留）**：`book_library` 含 `addCount/likeCount/readFinishCount` 字段（当前恒为 0）；打卡完成同步 `readFinishCount +1` 已在 `reading-service._syncBookProgress` 留 `TODO P1`，其余见 `docs/BOOK_LIBRARY_BACKLOG.md`。
 
 ---
 
@@ -234,11 +250,11 @@ lib/
 
 依赖方向单向：`pages → components / services → utils → wx.cloud`。禁止 services 依赖 pages、utils 依赖 services。
 
-### 8.2 云数据库集合（8 个，CloudBase 文档型）
+### 8.2 云数据库集合（9 个，CloudBase 文档型）
 
 - 归属体系：`ownerId`（unionid 优先否则 openid）+ 业务集合加 `childId`（指向 `children.uuid`）。
 - 同步三件套：`uuid`（跨端业务主键）/ `updatedAt`（毫秒时间戳）/ `isDeleted`（软删）。
-- 关系引用存被引 `uuid`（`books.seriesUuid`、`reading_logs.bookUuid`）。
+- 关系引用存被引 `uuid`（`books.seriesUuid`、`reading_logs.bookUuid`、`books.libraryUuid`/`series.libraryUuid` → `book_library.uuid`）。
 
 | 集合 | 归属 | 用途 | 状态 |
 | --- | --- | --- | --- |
@@ -246,12 +262,13 @@ lib/
 | `children` | ownerId | 孩子档案（多孩子） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
 | `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
-| `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl` 字段） | ✅ 已实现 |
+| `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl`/`libraryUuid` 字段） | ✅ 已实现 |
 | `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
-| `series` | ownerId+childId | 套书元信息（`name`/`totalVolumes`；已读册数由 books 聚合派生，不冗余存储） | ✅ 已实现（`series-service` 分组聚合 + 系列面板） |
+| `series` | ownerId+childId | 套书元信息（`name`/`totalVolumes`/`libraryUuid`；已读册数由 books 聚合派生，不冗余存储） | ✅ 已实现（`series-service` 分组聚合 + 系列面板） |
+| `book_library` | **公共（无归属）** | 精选书库公共只读集合（分龄书单，含 `volumes[]`/`ageRange`/`type`/`isOfficial`/热度计数）；走 `db.listAllPublic` **不过滤归属** | ✅ 已实现（P0，`pages/library` + 加入书架 + 书架 join 水合） |
 | `weekly_reports` | ownerId+childId | 周报快照 | ⏳ 后续（云函数聚合） |
 
-字段与索引明细见架构文档 §2.3。权限统一「仅创建者可读写」。
+字段与索引明细见架构文档 §2.3。权限：业务集合统一「仅创建者可读写」；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。
 
 ### 8.3 日历聚合口径（核心业务）
 
@@ -270,8 +287,9 @@ lib/
 2. ~~**书架 → 阅读打卡闭环**（补 `reading_logs` 写入 + 状态跃迁 + 进度派生）— P1~~ ✅ 已落地（`reading-service.addReadingLog` + 书架打卡弹层）
 3. ~~**课外班日历推算**（weekday + recurrence 展开日期）— P0~~ ✅ 已落地（`date.expandWeeklySchedule`，weekly）
 4. ~~**书架扫码录入**（`wx.scanCode` + `bookLookup` 云函数 ISBN 查书）+ **系列书面板**（`series` 集合 + `series-service` 聚合 + 叠层卡片/面板）— P1~~ ✅ 已落地
-5. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
-6. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
+5. ~~**精选书库 P0**（`book_library` 公共集合 + `pages/library` 分龄浏览 + 加入书架单本/系列 + 书架 join 水合）~~ ✅ 已落地（P1 热度计数/共建投稿见 `docs/BOOK_LIBRARY_BACKLOG.md`）
+6. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
+7. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
 
 ### 8.5 编码规范要点
 

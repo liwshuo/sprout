@@ -64,13 +64,49 @@ Page({
       db.books.listAll(),
       db.series.listAll(),
     ]);
-    // 先水合封面（fileID → 临时链接；外链 coverExternalUrl 直接用），供分组/面板复用
-    this._all = await this._hydrateCovers(books);
+    // 书库 join 水合：带 libraryUuid 的书回填书库元信息（书名/作者/封面/年龄段/类型/简介），
+    // 已有手动值不覆盖。放在封面水合之前，让 coverExternalUrl 能被后续 _hydrateCovers 复用。
+    const hydratedBooks = await this._hydrateFromLibrary(books);
+    // 再水合封面（fileID → 临时链接；外链 coverExternalUrl 直接用），供分组/面板复用
+    this._all = await this._hydrateCovers(hydratedBooks);
     this._seriesList = seriesList;
     this._grouped = seriesService.groupBySeries(this._all, this._seriesList);
     this._applyFilter();
     this.setData({ loading: false });
   },
+
+  /**
+   * 书库 join 水合：一次性拉 book_library 建 Map，对带 libraryUuid 的书回填元信息。
+   * 回填字段：title / author / coverExternalUrl / ageRange / type / description。
+   * 原则：书自身已有非空值则保留（用户手动改过的不覆盖）。
+   * @param {Array} books 原始书籍列表
+   * @returns {Promise<Array>} 回填后的书籍列表
+   */
+  async _hydrateFromLibrary(books) {
+    const list = books || [];
+    const needs = list.filter((b) => b && b.libraryUuid);
+    if (!needs.length) return list;
+    const libBooks = await db.bookLibrary.listAll();
+    if (!libBooks || !libBooks.length) return list;
+    const map = {};
+    libBooks.forEach((lb) => {
+      if (lb && lb.uuid) map[lb.uuid] = lb;
+    });
+    const FIELDS = ['title', 'author', 'coverExternalUrl', 'ageRange', 'type', 'description'];
+    const isEmpty = (v) => v == null || v === '';
+    return list.map((b) => {
+      if (!b || !b.libraryUuid) return b;
+      const lb = map[b.libraryUuid];
+      if (!lb) return b;
+      const patch = {};
+      FIELDS.forEach((f) => {
+        // 仅在书自身该字段为空时，用书库值回填（保留用户手动值）
+        if (isEmpty(b[f]) && !isEmpty(lb[f])) patch[f] = lb[f];
+      });
+      return Object.keys(patch).length ? Object.assign({}, b, patch) : b;
+    });
+  },
+
 
   /**
    * 封面水合：coverExternalUrl（扫码外链）优先直接用；否则 cover(fileID) 批量换临时链接。
@@ -118,6 +154,11 @@ Page({
   },
   closeAddChoice() {
     this.setData({ showAddChoice: false });
+  },
+  // 跳转「精选书库」浏览页（从书库加入书架后，回到书架会 onShow→refresh 自动水合）
+  goLibrary() {
+    this.setData({ showAddChoice: false });
+    wx.navigateTo({ url: '/pages/library/library' });
   },
   chooseManual() {
     this._volumeCtx = null; // 普通新增：无系列上下文

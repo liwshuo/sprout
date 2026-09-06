@@ -5,6 +5,19 @@
 
 ## [Unreleased]
 
+### 2026-09-06 · 精选书库 P0（书库浏览 + 加入书架 + 书架 join 水合）
+
+#### 新增
+- **精选书库浏览页 `pages/library/`**：分龄挑好书一键加入书架。顶部搜索栏（书名/作者实时前缀过滤）+ 年龄段 Tab（全部 / 0-3岁 / 3-6岁 / 6-9岁 / 9-12岁 / 官方精选，横向滚动）+ 两列书卡网格（封面无图走「色块 + 书名首字」兜底并按年龄段变色、书名、作者、年龄段徽标〔0-3 粉 / 3-6 橙 / 6-9 绿 / 9-12 蓝〕、类型徽标，系列书右上「系列 · N册」角标），含 loading 骨架屏与搜索空态；已注册路由 `pages/library/library`。
+- **加入书架**：单本弹「加入书架」面板；系列书弹分册列表面板，支持「加入某一分册」或「加入整套」。写入前拉孩子列表，多孩子弹 `showActionSheet` 选择器，选定后 `app.setActiveChild` 归属该孩子再落库。单本按 `libraryUuid` 去重；系列按「方案 A」在用户私有 `series` 新建一条并回填 `libraryUuid`（同孩子按 `libraryUuid` 复用不重复建系列），分册以 `seriesUuid` + `seriesIndex` 落 `books`，天然复用现有 `series-service` 分组与系列面板。`books.status` 沿用 `want/reading/done`，加入默认 `want`。
+- **书架入口**：阅读书架「＋」添加方式弹层新增「📚 精选书库」入口（`wx.navigateTo` 跳转），置于首位。
+- **`db.bookLibrary` 命名空间**：`utils/db.js` 新增 `bookLibrary`（`listAll({ ageRange?, isOfficial? })` / `getByUuid`），走新增的 `listAllPublic`（**公共集合分页拉全，不做 ownerId/childId 归属过滤**）；新增集合常量 `book_library`。
+- **官方精选种子数据**：`miniprogram/scripts/seed_book_library.json`（100 本，`0-3`/`3-6`/`6-9`/`9-12` 各 25 本，覆盖绘本/桥梁书/章节书/科普，含 12 套系列书 `volumes[]`）+ `miniprogram/scripts/README.md`（云开发控制台建集合〔所有人可读〕并导入的操作说明）。
+
+#### 变更
+- **书架 join 水合**：`pages/reading/reading.js` 的 `refresh()` 在 `groupBySeries` 之前新增 `_hydrateFromLibrary(books)`——对带 `libraryUuid` 的书一次性从 `book_library` 回填 `title/author/coverExternalUrl/ageRange/type/description`，**书自身已有手动值则保留、不覆盖**；置于封面水合之前以复用 `coverExternalUrl`。
+- `reading-service._syncBookProgress` 打卡完成判定处新增 `TODO P1`：读完（status→done）时同步 `book_library.readFinishCount +1`（需幂等）。
+
 ### 2026-09-04 · 书架：扫码录入 + 系列书面板
 
 #### 新增
