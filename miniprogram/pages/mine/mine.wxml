@@ -40,7 +40,6 @@
         >
           <image wx:if="{{item._avatarUrl}}" src="{{item._avatarUrl}}" class="chip-avatar-img" mode="aspectFill" />
           <view wx:else class="chip-avatar-emoji">{{item._avatarEmoji || '👶'}}</view>
-          <view class="chip-avatar-camera">📷</view>
         </view>
         <!-- 非 active 孩子头像不可点击 -->
         <view class="chip-avatar-wrap" wx:else>

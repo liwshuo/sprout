@@ -81,20 +81,6 @@
   border-radius: 50%;
   background: var(--primary-soft, #fff3e0);
 }
-/* 相机 badge：贴在头像右下角 */
-.chip-avatar-camera {
-  position: absolute;
-  right: -4rpx;
-  bottom: -4rpx;
-  font-size: 24rpx;
-  background: #fff;
-  border-radius: 50%;
-  width: 32rpx;
-  height: 32rpx;
-  line-height: 32rpx;
-  text-align: center;
-  box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.15);
-}
 /* chip 名字 */
 .chip-name {
   font-size: 24rpx;
