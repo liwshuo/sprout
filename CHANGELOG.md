@@ -3,15 +3,19 @@
 本项目所有值得记录的功能变动都记于此。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，遵循语义化版本。
 > 约定：每次功能改动都应同步更新本文件与 `docs/PRODUCT_SPEC.md`。最新变更置于顶部。
 
-## [unreleased]
+## [Unreleased]
 ### Changed
-- mine 页：合并「用户登录卡」与「当前孩子主卡」为一体卡，孩子信息为主，家长信息为辅
-- mine 页：新增家长角色选择（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他），首次进入主动引导
-- mine 页：修复编辑孩子弹层名字回填为空的 bug（input 缺少 value 绑定）
+- mine 页顶部重构：合并「家长卡」与「孩子主卡」为一体双区主卡
+- 新增家长角色选择功能（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他），存储于 users.role 字段
+- 功能菜单改为 iOS 风格纯列表，去掉卡片包裹
+- 家长副区去掉 emoji，点击整行弹二级菜单（选角色 / 绑手机号）
 ### Added
 - auth.js：新增 updateUserRole(role) 方法
-
-## [Unreleased]
+### Fixed
+- 修复编辑孩子弹层 name input 未绑定 value 导致编辑时名字空白
+- 修复家长副区 button open-type 吃掉 bindtap 事件导致点击无效
+- 修复主卡与统计卡统计数字重复展示问题
+- 修复左右边距不对齐问题
 
 ## [v1.1.0] - 2026-09-07
 

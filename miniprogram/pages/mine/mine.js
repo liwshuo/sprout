@@ -1,39 +1,76 @@
-// pages/mine/mine.js —— 我的：孩子信息 + 多孩子切换 + 周报入口 + 登录/绑手机
+// pages/mine/mine.js —— 我的：一体主卡（孩子主区 + 家长副区）+ 统计卡 + iOS 风格功能列表
 const app = getApp();
 const db = require('../../utils/db');
 const auth = require('../../utils/auth');
 const dateUtil = require('../../utils/date');
 
+// 家长角色映射：value → 称谓后缀（用于派生 parentLabel）
+const ROLE_SUFFIX = {
+  dad: '爸爸',
+  mom: '妈妈',
+  grandpa: '爷爷',
+  grandma: '奶奶',
+  grandpa_m: '姥爷',
+  grandma_m: '姥姥',
+  other: '家长',
+};
+// 角色选择 ActionSheet 顺序（与 itemList 索引一一对应）
+const ROLE_OPTIONS = [
+  { value: 'dad', label: '爸爸' },
+  { value: 'mom', label: '妈妈' },
+  { value: 'grandpa', label: '爷爷' },
+  { value: 'grandma', label: '奶奶' },
+  { value: 'grandpa_m', label: '姥爷' },
+  { value: 'grandma_m', label: '姥姥' },
+  { value: 'other', label: '其他' },
+];
+
 Page({
   data: {
-    user: null,
+    // 登录/用户
+    isLoggedIn: false,
+    currentUser: null,
+    // 孩子
     children: [],
     activeChildId: '',
     activeChild: null,
+    // 统计（仅统计卡展示，主卡不再展示）
     stats: { records: 0, books: 0 },
-    parentLabel: '',   // 派生：「小云朵的爸爸」或「我是 Ta 的... 选一下 →」
-    parentEmoji: '😊', // 派生
-    // 添加孩子弹层
-    showAddChild: false,
+    // 家长副区派生文案
+    parentLabel: '',       // 「小云朵的爸爸」/「我是 Ta 的...」
+    parentLabelSet: false, // currentUser.role != null 时为 true
+    phoneTail: '',         // 已绑定手机号时展示的末四位
+
+    // 添加/编辑孩子弹层
+    showChildSheet: false,
     editingChildUuid: '',
     childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
     formAvatarUrl: '',
-    // 年级确认弹层
+
+    // 绑定手机号弹层（getPhoneNumber 必须由 button 触发，故用轻量弹层承接）
+    showPhoneSheet: false,
+
+    // 年级确认 / 手动选择弹层
     showGradeConfirm: false,
     gradeConfirmText: '',
     pendingGradeChildUuid: '',
     showGradePicker: false,
     gradePickerRange: [
-      '幼儿园小班','幼儿园中班','幼儿园大班',
-      '小学1年级','小学2年级','小学3年级','小学4年级','小学5年级','小学6年级',
-      '初中1年级','初中2年级','初中3年级',
-      '高中1年级','高中2年级','高中3年级',
+      '幼儿园小班', '幼儿园中班', '幼儿园大班',
+      '小学1年级', '小学2年级', '小学3年级', '小学4年级', '小学5年级', '小学6年级',
+      '初中1年级', '初中2年级', '初中3年级',
+      '高中1年级', '高中2年级', '高中3年级',
     ],
     gradePickerIndex: 0,
   },
 
+  // ==================== 生命周期 ====================
   onLoad() {
-    this._onUser = (u) => this.setData({ user: u });
+    // 订阅全局事件：用户/当前孩子变化时刷新
+    this._onUser = (u) => {
+      this.setData({ currentUser: u, isLoggedIn: !!u });
+      this._deriveParentLabel();
+    };
     app.on && app.on('userChanged', this._onUser);
     this._onActiveChild = (id) => {
       this.setData({ activeChildId: id });
@@ -41,16 +78,23 @@ Page({
     };
     app.on && app.on('activeChildChanged', this._onActiveChild);
   },
+
   onShow() {
-    this.setData({ user: auth.currentUser(), activeChildId: app.globalData.activeChildId });
+    const u = auth.currentUser();
+    this.setData({
+      currentUser: u,
+      isLoggedIn: !!u,
+      activeChildId: app.globalData.activeChildId,
+    });
     this.refresh();
-    this._deriveParentLabel();
   },
+
   onUnload() {
     app.off && app.off('userChanged', this._onUser);
     app.off && app.off('activeChildChanged', this._onActiveChild);
   },
 
+  // ==================== 数据加载 ====================
   async refresh() {
     const children = await db.children.listAll();
     let activeChildId = app.globalData.activeChildId;
@@ -67,61 +111,10 @@ Page({
     }
     this._parseChildren(children, urlMap);
     this.setData({ children, activeChildId });
-    // 先加载 children 列表，再定位当前孩子主卡，再刷新统计
+    // 先定位当前孩子，再刷新统计，最后派生家长称谓（依赖 activeChild 名字）
     this._loadActiveChild();
     this._loadStats();
     this._deriveParentLabel();
-  },
-
-  // 派生家长副区文案与 emoji
-  _deriveParentLabel() {
-    const user = this.data.user;
-    const child = this.data.activeChild;
-    const name = (child && child._displayName) || 'Ta';
-    const ROLE_MAP = {
-      dad:       { emoji: '👨', label: `${name}的爸爸` },
-      mom:       { emoji: '👩', label: `${name}的妈妈` },
-      grandpa:   { emoji: '👴', label: `${name}的爷爷` },
-      grandma:   { emoji: '👵', label: `${name}的奶奶` },
-      grandpa_m: { emoji: '👴', label: `${name}的姥爷` },
-      grandma_m: { emoji: '👵', label: `${name}的姥姥` },
-      other:     { emoji: '🧑', label: `${name}的家长` },
-    };
-    const entry = user && user.role ? ROLE_MAP[user.role] : null;
-    this.setData({
-      parentLabel: entry ? entry.label : (user ? '我是 Ta 的... 选一下 →' : '登录后记录孩子成长'),
-      parentEmoji: entry ? entry.emoji : '😊',
-    });
-  },
-
-  // 点击家长副区：未登录先登录，否则弹出角色选择
-  onRoleSelect() {
-    if (!this.data.user) {
-      this.doLogin();
-      return;
-    }
-    const ROLES = [
-      { value: 'dad',       label: '👨 爸爸' },
-      { value: 'mom',       label: '👩 妈妈' },
-      { value: 'grandpa',   label: '👴 爷爷' },
-      { value: 'grandma',   label: '👵 奶奶' },
-      { value: 'grandpa_m', label: '👴 姥爷' },
-      { value: 'grandma_m', label: '👵 姥姥' },
-      { value: 'other',     label: '🧑 其他' },
-    ];
-    wx.showActionSheet({
-      itemList: ROLES.map(r => r.label),
-      success: async (res) => {
-        const role = ROLES[res.tapIndex].value;
-        try {
-          const updated = await auth.updateUserRole(role);
-          this.setData({ user: updated });
-          this._deriveParentLabel();
-        } catch (e) {
-          wx.showToast({ title: '保存失败', icon: 'none' });
-        }
-      },
-    });
   },
 
   // 解析孩子派生字段（_displayName / _ageText / _grade / _ageRange / _avatarEmoji / _avatarUrl）
@@ -138,24 +131,98 @@ Page({
     return children;
   },
 
-  // 从已解析的 children 中定位当前 activeChildId 对应孩子，赋给 activeChild
+  // 从已解析的 children 中定位当前 activeChildId 对应孩子
   _loadActiveChild() {
     const { children, activeChildId } = this.data;
     const activeChild = (children || []).find((c) => c.uuid === activeChildId) || null;
     this.setData({ activeChild });
   },
 
+  // 统计：records / books 均在 db 层经 scope().childId 自动按当前孩子过滤
+  //（scope 读取 app.globalData.activeChildId，与本页 activeChildId 保持一致），无需再手动加 childId。
   async _loadStats() {
     const childId = this.data.activeChildId;
     const [records, books] = await Promise.all([
       db.records.listAll(999),
       childId ? db.books.listAll() : Promise.resolve([]),
     ]);
-    // books 已在 listAllPaged 通过 scope().childId 自动过滤当前孩子，不需要额外 filter
     this.setData({ stats: { records: records.length, books: books.length } });
   },
 
-  // 切换孩子：ActionSheet 列出所有孩子 + 「+ 添加新孩子」
+  // 派生家长副区文案：currentUser.role + 当前孩子名 → 称谓
+  _deriveParentLabel() {
+    const user = this.data.currentUser;
+    const child = this.data.activeChild;
+    const name = (child && child._displayName) || 'Ta';
+    const roleSet = !!(user && user.role != null && ROLE_SUFFIX[user.role]);
+    let label;
+    if (roleSet) {
+      label = `${name}的${ROLE_SUFFIX[user.role]}`;
+    } else {
+      label = '我是 Ta 的...';
+    }
+    this.setData({ parentLabel: label, parentLabelSet: roleSet });
+    // 派生手机号末四位（仅已绑定时展示）
+    const phone = user && user.phone ? String(user.phone) : '';
+    this.setData({ phoneTail: phone ? phone.slice(-4) : '' });
+  },
+
+  // ==================== 家长副区交互 ====================
+  // 点击家长副区整行：未登录先登录；已登录弹一级菜单（选角色 / 绑手机号）
+  onParentRowTap() {
+    if (!this.data.isLoggedIn) {
+      this.doLogin();
+      return;
+    }
+    wx.showActionSheet({
+      itemList: ['选择我的角色', '绑定/更换手机号'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this.onRoleSelect();
+        } else if (res.tapIndex === 1) {
+          this.onBindPhone();
+        }
+      },
+      fail: () => { /* 用户取消，忽略 */ },
+    });
+  },
+
+  // 弹角色选择 ActionSheet（7 项），选完写库并重新派生
+  onRoleSelect() {
+    if (!this.data.isLoggedIn) {
+      this.doLogin();
+      return;
+    }
+    wx.showActionSheet({
+      itemList: ROLE_OPTIONS.map((r) => r.label),
+      success: async (res) => {
+        const role = ROLE_OPTIONS[res.tapIndex] && ROLE_OPTIONS[res.tapIndex].value;
+        if (!role) return;
+        try {
+          const updated = await auth.updateUserRole(role);
+          // 同步本页与全局，再重新派生称谓
+          app.globalData.currentUser = updated;
+          this.setData({ currentUser: updated, isLoggedIn: true });
+          this._deriveParentLabel();
+          wx.showToast({ title: '已设置', icon: 'success' });
+        } catch (e) {
+          console.error('[mine] updateUserRole 失败', e);
+          wx.showToast({ title: '保存失败', icon: 'none' });
+        }
+      },
+      fail: () => { /* 取消 */ },
+    });
+  },
+
+  // 绑定/更换手机号：弹轻量弹层（内含 getPhoneNumber 按钮，微信规定其必须由按钮触发）
+  onBindPhone() {
+    this.setData({ showPhoneSheet: true });
+  },
+  closePhoneSheet() {
+    this.setData({ showPhoneSheet: false });
+  },
+
+  // ==================== 切换孩子 ====================
   onSwitchChild() {
     const children = this.data.children || [];
     if (!children.length) {
@@ -176,12 +243,13 @@ Page({
           return;
         }
         const child = children[idx];
-        if (child) app.setActiveChild(child.uuid); // 触发 activeChildChanged → refresh（含统计刷新）
+        if (child) app.setActiveChild(child.uuid); // 触发 activeChildChanged → refresh（含统计刷新 + 重新派生 parentLabel）
       },
+      fail: () => { /* 取消 */ },
     });
   },
 
-  // ---- 登录 ----
+  // ==================== 登录 / 手机号 ====================
   doLogin() {
     if (!app.globalData.cloudReady) {
       wx.showToast({ title: '云环境未配置', icon: 'none' });
@@ -193,7 +261,7 @@ Page({
       .then((u) => {
         app.globalData.currentUser = u;
         wx.hideLoading();
-        this.setData({ user: u });
+        this.setData({ currentUser: u, isLoggedIn: true });
         this.refresh();
         wx.showToast({ title: '登录成功', icon: 'success' });
       })
@@ -211,37 +279,49 @@ Page({
   onGetPhone(e) {
     const d = e.detail || {};
     // 用户拒绝授权
-    if (d.errMsg && d.errMsg.indexOf('ok') === -1) return;
+    if (d.errMsg && d.errMsg.indexOf('ok') === -1) {
+      this.closePhoneSheet();
+      return;
+    }
     const payload = d.code ? { code: d.code } : d.cloudID ? { cloudID: d.cloudID } : null;
-    if (!payload) return;
+    if (!payload) {
+      this.closePhoneSheet();
+      return;
+    }
     auth
       .bindPhone(payload)
       .then(() => {
+        this.closePhoneSheet();
         wx.showToast({ title: '已绑定手机号', icon: 'success' });
-        this.setData({ user: auth.currentUser() });
+        const u = auth.currentUser();
+        this.setData({ currentUser: u, isLoggedIn: !!u });
         this.refresh();
       })
-      .catch(() => wx.showToast({ title: '绑定失败', icon: 'none' }));
+      .catch(() => {
+        this.closePhoneSheet();
+        wx.showToast({ title: '绑定失败', icon: 'none' });
+      });
   },
 
-  // ---- 添加孩子 ----
+  // ==================== 添加 / 编辑孩子 ====================
   openAddChild() {
     this.setData({
-      showAddChild: true,
+      showChildSheet: true,
       editingChildUuid: '',
       childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
       formAvatarUrl: '',
     });
   },
+
   async onEditChild(e) {
-    // 主卡「✏️ 编辑」无 dataset 时编辑当前 activeChild；chip/列表场景可带 data-uuid
+    // 主卡「✏️ 编辑」无 dataset 时编辑当前 activeChild；列表场景可带 data-uuid
     const uuid = (e && e.currentTarget && e.currentTarget.dataset.uuid) || this.data.activeChildId;
     const child = this.data.children.find((c) => c.uuid === uuid);
     if (!child) return;
     const birthDateStr = child.birthDate ? dateUtil.ymd(new Date(child.birthDate)) : '';
-    // B1：打开编辑弹层时正确回填 name / birthDate / gender / gradeOverride
+    // B1：打开编辑弹层时必须回填 name（否则编辑时名字空白）及其余字段
     this.setData({
-      showAddChild: true,
+      showChildSheet: true,
       editingChildUuid: uuid,
       childForm: {
         name: child.name || '',
@@ -261,14 +341,16 @@ Page({
       } catch (err) { /* ignore */ }
     }
   },
+
   closeAddChild() {
     this.setData({
-      showAddChild: false,
+      showChildSheet: false,
       'childForm.avatarFileId': '',
       'childForm._avatarTempPath': '',
       formAvatarUrl: '',
     });
   },
+
   onChildInput(e) {
     this.setData({ 'childForm.name': e.detail.value });
   },
@@ -279,6 +361,7 @@ Page({
   onBirthChange(e) {
     this.setData({ 'childForm.birthDate': e.detail.value });
   },
+
   // 弹层内选头像（仅暂存临时路径，保存时统一上传）
   async onFormAvatarTap() {
     const res = await wx.chooseMedia({
@@ -291,6 +374,7 @@ Page({
     const tempPath = res.tempFiles[0].tempFilePath;
     this.setData({ 'childForm._avatarTempPath': tempPath });
   },
+
   async saveChild() {
     const { name, birthDate, gender } = this.data.childForm;
     const editingUuid = this.data.editingChildUuid;
@@ -327,10 +411,9 @@ Page({
           avatarFileId: avatarFileId || null,
         });
         wx.hideLoading();
-        this.setData({ showAddChild: false, editingChildUuid: '', formAvatarUrl: '' });
+        this.setData({ showChildSheet: false, editingChildUuid: '', formAvatarUrl: '' });
         await this.refresh();
         wx.showToast({ title: '已保存', icon: 'success' });
-        // 编辑完也触发年级确认（如果有生日）
         this._maybeConfirmGrade(editingUuid);
       } else {
         // 新增模式
@@ -343,11 +426,10 @@ Page({
           sortOrder: this.data.children.length,
         });
         wx.hideLoading();
-        this.setData({ showAddChild: false, editingChildUuid: '', formAvatarUrl: '' });
+        this.setData({ showChildSheet: false, editingChildUuid: '', formAvatarUrl: '' });
         app.setActiveChild(child.uuid);
         await this.refresh();
         wx.showToast({ title: '已添加', icon: 'success' });
-        // 新增完触发年级确认
         this._maybeConfirmGrade(child.uuid);
       }
     } catch (err) {
@@ -357,12 +439,11 @@ Page({
     }
   },
 
-  // ---- 年级确认弹层 ----
+  // ==================== 年级确认弹层 ====================
   _maybeConfirmGrade(childUuid) {
     const child = this.data.children.find((c) => c.uuid === childUuid);
     if (!child || !child.birthDate) return;
-    // 已有手动覆盖则跳过确认
-    if (child.gradeOverride) return;
+    if (child.gradeOverride) return; // 已手动覆盖则跳过
     const grade = dateUtil.gradeOf(child.birthDate, null);
     if (!grade) return; // 幼儿园/大学阶段不弹
     this.setData({
@@ -377,7 +458,6 @@ Page({
   },
 
   onGradeConfirmEdit() {
-    // 关闭确认弹层，打开年级 picker
     const grade = this.data.gradeConfirmText;
     const idx = this.data.gradePickerRange.indexOf(grade);
     this.setData({
@@ -412,9 +492,17 @@ Page({
     this.setData({ showGradePicker: false, pendingGradeChildUuid: '' });
   },
 
-  // ---- 头像上传（已移入添加/编辑孩子弹层，见 onFormAvatarTap / saveChild）----
-
+  // ==================== 功能菜单 ====================
+  goArchive() {
+    wx.showToast({ title: '成长档案敬请期待', icon: 'none' });
+  },
   goReport() {
     wx.navigateTo({ url: '/pages/report/report' });
+  },
+  goCloudSync() {
+    wx.showToast({ title: '云同步敬请期待', icon: 'none' });
+  },
+  goSettings() {
+    wx.showToast({ title: '设置敬请期待', icon: 'none' });
   },
 });

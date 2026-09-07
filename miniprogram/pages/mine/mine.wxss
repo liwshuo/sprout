@@ -1,189 +1,234 @@
-/* pages/mine/mine.wxss —— 我的 */
+/* pages/mine/mine.wxss —— 我的：一体主卡 + 统计卡 + iOS 风格功能列表（暖橙马卡龙） */
 
-/* 家长副区 */
-.parent-divider {
-  height: 1rpx;
-  background: #f0f0f0;
-  margin: 20rpx 0 16rpx;
+/* ============ 整页容器 ============ */
+.page-container {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32rpx 28rpx calc(48rpx + env(safe-area-inset-bottom));
+  background: #FFF8F3;
 }
-.parent-row {
+
+/* ============ ① 顶部一体主卡 ============ */
+.child-main-card {
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 24rpx rgba(255, 140, 66, 0.08);
+  margin-bottom: 24rpx;
+}
+
+/* 孩子主区 */
+.child-main-area {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 16rpx;
 }
-.parent-emoji {
-  font-size: 44rpx;
-  width: 56rpx;
+.child-avatar {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #FFF3E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.child-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.child-avatar-emoji {
+  font-size: 60rpx;
+  line-height: 1;
+}
+.child-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  margin-left: 24rpx;
+}
+.child-name {
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #333;
+}
+.child-meta {
+  font-size: 26rpx;
+  color: #999;
+}
+/* 右上角胶囊按钮组 */
+.card-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+.action-btn {
+  font-size: 24rpx;
+  color: #FF8C42;
+  background: #FFF3E8;
+  border-radius: 999rpx;
+  padding: 8rpx 20rpx;
+  line-height: 1.4;
+}
+/* 切换孩子 */
+.switch-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 20rpx;
+}
+.switch-btn {
+  font-size: 26rpx;
+  color: #FF8C42;
+  background: #FFF3E8;
+  border-radius: 999rpx;
+  padding: 8rpx 24rpx;
+}
+/* 无孩子引导 */
+.child-empty {
+  font-size: 28rpx;
+  color: #FF8C42;
   text-align: center;
+  padding: 28rpx 0;
+}
+
+/* 分割线 */
+.card-divider {
+  height: 1px;
+  background: #F0F0F0;
+  margin: 24rpx 0;
+}
+
+/* 家长副区（整行点击，两端对齐，无 emoji） */
+.parent-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48rpx;
 }
 .parent-label {
   flex: 1;
+  min-width: 0;
   font-size: 28rpx;
   color: #333;
   font-weight: 500;
 }
 .parent-label-guide {
   color: #FF8C42;
+}
+.parent-label-arrow {
+  color: #FFB07C;
   font-size: 26rpx;
 }
-.parent-actions {
-  display: flex;
-  align-items: center;
-}
-.parent-login-btn {
-  min-width: 120rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  font-size: 26rpx;
-  padding: 0 20rpx;
-  margin: 0;
-}
-.parent-phone {
+.parent-hint {
   font-size: 24rpx;
-  color: #aaa;
+  color: #BBB;
+  margin-left: 16rpx;
+  flex-shrink: 0;
 }
 
-/* 当前孩子主卡（暖橙马卡龙：白卡 + 大圆角 + 柔和阴影） */
-.child-main-card {
-  border-radius: 20rpx;
-  padding: 28rpx 32rpx;
-  margin: 24rpx 28rpx 12rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
-}
-.child-card-header {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-.child-card-title {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #333;
-}
-.child-card-actions {
+/* ============ ② 统计双列卡 ============ */
+.stats-card {
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 24rpx rgba(255, 140, 66, 0.08);
+  margin-bottom: 24rpx;
+  padding: 36rpx 0;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 16rpx;
 }
-.child-card-action-btn {
-  font-size: 26rpx;
-  color: #FF8C42;
-  padding: 4rpx 12rpx;
-}
-.child-card-body {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-top: 16rpx;
-  gap: 24rpx;
-}
-.child-avatar-wrap {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: 50rpx;
-  overflow: hidden;
-  background: #FFF3E8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.child-avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50rpx;
-}
-.child-avatar-emoji {
-  font-size: 56rpx;
-}
-.child-info {
+.stat-col {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8rpx;
 }
-.child-name {
-  font-size: 36rpx;
+.stat-number {
+  font-size: 52rpx;
   font-weight: 700;
-  color: #333;
-}
-.child-stats {
-  font-size: 24rpx;
-  color: #aaa;
-}
-.child-switch-row {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  margin-top: 16rpx;
-}
-.child-switch-btn {
-  font-size: 26rpx;
   color: #FF8C42;
-}
-.child-empty-tip {
-  font-size: 28rpx;
-  color: #aaa;
-  text-align: center;
-  padding: 32rpx;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-}
-.stat-item {
-  flex: 1;
-  text-align: center;
-}
-.stat-num {
-  font-size: 48rpx;
-  font-weight: 700;
-  color: var(--primary);
+  line-height: 1.1;
 }
 .stat-label {
   font-size: 24rpx;
-  margin-top: 6rpx;
+  color: #999;
 }
 .stat-divider {
-  width: 2rpx;
-  height: 60rpx;
-  background: var(--line);
+  width: 1px;
+  height: 64rpx;
+  background: #F0F0F0;
 }
 
-.menu-card {
-  padding: 8rpx 28rpx;
+/* ============ ③ 功能菜单（iOS 风格纯列表） ============ */
+.list-section {
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 24rpx rgba(255, 140, 66, 0.08);
+  padding: 0 28rpx;
+  margin-bottom: 24rpx;
 }
-.menu-item {
+.list-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 96rpx;
+}
+.list-item-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
-  padding: 28rpx 0;
+  justify-content: center;
+  font-size: 34rpx;
+  flex-shrink: 0;
 }
-.menu-icon {
-  font-size: 40rpx;
-  margin-right: 20rpx;
-}
-.menu-text {
+.icon-blue { background: #E8F1FF; }
+.icon-orange { background: #FFF0E3; }
+.icon-green { background: #E6F7EE; }
+.icon-gray { background: #F0F0F2; }
+.list-item-label {
+  flex: 1;
+  min-width: 0;
   font-size: 30rpx;
+  color: #333;
+  margin-left: 24rpx;
 }
-.menu-arrow {
-  color: var(--ink-weak);
+.list-item-arrow {
   font-size: 40rpx;
+  color: #CCC;
+  flex-shrink: 0;
 }
-.menu-divider {
-  height: 2rpx;
-  background: var(--line);
+/* 项间细分割线（缩进对齐文字，留出图标宽度） */
+.list-divider {
+  height: 1px;
+  background: #F5F5F5;
+  margin-left: 88rpx;
+}
+/* 更明显的分组分割线（设置项前） */
+.list-divider-major {
+  height: 1px;
+  background: #ECECEC;
 }
 
-.footer {
+/* ============ ④ 页脚 ============ */
+.page-footer {
   text-align: center;
   font-size: 24rpx;
-  margin-top: 40rpx;
+  color: #BBB;
+  margin-top: 24rpx;
 }
 
-/* 弹层 */
+/* ============ ⑤ 弹层通用 ============ */
 .mask {
   position: fixed;
   inset: 0;
@@ -196,7 +241,7 @@
   right: 0;
   bottom: 0;
   background: #fff;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
   z-index: 31;
 }
@@ -207,7 +252,7 @@
 }
 .sheet-input {
   background: var(--bg);
-  border-radius: var(--radius);
+  border-radius: 16rpx;
   padding: 24rpx;
   font-size: 30rpx;
   margin-bottom: 20rpx;
@@ -241,11 +286,22 @@
   margin-right: 20rpx;
 }
 
-/* 孩子信息副文字（年龄 / 年级） */
-.child-meta {
+/* 绑定手机号弹层 */
+.phone-sheet-desc {
   font-size: 26rpx;
-  color: #888;
-  margin-top: 4rpx;
+  color: #999;
+  margin-bottom: 28rpx;
+}
+.phone-auth-btn {
+  width: 100%;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 32rpx;
+  text-align: center;
+}
+.phone-cancel-btn {
+  margin-top: 20rpx;
+  border-radius: 999rpx;
 }
 
 /* 性别 chip */
@@ -256,7 +312,6 @@
   flex-wrap: wrap;
   margin-top: 8rpx;
 }
-
 .chip {
   padding: 8rpx 24rpx;
   border-radius: 999rpx;
@@ -265,7 +320,6 @@
   color: #555;
   border: 2rpx solid transparent;
 }
-
 .chip-active {
   background: #fff3e8;
   color: #ff7a2e;

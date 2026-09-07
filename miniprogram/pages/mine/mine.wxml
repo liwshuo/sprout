@@ -1,20 +1,15 @@
-<!-- pages/mine/mine.wxml —— 我的 -->
-<view class="container">
-  <!-- 主卡：孩子主区 + 家长副区合并 -->
-  <view class="card child-main-card">
+<!-- pages/mine/mine.wxml —— 我的：一体主卡 + 统计卡 + iOS 风格功能列表 -->
+<view class="page-container">
+
+  <!-- ① 顶部一体主卡：孩子主区 + 分割线 + 家长副区 -->
+  <view class="child-main-card">
+
     <!-- 孩子主区 -->
     <block wx:if="{{children.length > 0}}">
-      <view class="child-card-header">
-        <view class="child-card-title">我的宝宝</view>
-        <view class="child-card-actions">
-          <view class="child-card-action-btn" bindtap="onEditChild">✏️ 编辑</view>
-          <view class="child-card-action-btn" bindtap="openAddChild">+ 添加</view>
-        </view>
-      </view>
-      <view class="child-card-body">
-        <view class="child-avatar-wrap">
+      <view class="child-main-area">
+        <view class="child-avatar">
           <image wx:if="{{activeChild._avatarUrl}}" src="{{activeChild._avatarUrl}}" class="child-avatar-img" mode="aspectFill" />
-          <view wx:else class="child-avatar-emoji">{{activeChild._avatarEmoji || '👶'}}</view>
+          <text wx:else class="child-avatar-emoji">{{activeChild._avatarEmoji || '👶'}}</text>
         </view>
         <view class="child-info">
           <view class="child-name ellipsis">{{activeChild._displayName || activeChild.name || '宝贝'}}</view>
@@ -23,80 +18,85 @@
             <text wx:if="{{activeChild._ageText && activeChild._grade}}"> · </text>
             <text wx:if="{{activeChild._grade}}">{{activeChild._grade}}</text>
           </view>
-          <view class="child-stats">已读 {{stats.books}} 本 · 打卡 {{stats.records}} 次</view>
+        </view>
+        <view class="card-actions">
+          <view class="action-btn" catchtap="onEditChild">✏️ 编辑</view>
+          <view class="action-btn" catchtap="openAddChild">+ 添加</view>
         </view>
       </view>
-      <view class="child-switch-row" wx:if="{{children.length > 1}}">
-        <view class="child-switch-btn" bindtap="onSwitchChild">切换孩子 ▼</view>
+      <!-- 多孩子：右下角切换 -->
+      <view class="switch-row" wx:if="{{children.length > 1}}">
+        <view class="switch-btn" catchtap="onSwitchChild">切换孩子 ▼</view>
       </view>
     </block>
-    <view wx:else class="child-empty-tip" bindtap="openAddChild">还没有孩子档案，点击添加 →</view>
+
+    <!-- 无孩子引导 -->
+    <view wx:else class="child-empty" catchtap="openAddChild">还没有孩子档案，点这里添加 +</view>
 
     <!-- 分割线 -->
-    <view class="parent-divider"></view>
+    <view class="card-divider"></view>
 
-    <!-- 家长副区 -->
-    <view class="parent-row" bindtap="onRoleSelect">
-      <view class="parent-emoji">{{parentEmoji}}</view>
-      <view class="parent-label {{!user || !user.role ? 'parent-label-guide' : ''}}">{{parentLabel}}</view>
-      <view class="parent-actions">
-        <button
-          wx:if="{{!user}}"
-          class="btn-primary parent-login-btn"
-          catchtap="doLogin"
-        >登录</button>
-        <button
-          wx:elif="{{!user.phone}}"
-          class="btn-ghost parent-login-btn"
-          open-type="getPhoneNumber"
-          bindgetphonenumber="onGetPhone"
-          catchtap
-        >绑手机</button>
-        <view wx:else class="parent-phone text-sub">{{user.phone}}</view>
-      </view>
+    <!-- 家长副区（整行点击，无 emoji，纯文字） -->
+    <view class="parent-area" bindtap="onParentRowTap">
+      <block wx:if="{{isLoggedIn}}">
+        <view class="parent-label {{parentLabelSet ? '' : 'parent-label-guide'}}">
+          {{parentLabel}}<text wx:if="{{!parentLabelSet}}" class="parent-label-arrow">  选一下 →</text>
+        </view>
+        <view wx:if="{{phoneTail}}" class="parent-hint">尾号 {{phoneTail}}</view>
+      </block>
+      <view wx:else class="parent-label parent-label-guide">登录后记录孩子成长</view>
     </view>
   </view>
 
-  <!-- 统计 -->
-  <view class="card stat-card">
-    <view class="stat-item">
-      <view class="stat-num">{{stats.records}}</view>
-      <view class="stat-label text-sub">成长记录</view>
+  <!-- ② 统计双列卡 -->
+  <view class="stats-card">
+    <view class="stat-col">
+      <view class="stat-number">{{stats.records}}</view>
+      <view class="stat-label">成长记录</view>
     </view>
     <view class="stat-divider"></view>
-    <view class="stat-item">
-      <view class="stat-num">{{stats.books}}</view>
-      <view class="stat-label text-sub">共读绘本</view>
+    <view class="stat-col">
+      <view class="stat-number">{{stats.books}}</view>
+      <view class="stat-label">共读绘本</view>
     </view>
   </view>
 
-  <!-- 功能入口 -->
-  <view class="card menu-card">
-    <view class="menu-item" bindtap="goReport">
-      <view class="menu-icon">📊</view>
-      <view class="flex-1 menu-text">本周成长周报</view>
-      <view class="menu-arrow">›</view>
+  <!-- ③ 功能菜单（iOS 风格纯列表） -->
+  <view class="list-section">
+    <view class="list-item" bindtap="goArchive">
+      <view class="list-item-icon icon-blue">📁</view>
+      <view class="list-item-label">成长档案</view>
+      <view class="list-item-arrow">›</view>
     </view>
-    <view class="menu-divider"></view>
-    <view class="menu-item">
-      <view class="menu-icon">☁️</view>
-      <view class="flex-1 menu-text">云同步 · 与 App 打通</view>
-      <view class="menu-arrow">›</view>
+    <view class="list-divider"></view>
+    <view class="list-item" bindtap="goReport">
+      <view class="list-item-icon icon-orange">📊</view>
+      <view class="list-item-label">本周成长周报</view>
+      <view class="list-item-arrow">›</view>
     </view>
-    <view class="menu-divider"></view>
-    <view class="menu-item">
-      <view class="menu-icon">⚙️</view>
-      <view class="flex-1 menu-text">设置</view>
-      <view class="menu-arrow">›</view>
+    <view class="list-divider"></view>
+    <view class="list-item" bindtap="goCloudSync">
+      <view class="list-item-icon icon-green">☁️</view>
+      <view class="list-item-label">云同步</view>
+      <view class="list-item-arrow">›</view>
+    </view>
+    <view class="list-divider-major"></view>
+    <view class="list-item" bindtap="goSettings">
+      <view class="list-item-icon icon-gray">⚙️</view>
+      <view class="list-item-label">设置</view>
+      <view class="list-item-arrow">›</view>
     </view>
   </view>
 
-  <view class="footer text-sub">萌芽成长册 · 记录每一次成长</view>
+  <!-- ④ 页脚 -->
+  <view class="page-footer">萌芽成长册 · 记录每一次成长</view>
 </view>
 
-<!-- 添加孩子弹层 -->
-<view class="mask" wx:if="{{showAddChild}}" bindtap="closeAddChild"></view>
-<view class="sheet" wx:if="{{showAddChild}}" catchtap>
+<!-- ⑤ 弹层区 -->
+
+<!-- 添加 / 编辑孩子弹层 -->
+<view class="mask" wx:if="{{showChildSheet}}" bindtap="closeAddChild"></view>
+<view class="sheet" wx:if="{{showChildSheet}}" catchtap>
   <view class="sheet-title">{{editingChildUuid ? '编辑宝宝信息' : '添加宝宝'}}</view>
   <!-- 头像选择（弹层内） -->
   <view class="form-avatar-row" bindtap="onFormAvatarTap">
@@ -111,7 +111,7 @@
     <view wx:else class="form-avatar-placeholder">
       {{childForm.gender === 'boy' ? '👦' : childForm.gender === 'girl' ? '👧' : '👶'}}
     </view>
-    <view class="form-avatar-hint text-sub">点击换头像</view>
+    <view class="form-avatar-hint">点击换头像</view>
   </view>
   <input class="sheet-input" value="{{childForm.name}}" placeholder="宝宝叫什么呢？大名小名都可以" placeholder-class="ph" bindinput="onChildInput" />
   <view class="sheet-field-label">性别</view>
@@ -130,6 +130,15 @@
     <view class="btn-ghost sheet-btn" bindtap="closeAddChild">取消</view>
     <view class="btn-primary sheet-btn" bindtap="saveChild">保存</view>
   </view>
+</view>
+
+<!-- 绑定手机号弹层（getPhoneNumber 必须由 button 触发，故单独弹层承接） -->
+<view class="mask" wx:if="{{showPhoneSheet}}" bindtap="closePhoneSheet"></view>
+<view class="sheet" wx:if="{{showPhoneSheet}}" catchtap>
+  <view class="sheet-title">绑定 / 更换手机号</view>
+  <view class="phone-sheet-desc">用于账号找回与多端同步</view>
+  <button class="btn-primary phone-auth-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhone">微信授权绑定手机号</button>
+  <view class="btn-ghost sheet-btn phone-cancel-btn" bindtap="closePhoneSheet">取消</view>
 </view>
 
 <!-- 年级确认弹层 -->
