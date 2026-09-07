@@ -168,41 +168,30 @@ Page({
   },
 
   // ==================== 家长副区交互 ====================
-  // 点击家长副区整行：未登录先登录；已登录弹一级菜单（选角色 / 绑手机号）
+  // 点击家长副区称谓行：未登录先登录；已登录「直接」弹角色选择 ActionSheet。
+  // 废弃原两级 ActionSheet 嵌套：微信不允许在上一个 ActionSheet 的 success 回调里
+  // 再调起 ActionSheet，第二个会被系统静默丢弃 → 表现为「点了没反应」。
   onParentRowTap() {
     if (!this.data.isLoggedIn) {
       this.doLogin();
       return;
     }
-    wx.showActionSheet({
-      itemList: ['选择我的角色', '绑定/更换手机号'],
-      success: (res) => {
-        // 微信限制：不能在上一个 ActionSheet 的 success 回调里同步再弹 ActionSheet
-        //（第一个还在关闭动画中，第二个会被静默丢弃 → 表现为「点了没反应」）。
-        // 故用 setTimeout 等第一个 ActionSheet 完全关闭后再调起二级菜单。
-        if (res.tapIndex === 0) {
-          setTimeout(() => this.onRoleSelect(), 350);
-        } else if (res.tapIndex === 1) {
-          this.onBindPhone();
-        }
-      },
-      fail: () => { /* 用户取消，忽略 */ },
-    });
+    this.onRoleSelect();
   },
 
-  // 弹角色选择 ActionSheet（7 项），选完写库并重新派生
+  // 直接弹角色选择 ActionSheet（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他 + 取消），选完写库并重新派生
   onRoleSelect() {
     if (!this.data.isLoggedIn) {
       this.doLogin();
       return;
     }
     wx.showActionSheet({
-      itemList: ROLE_OPTIONS.map((r) => r.label),
+      itemList: ROLE_OPTIONS.map((r) => r.label), // 7 项角色；ActionSheet 自带「取消」
       success: async (res) => {
-        const role = ROLE_OPTIONS[res.tapIndex] && ROLE_OPTIONS[res.tapIndex].value;
-        if (!role) return;
+        const opt = ROLE_OPTIONS[res.tapIndex];
+        if (!opt) return; // 取消或越界不落库
         try {
-          const updated = await auth.updateUserRole(role);
+          const updated = await auth.updateUserRole(opt.value);
           // 同步本页与全局，再重新派生称谓
           app.globalData.currentUser = updated;
           this.setData({ currentUser: updated, isLoggedIn: true });
@@ -213,12 +202,17 @@ Page({
           wx.showToast({ title: '保存失败', icon: 'none' });
         }
       },
-      fail: () => { /* 取消 */ },
+      fail: () => { /* 取消，忽略 */ },
     });
   },
 
-  // 绑定/更换手机号：弹轻量弹层（内含 getPhoneNumber 按钮，微信规定其必须由按钮触发）
+  // 绑定/更换手机号：由独立按钮（bindtap）触发，不再走 ActionSheet。
+  // 弹轻量弹层（内含 getPhoneNumber 按钮，微信规定该授权必须由按钮触发）。
   onBindPhone() {
+    if (!this.data.isLoggedIn) {
+      this.doLogin();
+      return;
+    }
     this.setData({ showPhoneSheet: true });
   },
   closePhoneSheet() {

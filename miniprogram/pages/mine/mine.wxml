@@ -36,15 +36,15 @@
     <!-- 分割线 -->
     <view class="card-divider"></view>
 
-    <!-- 家长副区（整行点击，无 emoji，纯文字） -->
-    <view class="parent-area" bindtap="onParentRowTap">
+    <!-- 家长副区（无 emoji；称谓行点击直接选角色，手机号为独立按钮） -->
+    <view class="parent-area">
       <block wx:if="{{isLoggedIn}}">
-        <view class="parent-label {{parentLabelSet ? '' : 'parent-label-guide'}}">
+        <view class="parent-label {{parentLabelSet ? '' : 'parent-label-guide'}}" bindtap="onParentRowTap">
           {{parentLabel}}<text wx:if="{{!parentLabelSet}}" class="parent-label-arrow">  选一下 →</text>
         </view>
-        <view wx:if="{{phoneTail}}" class="parent-hint">尾号 {{phoneTail}}</view>
+        <view class="parent-phone-btn" catchtap="onBindPhone">{{phoneTail ? '尾号 ' + phoneTail : '绑手机号'}}</view>
       </block>
-      <view wx:else class="parent-label parent-label-guide">登录后记录孩子成长</view>
+      <view wx:else class="parent-label parent-label-guide" bindtap="onParentRowTap">登录后记录孩子成长</view>
     </view>
   </view>
 
