@@ -32,18 +32,29 @@
         data-uuid="{{item.uuid}}"
         bindtap="switchChild"
       >
-        <view class="child-avatar">{{item._avatarEmoji || '👶'}}</view>
-        <view class="child-name ellipsis">{{item._displayName || item.name}}</view>
-        <view class="child-edit-btn" catchtap="openEditChild" data-uuid="{{item.uuid}}">✏️</view>
+        <!-- 头像区域（点击上传，仅 activeChild 有效） -->
+        <view
+          class="chip-avatar-wrap"
+          catchtap="onAvatarTap"
+          wx:if="{{activeChildId === item.uuid}}"
+        >
+          <image wx:if="{{item._avatarUrl}}" src="{{item._avatarUrl}}" class="chip-avatar-img" mode="aspectFill" />
+          <view wx:else class="chip-avatar-emoji">{{item._avatarEmoji || '👶'}}</view>
+          <view class="chip-avatar-camera">📷</view>
+        </view>
+        <!-- 非 active 孩子头像不可点击 -->
+        <view class="chip-avatar-wrap" wx:else>
+          <image wx:if="{{item._avatarUrl}}" src="{{item._avatarUrl}}" class="chip-avatar-img" mode="aspectFill" />
+          <view wx:else class="chip-avatar-emoji">{{item._avatarEmoji || '👶'}}</view>
+        </view>
+
+        <view class="chip-name ellipsis">{{item._displayName || item.name}}</view>
+
+        <!-- 编辑按钮：绝对定位右上角 -->
+        <view class="chip-edit-btn" catchtap="openEditChild" data-uuid="{{item.uuid}}">✏️</view>
       </view>
     </view>
     <view class="text-sub no-child" wx:else>还没有添加宝宝，点「添加」创建档案</view>
-    <!-- 当前宝宝头像（可点击更换） -->
-    <view class="active-avatar-wrap" bindtap="onAvatarTap" wx:if="{{activeChild}}">
-      <image wx:if="{{activeChild._avatarUrl}}" src="{{activeChild._avatarUrl}}" class="active-avatar-img" mode="aspectFill" />
-      <view wx:else class="active-avatar-emoji">{{activeChild._avatarEmoji || '👶'}}</view>
-      <view class="active-avatar-edit">📷</view>
-    </view>
     <!-- 当前宝宝派生信息（年龄 / 年级） -->
     <view class="child-meta" wx:if="{{activeChild && (activeChild._ageText || activeChild._grade)}}">
       <text wx:if="{{activeChild._ageText}}">{{activeChild._ageText}}</text>
