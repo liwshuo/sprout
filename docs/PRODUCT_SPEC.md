@@ -106,9 +106,10 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 
 ### 4.5 我的 / 周报（我的 Tab）— 已实现
 
-- **孩子档案卡**：头像 + 昵称 + 年龄（按生日计算「X 岁 Y 个月」）；点击进入建档/编辑。
-  - **孩子头像**：点击当前宝宝头像可从相册上传自定义头像（`wx.chooseMedia` 选图 → `db.uploadFile` 存云存储 → 回填 `avatarFileId`），或选「使用默认图标」清空 `avatarFileId` 恢复性别 emoji 兜底；展示时按 `avatarFileId` 换取临时链接（`db.getTempUrls`）渲染。
-  - **孩子信息编辑**：点击孩子 chip 上的 ✏️ 按钮进入编辑模式，可修改名字 / 性别 / 生日（复用建档弹层，`editingChildUuid` 区分新增/编辑，编辑走 `db.children.update`）。
+- **孩子主卡（页面顶部）**：以「当前孩子主卡」呈现当前 `activeChild` 档案，展示字段 —— 圆形头像（有 `avatarFileId` 换取临时链接展示，无则按性别 emoji 兜底）、名字、年龄/年级（「X 岁 Y 个月 · 小学N年级」，由生日与 `gradeOverride` 派生）、阅读统计（**已读 N 本 · 打卡 N 次**，按当前 `activeChildId` 过滤）。右上角提供「✏️ 编辑」（`onEditChild`，编辑当前孩子）与「+ 添加」（`openAddChild`）两个入口。无孩子（`children.length === 0`）时主卡显示「还没有孩子档案，点击添加 →」引导态。
+  - **切换孩子**：多孩子（`children.length > 1`）时主卡底部显示「切换孩子 ▼」按钮（`onSwitchChild`），点击弹 `wx.showActionSheet` 列出所有孩子（每项 `名字 · 年龄`）并追加「+ 添加新孩子」项；选中孩子走 `app.setActiveChild(uuid)` 切换（触发 `activeChildChanged` 全局事件，主卡与统计随即刷新），选「+ 添加新孩子」打开建档弹层。
+  - **孩子头像**：在编辑/添加弹层内点击头像从相册上传自定义头像（`wx.chooseMedia` 选图 → `db.uploadFile` 存云存储 → 回填 `avatarFileId`）；展示时按 `avatarFileId` 换取临时链接（`db.getTempUrls`）渲染，无则回落性别 emoji。
+  - **孩子信息编辑**：点主卡「✏️ 编辑」进入编辑模式（复用建档弹层，`editingChildUuid` 区分新增/编辑，编辑走 `db.children.update`），可修改名字 / 性别 / 生日；打开弹层时 `childForm` 正确回填 `name` / `birthDate` / `gender` / `gradeOverride`。
   - **年级确认**：保存孩子信息后（新增或编辑），若已填生日则按 `gradeOverride` 优先、否则由生日自动推导年级并弹「年级确认」框；用户可确认或点「修改」打开年级 picker 手动选择（幼儿园小班～高中3年级），选定后写入 `gradeOverride`。已有 `gradeOverride` 或推导结果为空（幼儿园/大学阶段）时不弹。
 - **功能入口**：课表管理 / 成长周报 / 设置。
 - **成长周报**：

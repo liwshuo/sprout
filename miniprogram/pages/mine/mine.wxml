@@ -18,39 +18,36 @@
     >绑手机</button>
   </view>
 
-  <!-- 孩子切换器 -->
-  <view class="card">
-    <view class="row-between">
-      <view class="section-title">我的宝宝</view>
-      <view class="text-primary add-link" bindtap="openAddChild">+ 添加</view>
-    </view>
-    <view class="child-scroll" wx:if="{{children.length > 0}}">
-      <view
-        class="child-chip {{activeChildId === item.uuid ? 'active' : ''}}"
-        wx:for="{{children}}"
-        wx:key="uuid"
-        data-uuid="{{item.uuid}}"
-        bindtap="switchChild"
-      >
-        <!-- 头像区域（只展示，不可点击；上传移入弹层） -->
-        <view class="chip-avatar-wrap">
-          <image wx:if="{{item._avatarUrl}}" src="{{item._avatarUrl}}" class="chip-avatar-img" mode="aspectFill" />
-          <view wx:else class="chip-avatar-emoji">{{item._avatarEmoji || '👶'}}</view>
+  <!-- 当前孩子主卡 -->
+  <view class="card child-main-card">
+    <block wx:if="{{children.length > 0}}">
+      <view class="child-card-header">
+        <view class="child-card-title">我的宝宝</view>
+        <view class="child-card-actions">
+          <view class="child-card-action-btn" bindtap="onEditChild">✏️ 编辑</view>
+          <view class="child-card-action-btn" bindtap="openAddChild">+ 添加</view>
         </view>
-
-        <view class="chip-name ellipsis">{{item._displayName || item.name}}</view>
-
-        <!-- 编辑按钮：绝对定位右上角 -->
-        <view class="chip-edit-btn" catchtap="openEditChild" data-uuid="{{item.uuid}}">✏️</view>
       </view>
-    </view>
-    <view class="text-sub no-child" wx:else>还没有添加宝宝，点「添加」创建档案</view>
-    <!-- 当前宝宝派生信息（年龄 / 年级） -->
-    <view class="child-meta" wx:if="{{activeChild && (activeChild._ageText || activeChild._grade)}}">
-      <text wx:if="{{activeChild._ageText}}">{{activeChild._ageText}}</text>
-      <text wx:if="{{activeChild._ageText && activeChild._grade}}"> · </text>
-      <text wx:if="{{activeChild._grade}}">{{activeChild._grade}}</text>
-    </view>
+      <view class="child-card-body">
+        <view class="child-avatar-wrap">
+          <image wx:if="{{activeChild._avatarUrl}}" src="{{activeChild._avatarUrl}}" class="child-avatar-img" mode="aspectFill" />
+          <view wx:else class="child-avatar-emoji">{{activeChild._avatarEmoji || '👶'}}</view>
+        </view>
+        <view class="child-info">
+          <view class="child-name ellipsis">{{activeChild._displayName || activeChild.name || '宝贝'}}</view>
+          <view class="child-meta" wx:if="{{activeChild._ageText || activeChild._grade}}">
+            <text wx:if="{{activeChild._ageText}}">{{activeChild._ageText}}</text>
+            <text wx:if="{{activeChild._ageText && activeChild._grade}}"> · </text>
+            <text wx:if="{{activeChild._grade}}">{{activeChild._grade}}</text>
+          </view>
+          <view class="child-stats">已读 {{stats.books}} 本 · 打卡 {{stats.records}} 次</view>
+        </view>
+      </view>
+      <view class="child-switch-row" wx:if="{{children.length > 1}}">
+        <view class="child-switch-btn" bindtap="onSwitchChild">切换孩子 ▼</view>
+      </view>
+    </block>
+    <view wx:else class="child-empty-tip" bindtap="openAddChild">还没有孩子档案，点击添加 →</view>
   </view>
 
   <!-- 统计 -->

@@ -14,7 +14,7 @@ Page({
     // 添加孩子弹层
     showAddChild: false,
     editingChildUuid: '',
-    childForm: { name: '', birthDate: '', gender: 'unknown', avatarFileId: '', _avatarTempPath: '' },
+    childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
     formAvatarUrl: '',
     // 年级确认弹层
     showGradeConfirm: false,
@@ -56,35 +56,38 @@ Page({
       activeChildId = children[0].uuid;
       app.setActiveChild(activeChildId);
     }
-    const activeChild = children.find((c) => c.uuid === activeChildId) || null;
-    if (activeChild) {
-      activeChild._displayName = activeChild.name || '宝贝';
-      activeChild._ageText = dateUtil.ageText(activeChild.birthDate);
-      activeChild._grade = dateUtil.gradeOf(activeChild.birthDate, activeChild.gradeOverride);
-      activeChild._ageRange = dateUtil.ageRangeOf(activeChild.birthDate);
-      activeChild._avatarEmoji = activeChild.gender === 'boy' ? '👦' : activeChild.gender === 'girl' ? '👧' : '👶';
-    }
     // 批量解析所有孩子的头像临时 URL
     const fileIds = children.filter((c) => c.avatarFileId).map((c) => c.avatarFileId);
     let urlMap = {};
     if (fileIds.length) {
       try { urlMap = await db.getTempUrls(fileIds); } catch (e) { /* ignore */ }
     }
-    children.forEach((c) => {
+    this._parseChildren(children, urlMap);
+    this.setData({ children, activeChildId });
+    // 先加载 children 列表，再定位当前孩子主卡，再刷新统计
+    this._loadActiveChild();
+    this._loadStats();
+  },
+
+  // 解析孩子派生字段（_displayName / _ageText / _grade / _ageRange / _avatarEmoji / _avatarUrl）
+  _parseChildren(children, urlMap) {
+    urlMap = urlMap || {};
+    (children || []).forEach((c) => {
       c._displayName = c.name || '宝贝';
       c._ageText = dateUtil.ageText(c.birthDate);
+      c._grade = dateUtil.gradeOf(c.birthDate, c.gradeOverride);
+      c._ageRange = dateUtil.ageRangeOf(c.birthDate);
       c._avatarEmoji = c.gender === 'boy' ? '👦' : c.gender === 'girl' ? '👧' : '👶';
       c._avatarUrl = c.avatarFileId ? (urlMap[c.avatarFileId] || '') : '';
     });
-    // activeChild 直接从已处理的 children 里取
-    const updatedActiveChild = children.find((c) => c.uuid === activeChildId) || null;
-    if (updatedActiveChild && activeChild) {
-      // 把派生字段同步到 activeChild（activeChild 已在上方单独处理了 _grade / _ageRange）
-      activeChild._avatarUrl = updatedActiveChild._avatarUrl;
-      activeChild._avatarEmoji = updatedActiveChild._avatarEmoji;
-    }
-    this.setData({ children, activeChildId, activeChild });
-    this._loadStats();
+    return children;
+  },
+
+  // 从已解析的 children 中定位当前 activeChildId 对应孩子，赋给 activeChild
+  _loadActiveChild() {
+    const { children, activeChildId } = this.data;
+    const activeChild = (children || []).find((c) => c.uuid === activeChildId) || null;
+    this.setData({ activeChild });
   },
 
   async _loadStats() {
@@ -97,20 +100,30 @@ Page({
     this.setData({ stats: { records: records.length, books: books.length } });
   },
 
-  switchChild(e) {
-    const uuid = e.currentTarget.dataset.uuid;
-    app.setActiveChild(uuid);
-    const child = this.data.children.find((c) => c.uuid === uuid) || null;
-    if (child) {
-      child._displayName = child.name || '宝贝';
-      child._ageText = dateUtil.ageText(child.birthDate);
-      child._grade = dateUtil.gradeOf(child.birthDate, child.gradeOverride);
-      child._ageRange = dateUtil.ageRangeOf(child.birthDate);
-      child._avatarEmoji = child.gender === 'boy' ? '👦' : child.gender === 'girl' ? '👧' : '👶';
+  // 切换孩子：ActionSheet 列出所有孩子 + 「+ 添加新孩子」
+  onSwitchChild() {
+    const children = this.data.children || [];
+    if (!children.length) {
+      this.openAddChild();
+      return;
     }
-    this.setData({ activeChildId: uuid, activeChild: child });
-    this._loadStats();
-    wx.showToast({ title: '已切换', icon: 'none' });
+    const itemList = children.map((c) => {
+      const name = c._displayName || c.name || '宝贝';
+      return c._ageText ? `${name} · ${c._ageText}` : name;
+    });
+    itemList.push('+ 添加新孩子');
+    wx.showActionSheet({
+      itemList,
+      success: (res) => {
+        const idx = res.tapIndex;
+        if (idx === children.length) {
+          this.openAddChild();
+          return;
+        }
+        const child = children[idx];
+        if (child) app.setActiveChild(child.uuid); // 触发 activeChildChanged → refresh（含统计刷新）
+      },
+    });
   },
 
   // ---- 登录 ----
@@ -161,15 +174,17 @@ Page({
     this.setData({
       showAddChild: true,
       editingChildUuid: '',
-      childForm: { name: '', birthDate: '', gender: 'unknown', avatarFileId: '', _avatarTempPath: '' },
+      childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
       formAvatarUrl: '',
     });
   },
-  async openEditChild(e) {
-    const uuid = e.currentTarget.dataset.uuid;
+  async onEditChild(e) {
+    // 主卡「✏️ 编辑」无 dataset 时编辑当前 activeChild；chip/列表场景可带 data-uuid
+    const uuid = (e && e.currentTarget && e.currentTarget.dataset.uuid) || this.data.activeChildId;
     const child = this.data.children.find((c) => c.uuid === uuid);
     if (!child) return;
     const birthDateStr = child.birthDate ? dateUtil.ymd(new Date(child.birthDate)) : '';
+    // B1：打开编辑弹层时正确回填 name / birthDate / gender / gradeOverride
     this.setData({
       showAddChild: true,
       editingChildUuid: uuid,
@@ -177,6 +192,7 @@ Page({
         name: child.name || '',
         birthDate: birthDateStr,
         gender: child.gender || 'unknown',
+        gradeOverride: child.gradeOverride || '',
         avatarFileId: child.avatarFileId || '',
         _avatarTempPath: '',
       },

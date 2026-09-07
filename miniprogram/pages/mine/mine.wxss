@@ -31,74 +31,90 @@
   margin: 0;
 }
 
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
+/* 当前孩子主卡（暖橙马卡龙：白卡 + 大圆角 + 柔和阴影） */
+.child-main-card {
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  margin: 24rpx 28rpx 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
-.add-link {
-  font-size: 28rpx;
-  font-weight: 600;
-}
-.child-scroll {
+.child-card-header {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: 24rpx;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
 }
-.child-chip {
-  position: relative;
+.child-card-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #333;
+}
+.child-card-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+.child-card-action-btn {
+  font-size: 26rpx;
+  color: #FF8C42;
+  padding: 4rpx 12rpx;
+}
+.child-card-body {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 16rpx;
+  gap: 24rpx;
+}
+.child-avatar-wrap {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50rpx;
+  overflow: hidden;
+  background: #FFF3E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.child-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50rpx;
+}
+.child-avatar-emoji {
+  font-size: 56rpx;
+}
+.child-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 120rpx;
-  padding: 16rpx 0;
-  border-radius: var(--radius);
-  margin: 0 20rpx 12rpx 0;
-  border: 2rpx solid var(--line);
+  gap: 8rpx;
 }
-.child-chip.active {
-  border-color: var(--primary);
-  background: var(--primary-soft);
+.child-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
 }
-/* chip 头像容器 */
-.chip-avatar-wrap {
-  position: relative;
-  width: 80rpx;
-  height: 80rpx;
-  margin: 0 auto 8rpx;
-}
-.chip-avatar-img {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.chip-avatar-emoji {
-  width: 80rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  font-size: 44rpx;
-  border-radius: 50%;
-  background: var(--primary-soft, #fff3e0);
-}
-/* chip 名字 */
-.chip-name {
+.child-stats {
   font-size: 24rpx;
-  text-align: center;
-  max-width: 100%;
+  color: #aaa;
 }
-/* ✏️ 编辑按钮：右上角绝对定位 */
-.chip-edit-btn {
-  position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  font-size: 22rpx;
-  opacity: 0.55;
-  line-height: 1;
+.child-switch-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 16rpx;
 }
-.no-child {
+.child-switch-btn {
   font-size: 26rpx;
-  margin-top: 20rpx;
+  color: #FF8C42;
+}
+.child-empty-tip {
+  font-size: 28rpx;
+  color: #aaa;
+  text-align: center;
+  padding: 32rpx;
 }
 
 .stat-card {
@@ -212,10 +228,10 @@
   margin-right: 20rpx;
 }
 
-/* 孩子信息副文字 */
+/* 孩子信息副文字（年龄 / 年级） */
 .child-meta {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 26rpx;
+  color: #888;
   margin-top: 4rpx;
 }
 

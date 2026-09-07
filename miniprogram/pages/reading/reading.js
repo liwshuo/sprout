@@ -87,12 +87,14 @@ Page({
     const needs = list.filter((b) => b && b.libraryUuid);
     if (!needs.length) return list;
     const app = getApp();
+    // B3：优先用全局缓存，命中则不再重复拉取；未命中（首次）才拉全量书库并回写缓存
     let libBooks = app.globalData.bookLibraryCache;
-    if (!libBooks) {
+    if (!Array.isArray(libBooks)) {
       libBooks = await db.bookLibrary.listAll();
-      app.globalData.bookLibraryCache = libBooks;
+      app.globalData.bookLibraryCache = Array.isArray(libBooks) ? libBooks : [];
+      libBooks = app.globalData.bookLibraryCache;
     }
-    if (!libBooks || !libBooks.length) return list;
+    if (!libBooks.length) return list;
     const map = {};
     libBooks.forEach((lb) => {
       if (lb && lb.uuid) map[lb.uuid] = lb;
