@@ -261,3 +261,32 @@
   text-align: center;
   font-size: 30rpx;
 }
+
+/* 弹层内头像选择 */
+.form-avatar-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0 16rpx;
+}
+.form-avatar-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  object-fit: cover;
+}
+.form-avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: #FFF3E0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56rpx;
+}
+.form-avatar-hint {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #BDBDBD;
+}

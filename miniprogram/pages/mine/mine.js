@@ -14,7 +14,8 @@ Page({
     // 添加孩子弹层
     showAddChild: false,
     editingChildUuid: '',
-    childForm: { name: '', birthDate: '', gender: 'unknown' },
+    childForm: { name: '', birthDate: '', gender: 'unknown', avatarFileId: '', _avatarTempPath: '' },
+    formAvatarUrl: '',
     // 年级确认弹层
     showGradeConfirm: false,
     gradeConfirmText: '',
@@ -160,10 +161,11 @@ Page({
     this.setData({
       showAddChild: true,
       editingChildUuid: '',
-      childForm: { name: '', birthDate: '', gender: 'unknown' },
+      childForm: { name: '', birthDate: '', gender: 'unknown', avatarFileId: '', _avatarTempPath: '' },
+      formAvatarUrl: '',
     });
   },
-  openEditChild(e) {
+  async openEditChild(e) {
     const uuid = e.currentTarget.dataset.uuid;
     const child = this.data.children.find((c) => c.uuid === uuid);
     if (!child) return;
@@ -175,11 +177,26 @@ Page({
         name: child.name || '',
         birthDate: birthDateStr,
         gender: child.gender || 'unknown',
+        avatarFileId: child.avatarFileId || '',
+        _avatarTempPath: '',
       },
+      formAvatarUrl: '',
     });
+    // 有 avatarFileId 时解析旧头像临时 URL 展示
+    if (child.avatarFileId) {
+      try {
+        const urlMap = await db.getTempUrls([child.avatarFileId]);
+        this.setData({ formAvatarUrl: urlMap[child.avatarFileId] || '' });
+      } catch (err) { /* ignore */ }
+    }
   },
   closeAddChild() {
-    this.setData({ showAddChild: false });
+    this.setData({
+      showAddChild: false,
+      'childForm.avatarFileId': '',
+      'childForm._avatarTempPath': '',
+      formAvatarUrl: '',
+    });
   },
   onChildInput(e) {
     this.setData({ 'childForm.name': e.detail.value });
@@ -190,6 +207,18 @@ Page({
   },
   onBirthChange(e) {
     this.setData({ 'childForm.birthDate': e.detail.value });
+  },
+  // 弹层内选头像（仅暂存临时路径，保存时统一上传）
+  async onFormAvatarTap() {
+    const res = await wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+    });
+    if (!res.tempFiles || !res.tempFiles.length) return;
+    const tempPath = res.tempFiles[0].tempFilePath;
+    this.setData({ 'childForm._avatarTempPath': tempPath });
   },
   async saveChild() {
     const { name, birthDate, gender } = this.data.childForm;
@@ -202,6 +231,17 @@ Page({
       wx.showToast({ title: '请先登录', icon: 'none' });
       return;
     }
+    // 处理头像：有新选择的临时图片则先上传
+    let avatarFileId = this.data.childForm.avatarFileId || '';
+    if (this.data.childForm._avatarTempPath) {
+      wx.showLoading({ title: '上传头像...', mask: true });
+      try {
+        avatarFileId = await db.uploadFile(this.data.childForm._avatarTempPath);
+      } catch (e) {
+        console.error('头像上传失败', e);
+      }
+      wx.hideLoading();
+    }
     wx.showLoading({ title: '保存中...', mask: true });
     try {
       const birthTs = birthDate
@@ -213,9 +253,10 @@ Page({
           name: name.trim(),
           birthDate: birthTs || null,
           gender: gender || 'unknown',
+          avatarFileId: avatarFileId || null,
         });
         wx.hideLoading();
-        this.setData({ showAddChild: false, editingChildUuid: '' });
+        this.setData({ showAddChild: false, editingChildUuid: '', formAvatarUrl: '' });
         await this.refresh();
         wx.showToast({ title: '已保存', icon: 'success' });
         // 编辑完也触发年级确认（如果有生日）
@@ -226,11 +267,12 @@ Page({
           name: name.trim(),
           birthDate: birthTs || null,
           gender: gender || 'unknown',
+          avatarFileId: avatarFileId || null,
           gradeOverride: null,
           sortOrder: this.data.children.length,
         });
         wx.hideLoading();
-        this.setData({ showAddChild: false, editingChildUuid: '' });
+        this.setData({ showAddChild: false, editingChildUuid: '', formAvatarUrl: '' });
         app.setActiveChild(child.uuid);
         await this.refresh();
         wx.showToast({ title: '已添加', icon: 'success' });
@@ -299,58 +341,7 @@ Page({
     this.setData({ showGradePicker: false, pendingGradeChildUuid: '' });
   },
 
-  // ---- 头像上传 ----
-  onAvatarTap() {
-    wx.showActionSheet({
-      itemList: ['从相册选择', '使用默认图标'],
-      success: (res) => {
-        if (res.tapIndex === 0) {
-          this._uploadAvatar();
-        } else if (res.tapIndex === 1) {
-          this._clearAvatar();
-        }
-      },
-    });
-  },
-
-  async _uploadAvatar() {
-    const uuid = this.data.activeChildId;
-    if (!uuid) return;
-    try {
-      const media = await new Promise((resolve, reject) => {
-        wx.chooseMedia({
-          count: 1,
-          mediaType: ['image'],
-          sizeType: ['compressed'],
-          success: resolve,
-          fail: reject,
-        });
-      });
-      if (!media.tempFiles || !media.tempFiles.length) return;
-      wx.showLoading({ title: '上传中...', mask: true });
-      const fileId = await db.uploadFile(media.tempFiles[0].tempFilePath);
-      await db.children.update(uuid, { avatarFileId: fileId });
-      wx.hideLoading();
-      await this.refresh();
-      wx.showToast({ title: '头像已更新', icon: 'success' });
-    } catch (err) {
-      wx.hideLoading();
-      console.error('[mine] 头像上传失败', err);
-      wx.showToast({ title: '上传失败', icon: 'none' });
-    }
-  },
-
-  async _clearAvatar() {
-    const uuid = this.data.activeChildId;
-    if (!uuid) return;
-    try {
-      await db.children.update(uuid, { avatarFileId: null });
-      await this.refresh();
-      wx.showToast({ title: '已恢复默认', icon: 'none' });
-    } catch (err) {
-      wx.showToast({ title: '操作失败', icon: 'none' });
-    }
-  },
+  // ---- 头像上传（已移入添加/编辑孩子弹层，见 onFormAvatarTap / saveChild）----
 
   goReport() {
     wx.navigateTo({ url: '/pages/report/report' });
