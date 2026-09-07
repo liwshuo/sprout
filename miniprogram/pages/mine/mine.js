@@ -177,8 +177,11 @@ Page({
     wx.showActionSheet({
       itemList: ['选择我的角色', '绑定/更换手机号'],
       success: (res) => {
+        // 微信限制：不能在上一个 ActionSheet 的 success 回调里同步再弹 ActionSheet
+        //（第一个还在关闭动画中，第二个会被静默丢弃 → 表现为「点了没反应」）。
+        // 故用 setTimeout 等第一个 ActionSheet 完全关闭后再调起二级菜单。
         if (res.tapIndex === 0) {
-          this.onRoleSelect();
+          setTimeout(() => this.onRoleSelect(), 350);
         } else if (res.tapIndex === 1) {
           this.onBindPhone();
         }
