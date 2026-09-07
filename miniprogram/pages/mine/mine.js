@@ -63,17 +63,25 @@ Page({
       activeChild._ageRange = dateUtil.ageRangeOf(activeChild.birthDate);
       activeChild._avatarEmoji = activeChild.gender === 'boy' ? '👦' : activeChild.gender === 'girl' ? '👧' : '👶';
     }
-    if (activeChild && activeChild.avatarFileId) {
-      const urlMap = await db.getTempUrls([activeChild.avatarFileId]);
-      activeChild._avatarUrl = urlMap[activeChild.avatarFileId] || '';
-    } else if (activeChild) {
-      activeChild._avatarUrl = '';
+    // 批量解析所有孩子的头像临时 URL
+    const fileIds = children.filter((c) => c.avatarFileId).map((c) => c.avatarFileId);
+    let urlMap = {};
+    if (fileIds.length) {
+      try { urlMap = await db.getTempUrls(fileIds); } catch (e) { /* ignore */ }
     }
     children.forEach((c) => {
       c._displayName = c.name || '宝贝';
       c._ageText = dateUtil.ageText(c.birthDate);
       c._avatarEmoji = c.gender === 'boy' ? '👦' : c.gender === 'girl' ? '👧' : '👶';
+      c._avatarUrl = c.avatarFileId ? (urlMap[c.avatarFileId] || '') : '';
     });
+    // activeChild 直接从已处理的 children 里取
+    const updatedActiveChild = children.find((c) => c.uuid === activeChildId) || null;
+    if (updatedActiveChild && activeChild) {
+      // 把派生字段同步到 activeChild（activeChild 已在上方单独处理了 _grade / _ageRange）
+      activeChild._avatarUrl = updatedActiveChild._avatarUrl;
+      activeChild._avatarEmoji = updatedActiveChild._avatarEmoji;
+    }
     this.setData({ children, activeChildId, activeChild });
     this._loadStats();
   },

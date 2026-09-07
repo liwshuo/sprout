@@ -103,7 +103,7 @@
 <!-- 添加孩子弹层 -->
 <view class="mask" wx:if="{{showAddChild}}" bindtap="closeAddChild"></view>
 <view class="sheet" wx:if="{{showAddChild}}" catchtap>
-  <view class="sheet-title">添加宝宝</view>
+  <view class="sheet-title">{{editingChildUuid ? '编辑宝宝信息' : '添加宝宝'}}</view>
   <input class="sheet-input" placeholder="宝宝叫什么呢？大名小名都可以" placeholder-class="ph" bindinput="onChildInput" />
   <view class="sheet-field-label">性别</view>
   <view class="gender-chips">
