@@ -13,7 +13,7 @@ Page({
     stats: { records: 0, books: 0 },
     // 添加孩子弹层
     showAddChild: false,
-    childForm: { name: '', birthDate: '', nickname: '', gender: 'unknown' },
+    childForm: { name: '', birthDate: '', gender: 'unknown' },
   },
 
   onLoad() {
@@ -38,14 +38,14 @@ Page({
     }
     const activeChild = children.find((c) => c.uuid === activeChildId) || null;
     if (activeChild) {
-      activeChild._displayName = activeChild.nickname || activeChild.name || '宝贝';
+      activeChild._displayName = activeChild.name || '宝贝';
       activeChild._ageText = dateUtil.ageText(activeChild.birthDate);
       activeChild._grade = dateUtil.gradeOf(activeChild.birthDate, activeChild.gradeOverride);
       activeChild._ageRange = dateUtil.ageRangeOf(activeChild.birthDate);
       activeChild._avatarEmoji = activeChild.gender === 'boy' ? '👦' : activeChild.gender === 'girl' ? '👧' : '👶';
     }
     children.forEach((c) => {
-      c._displayName = c.nickname || c.name || '宝贝';
+      c._displayName = c.name || '宝贝';
       c._ageText = dateUtil.ageText(c.birthDate);
       c._avatarEmoji = c.gender === 'boy' ? '👦' : c.gender === 'girl' ? '👧' : '👶';
     });
@@ -111,16 +111,13 @@ Page({
 
   // ---- 添加孩子 ----
   openAddChild() {
-    this.setData({ showAddChild: true, childForm: { name: '', birthDate: '', nickname: '', gender: 'unknown' } });
+    this.setData({ showAddChild: true, childForm: { name: '', birthDate: '', gender: 'unknown' } });
   },
   closeAddChild() {
     this.setData({ showAddChild: false });
   },
   onChildInput(e) {
     this.setData({ 'childForm.name': e.detail.value });
-  },
-  onNicknameInput(e) {
-    this.setData({ 'childForm.nickname': e.detail.value });
   },
   onGenderSelect(e) {
     const gender = e.currentTarget.dataset.gender;
@@ -145,7 +142,6 @@ Page({
       const child = await db.children.create({
         name: name.trim(),
         birthDate: birthTs || null,
-        nickname: (this.data.childForm.nickname || '').trim() || null,
         gender: this.data.childForm.gender || 'unknown',
         gradeOverride: null,
         sortOrder: this.data.children.length,

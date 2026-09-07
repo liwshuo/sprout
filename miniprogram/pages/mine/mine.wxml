@@ -86,8 +86,7 @@
 <view class="mask" wx:if="{{showAddChild}}" bindtap="closeAddChild"></view>
 <view class="sheet" wx:if="{{showAddChild}}" catchtap>
   <view class="sheet-title">添加宝宝</view>
-  <input class="sheet-input" placeholder="宝宝昵称" placeholder-class="ph" bindinput="onChildInput" />
-  <input class="sheet-input" placeholder="小名（选填，用于展示）" placeholder-class="ph" value="{{childForm.nickname}}" bindinput="onNicknameInput" />
+  <input class="sheet-input" placeholder="宝宝叫什么呢？大名小名都可以" placeholder-class="ph" bindinput="onChildInput" />
   <view class="sheet-field-label">性别</view>
   <view class="gender-chips">
     <view class="chip {{childForm.gender === 'boy' ? 'chip-active' : ''}}" bindtap="onGenderSelect" data-gender="boy">👦 男孩</view>
