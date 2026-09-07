@@ -86,7 +86,12 @@ Page({
     const list = books || [];
     const needs = list.filter((b) => b && b.libraryUuid);
     if (!needs.length) return list;
-    const libBooks = await db.bookLibrary.listAll();
+    const app = getApp();
+    let libBooks = app.globalData.bookLibraryCache;
+    if (!libBooks) {
+      libBooks = await db.bookLibrary.listAll();
+      app.globalData.bookLibraryCache = libBooks;
+    }
     if (!libBooks || !libBooks.length) return list;
     const map = {};
     libBooks.forEach((lb) => {

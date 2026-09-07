@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+## [unreleased] — 2026-09-07
+
+### feat
+- 孩子档案字段扩展 P0：新增 `gender`（性别）、`nickname`（小名）、`gradeOverride`（手动覆盖年级）字段
+- 新增 `utils/date.js` 工具函数：`ageText()`、`ageRangeOf()`、`gradeOf()`
+- 孩子卡片展示优化：小名优先展示、自动计算年龄文字和年级、性别联动头像 emoji
+- 建档弹层新增小名输入框和性别 chip 选择器
+
+### fix
+- 修复 reading.js 书库水合每次 refresh 重复拉取全量数据的问题，改为 globalData 缓存复用
+
+
 ### 2026-09-06 · 精选书库 P0（书库浏览 + 加入书架 + 书架 join 水合）
 
 #### 新增

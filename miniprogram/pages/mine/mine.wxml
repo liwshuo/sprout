@@ -32,11 +32,17 @@
         data-uuid="{{item.uuid}}"
         bindtap="switchChild"
       >
-        <view class="child-avatar">👶</view>
-        <view class="child-name ellipsis">{{item.name}}</view>
+        <view class="child-avatar">{{item._avatarEmoji || '👶'}}</view>
+        <view class="child-name ellipsis">{{item._displayName || item.name}}</view>
       </view>
     </view>
     <view class="text-sub no-child" wx:else>还没有添加宝宝，点「添加」创建档案</view>
+    <!-- 当前宝宝派生信息（年龄 / 年级） -->
+    <view class="child-meta" wx:if="{{activeChild && (activeChild._ageText || activeChild._grade)}}">
+      <text wx:if="{{activeChild._ageText}}">{{activeChild._ageText}}</text>
+      <text wx:if="{{activeChild._ageText && activeChild._grade}}"> · </text>
+      <text wx:if="{{activeChild._grade}}">{{activeChild._grade}}</text>
+    </view>
   </view>
 
   <!-- 统计 -->
@@ -81,6 +87,13 @@
 <view class="sheet" wx:if="{{showAddChild}}" catchtap>
   <view class="sheet-title">添加宝宝</view>
   <input class="sheet-input" placeholder="宝宝昵称" placeholder-class="ph" bindinput="onChildInput" />
+  <input class="sheet-input" placeholder="小名（选填，用于展示）" placeholder-class="ph" value="{{childForm.nickname}}" bindinput="onNicknameInput" />
+  <view class="sheet-field-label">性别</view>
+  <view class="gender-chips">
+    <view class="chip {{childForm.gender === 'boy' ? 'chip-active' : ''}}" bindtap="onGenderSelect" data-gender="boy">👦 男孩</view>
+    <view class="chip {{childForm.gender === 'girl' ? 'chip-active' : ''}}" bindtap="onGenderSelect" data-gender="girl">👧 女孩</view>
+    <view class="chip {{childForm.gender === 'unknown' ? 'chip-active' : ''}}" bindtap="onGenderSelect" data-gender="unknown">暂不填</view>
+  </view>
   <view class="row-between sheet-field">
     <view class="sheet-field-label">出生日期</view>
     <picker mode="date" value="{{childForm.birthDate}}" bindchange="onBirthChange">

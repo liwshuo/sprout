@@ -115,6 +115,82 @@ function expandWeeklySchedule(items, year, month) {
   return out;
 }
 
+/**
+ * 根据出生时间戳计算年龄文字
+ * @param {number} birthDateTs 毫秒时间戳
+ * @returns {string} 如 '3岁4个月' / '8个月' / '1岁'，未填返回 ''
+ */
+function ageText(birthDateTs) {
+  if (!birthDateTs) return '';
+  const now = new Date();
+  const birth = new Date(birthDateTs);
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) return '';
+  if (years === 0) return months > 0 ? `${months}个月` : '不足1个月';
+  if (months === 0) return `${years}岁`;
+  return `${years}岁${months}个月`;
+}
+
+/**
+ * 根据出生时间戳返回书库年龄段标签
+ * 与 seed_book_library.json 中 ageRange 枚举对齐：'0-2'/'3-4'/'5-6'/'7-9'/'10+'
+ * @param {number} birthDateTs 毫秒时间戳
+ * @returns {string|null} 年龄段字符串，未填返回 null（展示全量书库）
+ */
+function ageRangeOf(birthDateTs) {
+  if (!birthDateTs) return null;
+  const now = new Date();
+  const birth = new Date(birthDateTs);
+  let years = now.getFullYear() - birth.getFullYear();
+  let months = now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months--;
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) years = 0;
+  if (years <= 2) return '0-2';
+  if (years <= 4) return '3-4';
+  if (years <= 6) return '5-6';
+  if (years <= 9) return '7-9';
+  return '10+';
+}
+
+/**
+ * 推导年级文字，gradeOverride 优先
+ * 入学规则：8月31日前满6岁当年入学，9月及以后出生次年入学
+ * @param {number} birthDateTs 毫秒时间戳
+ * @param {string} gradeOverride 手动覆盖字符串，如 '小学3年级'
+ * @returns {string|null} 如 '小学2年级'/'初中1年级'，幼儿园/大学阶段返回 null
+ */
+function gradeOf(birthDateTs, gradeOverride) {
+  if (gradeOverride) return gradeOverride;
+  if (!birthDateTs) return null;
+  const now = new Date();
+  const birth = new Date(birthDateTs);
+  const birthYear = birth.getFullYear();
+  const birthMonth = birth.getMonth() + 1; // 1-12
+  const birthDay = birth.getDate();
+
+  // 入学年份：8月31日前满6岁当年入学，否则次年
+  const admissionYear = (birthMonth < 9 || (birthMonth === 8 && birthDay <= 31))
+    ? birthYear + 6
+    : birthYear + 7;
+
+  // 当前学年（9月起算）
+  const currentSchoolYear = now.getMonth() + 1 >= 9
+    ? now.getFullYear()
+    : now.getFullYear() - 1;
+
+  const grade = currentSchoolYear - admissionYear + 1;
+
+  if (grade < 1) return null; // 幼儿园
+  if (grade <= 6) return `小学${grade}年级`;
+  if (grade <= 9) return `初中${grade - 6}年级`;
+  if (grade <= 12) return `高中${grade - 9}年级`;
+  return null; // 大学及以上
+}
+
 module.exports = {
   startOfDay,
   startOfNextDay,
@@ -126,4 +202,7 @@ module.exports = {
   monthGrid,
   monthRange,
   expandWeeklySchedule,
+  ageText,
+  ageRangeOf,
+  gradeOf,
 };

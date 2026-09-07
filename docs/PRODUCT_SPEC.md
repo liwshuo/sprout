@@ -259,7 +259,7 @@ lib/
 | 集合 | 归属 | 用途 | 状态 |
 | --- | --- | --- | --- |
 | `users` | ownerId | 账号 | ✅ 已实现 |
-| `children` | ownerId | 孩子档案（多孩子） | ✅ 已实现 |
+| `children` | ownerId | 孩子档案（多孩子；字段 `name`/`birthDate`/`avatarFileId`/`sortOrder`，P0 扩展新增 `gender`〔`boy`/`girl`/`unknown`〕/`nickname`〔小名，展示优先〕/`gradeOverride`〔手动覆盖年级〕；年龄文字/年级/年龄段由 `utils/date.js` 的 `ageText`/`gradeOf`/`ageRangeOf` 派生） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
 | `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
 | `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl`/`libraryUuid` 字段） | ✅ 已实现 |

@@ -187,3 +187,34 @@
 .sheet-btn:first-child {
   margin-right: 20rpx;
 }
+
+/* 孩子信息副文字 */
+.child-meta {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 4rpx;
+}
+
+/* 性别 chip */
+.gender-chips {
+  display: flex;
+  flex-direction: row;
+  gap: 16rpx;
+  flex-wrap: wrap;
+  margin-top: 8rpx;
+}
+
+.chip {
+  padding: 8rpx 24rpx;
+  border-radius: 999rpx;
+  background: #f5f5f5;
+  font-size: 26rpx;
+  color: #555;
+  border: 2rpx solid transparent;
+}
+
+.chip-active {
+  background: #fff3e8;
+  color: #ff7a2e;
+  border-color: #ff7a2e;
+}

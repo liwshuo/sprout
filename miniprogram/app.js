@@ -15,6 +15,8 @@ App({
     children: [],
     syncStatus: 'idle', // idle | syncing | error
     themeColor: '#FF8C42',
+    // 精选书库缓存（书架水合复用，避免每次 refresh 重复拉全量）
+    bookLibraryCache: null,
   },
 
   onLaunch() {
