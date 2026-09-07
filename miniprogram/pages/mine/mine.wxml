@@ -34,9 +34,16 @@
       >
         <view class="child-avatar">{{item._avatarEmoji || '👶'}}</view>
         <view class="child-name ellipsis">{{item._displayName || item.name}}</view>
+        <view class="child-edit-btn" catchtap="openEditChild" data-uuid="{{item.uuid}}">✏️</view>
       </view>
     </view>
     <view class="text-sub no-child" wx:else>还没有添加宝宝，点「添加」创建档案</view>
+    <!-- 当前宝宝头像（可点击更换） -->
+    <view class="active-avatar-wrap" bindtap="onAvatarTap" wx:if="{{activeChild}}">
+      <image wx:if="{{activeChild._avatarUrl}}" src="{{activeChild._avatarUrl}}" class="active-avatar-img" mode="aspectFill" />
+      <view wx:else class="active-avatar-emoji">{{activeChild._avatarEmoji || '👶'}}</view>
+      <view class="active-avatar-edit">📷</view>
+    </view>
     <!-- 当前宝宝派生信息（年龄 / 年级） -->
     <view class="child-meta" wx:if="{{activeChild && (activeChild._ageText || activeChild._grade)}}">
       <text wx:if="{{activeChild._ageText}}">{{activeChild._ageText}}</text>
@@ -102,5 +109,35 @@
   <view class="row sheet-actions">
     <view class="btn-ghost sheet-btn" bindtap="closeAddChild">取消</view>
     <view class="btn-primary sheet-btn" bindtap="saveChild">保存</view>
+  </view>
+</view>
+
+<!-- 年级确认弹层 -->
+<view class="mask" wx:if="{{showGradeConfirm}}" bindtap="onGradeConfirmOk"></view>
+<view class="sheet" wx:if="{{showGradeConfirm}}" catchtap>
+  <view class="sheet-title">📚 年级确认</view>
+  <view class="grade-confirm-text">根据生日推测 Ta 是<text class="text-primary">{{gradeConfirmText}}</text>，对吗？</view>
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="onGradeConfirmEdit">✏️ 修改</view>
+    <view class="btn-primary sheet-btn" bindtap="onGradeConfirmOk">✅ 对的</view>
+  </view>
+</view>
+
+<!-- 年级手动选择 picker 弹层 -->
+<view class="mask" wx:if="{{showGradePicker}}" bindtap="onGradePickerCancel"></view>
+<view class="sheet" wx:if="{{showGradePicker}}" catchtap>
+  <view class="sheet-title">选择年级</view>
+  <picker-view
+    class="grade-picker-view"
+    value="{{[gradePickerIndex]}}"
+    bindchange="onGradePickerChange"
+  >
+    <picker-view-column>
+      <view wx:for="{{gradePickerRange}}" wx:key="*this" class="picker-item">{{item}}</view>
+    </picker-view-column>
+  </picker-view>
+  <view class="row sheet-actions">
+    <view class="btn-ghost sheet-btn" bindtap="onGradePickerCancel">取消</view>
+    <view class="btn-primary sheet-btn" bindtap="onGradePickerConfirm">确认</view>
   </view>
 </view>

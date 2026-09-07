@@ -218,3 +218,65 @@
   color: #ff7a2e;
   border-color: #ff7a2e;
 }
+
+/* 孩子 chip 编辑按钮 */
+.child-edit-btn {
+  font-size: 20rpx;
+  margin-top: 4rpx;
+  opacity: 0.6;
+}
+
+/* activeChild 头像区域 */
+.active-avatar-wrap {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  margin: 16rpx auto 8rpx;
+}
+.active-avatar-img {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.active-avatar-emoji {
+  width: 96rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 52rpx;
+  border-radius: 50%;
+  background: var(--primary-soft);
+}
+.active-avatar-edit {
+  position: absolute;
+  right: -4rpx;
+  bottom: -4rpx;
+  font-size: 28rpx;
+  background: #fff;
+  border-radius: 50%;
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.12);
+}
+
+/* 年级确认文字 */
+.grade-confirm-text {
+  font-size: 30rpx;
+  color: #333;
+  line-height: 1.7;
+  margin: 16rpx 0 32rpx;
+}
+
+/* 年级 picker */
+.grade-picker-view {
+  height: 400rpx;
+  margin: 16rpx 0;
+}
+.picker-item {
+  line-height: 80rpx;
+  text-align: center;
+  font-size: 30rpx;
+}

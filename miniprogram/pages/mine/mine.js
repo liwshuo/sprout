@@ -13,12 +13,30 @@ Page({
     stats: { records: 0, books: 0 },
     // 添加孩子弹层
     showAddChild: false,
+    editingChildUuid: '',
     childForm: { name: '', birthDate: '', gender: 'unknown' },
+    // 年级确认弹层
+    showGradeConfirm: false,
+    gradeConfirmText: '',
+    pendingGradeChildUuid: '',
+    showGradePicker: false,
+    gradePickerRange: [
+      '幼儿园小班','幼儿园中班','幼儿园大班',
+      '小学1年级','小学2年级','小学3年级','小学4年级','小学5年级','小学6年级',
+      '初中1年级','初中2年级','初中3年级',
+      '高中1年级','高中2年级','高中3年级',
+    ],
+    gradePickerIndex: 0,
   },
 
   onLoad() {
     this._onUser = (u) => this.setData({ user: u });
     app.on && app.on('userChanged', this._onUser);
+    this._onActiveChild = (id) => {
+      this.setData({ activeChildId: id });
+      this.refresh();
+    };
+    app.on && app.on('activeChildChanged', this._onActiveChild);
   },
   onShow() {
     this.setData({ user: auth.currentUser(), activeChildId: app.globalData.activeChildId });
@@ -26,6 +44,7 @@ Page({
   },
   onUnload() {
     app.off && app.off('userChanged', this._onUser);
+    app.off && app.off('activeChildChanged', this._onActiveChild);
   },
 
   async refresh() {
@@ -44,6 +63,12 @@ Page({
       activeChild._ageRange = dateUtil.ageRangeOf(activeChild.birthDate);
       activeChild._avatarEmoji = activeChild.gender === 'boy' ? '👦' : activeChild.gender === 'girl' ? '👧' : '👶';
     }
+    if (activeChild && activeChild.avatarFileId) {
+      const urlMap = await db.getTempUrls([activeChild.avatarFileId]);
+      activeChild._avatarUrl = urlMap[activeChild.avatarFileId] || '';
+    } else if (activeChild) {
+      activeChild._avatarUrl = '';
+    }
     children.forEach((c) => {
       c._displayName = c.name || '宝贝';
       c._ageText = dateUtil.ageText(c.birthDate);
@@ -54,14 +79,27 @@ Page({
   },
 
   async _loadStats() {
-    const [records, books] = await Promise.all([db.records.listAll(999), db.books.listAll()]);
+    const childId = this.data.activeChildId;
+    const [records, books] = await Promise.all([
+      db.records.listAll(999),
+      childId ? db.books.listAll() : Promise.resolve([]),
+    ]);
+    // books 已在 listAllPaged 通过 scope().childId 自动过滤当前孩子，不需要额外 filter
     this.setData({ stats: { records: records.length, books: books.length } });
   },
 
   switchChild(e) {
     const uuid = e.currentTarget.dataset.uuid;
     app.setActiveChild(uuid);
-    this.setData({ activeChildId: uuid, activeChild: this.data.children.find((c) => c.uuid === uuid) || null });
+    const child = this.data.children.find((c) => c.uuid === uuid) || null;
+    if (child) {
+      child._displayName = child.name || '宝贝';
+      child._ageText = dateUtil.ageText(child.birthDate);
+      child._grade = dateUtil.gradeOf(child.birthDate, child.gradeOverride);
+      child._ageRange = dateUtil.ageRangeOf(child.birthDate);
+      child._avatarEmoji = child.gender === 'boy' ? '👦' : child.gender === 'girl' ? '👧' : '👶';
+    }
+    this.setData({ activeChildId: uuid, activeChild: child });
     this._loadStats();
     wx.showToast({ title: '已切换', icon: 'none' });
   },
@@ -111,7 +149,26 @@ Page({
 
   // ---- 添加孩子 ----
   openAddChild() {
-    this.setData({ showAddChild: true, childForm: { name: '', birthDate: '', gender: 'unknown' } });
+    this.setData({
+      showAddChild: true,
+      editingChildUuid: '',
+      childForm: { name: '', birthDate: '', gender: 'unknown' },
+    });
+  },
+  openEditChild(e) {
+    const uuid = e.currentTarget.dataset.uuid;
+    const child = this.data.children.find((c) => c.uuid === uuid);
+    if (!child) return;
+    const birthDateStr = child.birthDate ? dateUtil.ymd(new Date(child.birthDate)) : '';
+    this.setData({
+      showAddChild: true,
+      editingChildUuid: uuid,
+      childForm: {
+        name: child.name || '',
+        birthDate: birthDateStr,
+        gender: child.gender || 'unknown',
+      },
+    });
   },
   closeAddChild() {
     this.setData({ showAddChild: false });
@@ -127,9 +184,10 @@ Page({
     this.setData({ 'childForm.birthDate': e.detail.value });
   },
   async saveChild() {
-    const { name, birthDate } = this.data.childForm;
+    const { name, birthDate, gender } = this.data.childForm;
+    const editingUuid = this.data.editingChildUuid;
     if (!name.trim()) {
-      wx.showToast({ title: '请填写昵称', icon: 'none' });
+      wx.showToast({ title: '请填写宝宝名字', icon: 'none' });
       return;
     }
     if (!auth.ownerId()) {
@@ -138,22 +196,151 @@ Page({
     }
     wx.showLoading({ title: '保存中...', mask: true });
     try {
-      const birthTs = birthDate ? dateUtil.startOfDay(new Date(birthDate.replace(/-/g, '/'))) : null;
-      const child = await db.children.create({
-        name: name.trim(),
-        birthDate: birthTs || null,
-        gender: this.data.childForm.gender || 'unknown',
-        gradeOverride: null,
-        sortOrder: this.data.children.length,
-      });
-      wx.hideLoading();
-      this.setData({ showAddChild: false });
-      app.setActiveChild(child.uuid);
-      this.refresh();
-      wx.showToast({ title: '已添加', icon: 'success' });
+      const birthTs = birthDate
+        ? dateUtil.startOfDay(new Date(birthDate.replace(/-/g, '/')))
+        : null;
+      if (editingUuid) {
+        // 编辑模式
+        await db.children.update(editingUuid, {
+          name: name.trim(),
+          birthDate: birthTs || null,
+          gender: gender || 'unknown',
+        });
+        wx.hideLoading();
+        this.setData({ showAddChild: false, editingChildUuid: '' });
+        await this.refresh();
+        wx.showToast({ title: '已保存', icon: 'success' });
+        // 编辑完也触发年级确认（如果有生日）
+        this._maybeConfirmGrade(editingUuid);
+      } else {
+        // 新增模式
+        const child = await db.children.create({
+          name: name.trim(),
+          birthDate: birthTs || null,
+          gender: gender || 'unknown',
+          gradeOverride: null,
+          sortOrder: this.data.children.length,
+        });
+        wx.hideLoading();
+        this.setData({ showAddChild: false, editingChildUuid: '' });
+        app.setActiveChild(child.uuid);
+        await this.refresh();
+        wx.showToast({ title: '已添加', icon: 'success' });
+        // 新增完触发年级确认
+        this._maybeConfirmGrade(child.uuid);
+      }
     } catch (err) {
       wx.hideLoading();
+      console.error('[mine] saveChild 失败', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
+    }
+  },
+
+  // ---- 年级确认弹层 ----
+  _maybeConfirmGrade(childUuid) {
+    const child = this.data.children.find((c) => c.uuid === childUuid);
+    if (!child || !child.birthDate) return;
+    // 已有手动覆盖则跳过确认
+    if (child.gradeOverride) return;
+    const grade = dateUtil.gradeOf(child.birthDate, null);
+    if (!grade) return; // 幼儿园/大学阶段不弹
+    this.setData({
+      showGradeConfirm: true,
+      gradeConfirmText: grade,
+      pendingGradeChildUuid: childUuid,
+    });
+  },
+
+  onGradeConfirmOk() {
+    this.setData({ showGradeConfirm: false, pendingGradeChildUuid: '' });
+  },
+
+  onGradeConfirmEdit() {
+    // 关闭确认弹层，打开年级 picker
+    const grade = this.data.gradeConfirmText;
+    const idx = this.data.gradePickerRange.indexOf(grade);
+    this.setData({
+      showGradeConfirm: false,
+      showGradePicker: true,
+      gradePickerIndex: idx >= 0 ? idx : 0,
+    });
+  },
+
+  onGradePickerChange(e) {
+    this.setData({ gradePickerIndex: Number(e.detail.value) });
+  },
+
+  async onGradePickerConfirm() {
+    const grade = this.data.gradePickerRange[this.data.gradePickerIndex];
+    const uuid = this.data.pendingGradeChildUuid;
+    if (!uuid || !grade) {
+      this.setData({ showGradePicker: false });
+      return;
+    }
+    try {
+      await db.children.update(uuid, { gradeOverride: grade });
+      this.setData({ showGradePicker: false, pendingGradeChildUuid: '' });
+      this.refresh();
+      wx.showToast({ title: '年级已更新', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: '更新失败', icon: 'none' });
+    }
+  },
+
+  onGradePickerCancel() {
+    this.setData({ showGradePicker: false, pendingGradeChildUuid: '' });
+  },
+
+  // ---- 头像上传 ----
+  onAvatarTap() {
+    wx.showActionSheet({
+      itemList: ['从相册选择', '使用默认图标'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          this._uploadAvatar();
+        } else if (res.tapIndex === 1) {
+          this._clearAvatar();
+        }
+      },
+    });
+  },
+
+  async _uploadAvatar() {
+    const uuid = this.data.activeChildId;
+    if (!uuid) return;
+    try {
+      const media = await new Promise((resolve, reject) => {
+        wx.chooseMedia({
+          count: 1,
+          mediaType: ['image'],
+          sizeType: ['compressed'],
+          success: resolve,
+          fail: reject,
+        });
+      });
+      if (!media.tempFiles || !media.tempFiles.length) return;
+      wx.showLoading({ title: '上传中...', mask: true });
+      const fileId = await db.uploadFile(media.tempFiles[0].tempFilePath);
+      await db.children.update(uuid, { avatarFileId: fileId });
+      wx.hideLoading();
+      await this.refresh();
+      wx.showToast({ title: '头像已更新', icon: 'success' });
+    } catch (err) {
+      wx.hideLoading();
+      console.error('[mine] 头像上传失败', err);
+      wx.showToast({ title: '上传失败', icon: 'none' });
+    }
+  },
+
+  async _clearAvatar() {
+    const uuid = this.data.activeChildId;
+    if (!uuid) return;
+    try {
+      await db.children.update(uuid, { avatarFileId: null });
+      await this.refresh();
+      wx.showToast({ title: '已恢复默认', icon: 'none' });
+    } catch (err) {
+      wx.showToast({ title: '操作失败', icon: 'none' });
     }
   },
 

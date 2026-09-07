@@ -7,6 +7,20 @@
 
 ## [unreleased] — 2026-09-07
 
+### Fixed
+- 孩子建档 Toast 文案「请填写昵称」修正为「请填写宝宝名字」
+- mine 页订阅 activeChildChanged，切换孩子后页面自动刷新
+- switchChild 切换孩子时重新派生年龄/年级/头像派生字段
+- 统计数据按当前孩子过滤，多孩子场景数据准确
+
+### Added
+- 孩子档案支持编辑（点击 chip 上 ✏️ 可修改名字/性别/生日）
+- 保存孩子信息后自动推导年级并弹确认框，支持手动修改
+- 孩子头像支持点击上传（从相册选择，存云存储）
+- 书架页书库水合接入全局缓存，避免每次 refresh 重复拉全量书库
+
+## [unreleased] — 2026-09-07
+
 ### feat
 - 孩子档案字段扩展 P0：新增 `gender`（性别）、`nickname`（小名）、`gradeOverride`（手动覆盖年级）字段
 - 新增 `utils/date.js` 工具函数：`ageText()`、`ageRangeOf()`、`gradeOf()`
