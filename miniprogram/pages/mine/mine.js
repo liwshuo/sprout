@@ -80,7 +80,9 @@ Page({
   },
 
   onShow() {
-    const u = auth.currentUser();
+    // B（时序）：app.js 登录为异步，onShow 早于 ensureLogin 完成时 auth.currentUser() 仍为 null，
+    // 会误判未登录 → 家长副区点击走 doLogin 分支。优先读全局已登录态，再 fallback。
+    const u = app.globalData.currentUser || auth.currentUser();
     this.setData({
       currentUser: u,
       isLoggedIn: !!u,
@@ -142,11 +144,13 @@ Page({
   //（scope 读取 app.globalData.activeChildId，与本页 activeChildId 保持一致），无需再手动加 childId。
   async _loadStats() {
     const childId = this.data.activeChildId;
-    const [records, books] = await Promise.all([
+    const [records, allBooks] = await Promise.all([
       db.records.listAll(999),
       childId ? db.books.listAll() : Promise.resolve([]),
     ]);
-    this.setData({ stats: { records: records.length, books: books.length } });
+    // 共读绘本仅统计「已读完」，不含加入书架但未读完的
+    const finishedBooks = allBooks.filter((b) => b.status === 'finished');
+    this.setData({ stats: { records: records.length, books: finishedBooks.length } });
   },
 
   // 派生家长副区文案：currentUser.role + 当前孩子名 → 称谓
@@ -154,9 +158,13 @@ Page({
     const user = this.data.currentUser;
     const child = this.data.activeChild;
     const name = (child && child._displayName) || 'Ta';
+    const loggedIn = this.data.isLoggedIn;
     const roleSet = !!(user && user.role != null && ROLE_SUFFIX[user.role]);
     let label;
-    if (roleSet) {
+    if (!loggedIn) {
+      // 未登录：家长副区不再显示空状态文案，而是明确的「选角色/绑定」入口
+      label = '登录后绑定家长角色';
+    } else if (roleSet) {
       label = `${name}的${ROLE_SUFFIX[user.role]}`;
     } else {
       label = '我是 Ta 的...';

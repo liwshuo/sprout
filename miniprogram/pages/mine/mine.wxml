@@ -44,7 +44,7 @@
         </view>
         <view class="parent-phone-btn" catchtap="onBindPhone">{{phoneTail ? '尾号 ' + phoneTail : '绑手机号'}}</view>
       </block>
-      <view wx:else class="parent-label parent-label-guide" bindtap="onParentRowTap">登录后记录孩子成长</view>
+      <view wx:else class="parent-label parent-label-guide" bindtap="onParentRowTap">{{parentLabel || '登录后绑定家长角色'}}<text class="parent-label-arrow">  登录 →</text></view>
     </view>
   </view>
 
@@ -57,7 +57,7 @@
     <view class="stat-divider"></view>
     <view class="stat-col">
       <view class="stat-number">{{stats.books}}</view>
-      <view class="stat-label">共读绘本</view>
+      <view class="stat-label">已读完</view>
     </view>
   </view>
 
