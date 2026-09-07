@@ -3,6 +3,14 @@
 本项目所有值得记录的功能变动都记于此。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，遵循语义化版本。
 > 约定：每次功能改动都应同步更新本文件与 `docs/PRODUCT_SPEC.md`。最新变更置于顶部。
 
+## [unreleased]
+### Changed
+- mine 页：合并「用户登录卡」与「当前孩子主卡」为一体卡，孩子信息为主，家长信息为辅
+- mine 页：新增家长角色选择（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他），首次进入主动引导
+- mine 页：修复编辑孩子弹层名字回填为空的 bug（input 缺少 value 绑定）
+### Added
+- auth.js：新增 updateUserRole(role) 方法
+
 ## [Unreleased]
 
 ## [v1.1.0] - 2026-09-07

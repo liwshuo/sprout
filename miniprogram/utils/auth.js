@@ -119,6 +119,26 @@ function ownerId() {
   return (u && u.ownerId) || '';
 }
 
+/**
+ * 更新家长角色：将 role 字段写入 users 集合当前用户文档，并更新本地缓存。
+ * @param {string} role  dad | mom | grandpa | grandma | grandpa_m | grandma_m | other
+ * @returns {Promise<Object>} 更新后的 user 对象
+ */
+async function updateUserRole(role) {
+  const app = getApp();
+  const u = currentUser();
+  if (!u || !u._id) throw new Error('未登录');
+  const db = wx.cloud.database();
+  await db.collection('users').doc(u._id).update({ data: { role, updatedAt: Date.now() } });
+  const updated = { ...u, role };
+  wx.setStorageSync('currentUser', updated);
+  if (app && app.globalData) {
+    app.globalData.currentUser = updated;
+    app._emit && app._emit('userChanged', updated);
+  }
+  return updated;
+}
+
 module.exports = {
   ensureLogin,
   upsertUser,
@@ -126,4 +146,5 @@ module.exports = {
   currentUser,
   ownerId,
   isCloudFunctionMissing,
+  updateUserRole,
 };

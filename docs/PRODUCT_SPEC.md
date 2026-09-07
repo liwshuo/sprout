@@ -106,7 +106,8 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 
 ### 4.5 我的 / 周报（我的 Tab）— 已实现
 
-- **孩子主卡（页面顶部）**：以「当前孩子主卡」呈现当前 `activeChild` 档案，展示字段 —— 圆形头像（有 `avatarFileId` 换取临时链接展示，无则按性别 emoji 兜底）、名字、年龄/年级（「X 岁 Y 个月 · 小学N年级」，由生日与 `gradeOverride` 派生）、阅读统计（**已读 N 本 · 打卡 N 次**，按当前 `activeChildId` 过滤）。右上角提供「✏️ 编辑」（`onEditChild`，编辑当前孩子）与「+ 添加」（`openAddChild`）两个入口。无孩子（`children.length === 0`）时主卡显示「还没有孩子档案，点击添加 →」引导态。
+- **孩子主卡（页面顶部）**：以「当前孩子主卡」呈现当前 `activeChild` 档案，展示字段 —— 圆形头像（有 `avatarFileId` 换取临时链接展示，无则按性别 emoji 兜底）、名字、年龄/年级（「X 岁 Y 个月 · 小学N年级」，由生日与 `gradeOverride` 派生）、阅读统计（**已读 N 本 · 打卡 N 次**，按当前 `activeChildId` 过滤）。右上角提供「✏️ 编辑」（`onEditChild`，编辑当前孩子）与「+ 添加」（`openAddChild`）两个入口。无孩子（`children.length === 0`）时主卡显示「还没有孩子档案，点击添加 →」引导态。原独立「用户/登录卡」已合并进该主卡下区（家长副区），孩子信息为主、家长信息为辅。
+  - **家长副区（主卡下区）**：主卡内以分割线分隔，下区展示家长 emoji + 家长称谓文案 + 绑定手机号 / 登录按钮。家长称谓由 `users.role` 与当前孩子名派生（如「小云朵的爸爸」）；`role` 枚举值：`dad / mom / grandpa / grandma / grandpa_m / grandma_m / other`（分别对应 爸爸 / 妈妈 / 爷爷 / 奶奶 / 姥爷 / 姥姥 / 其他，emoji 👨/👩/👴/👵/👴/👵/🧑）。首次进入（`role` 为 null）显示「😊 我是 Ta 的... 选一下 →」主动引导态；点击家长行走 `wx.showActionSheet`（`onRoleSelect`）选择角色，选后点击家长行可随时修改，角色经 `auth.updateUserRole(role)` 写入 `users` 集合并更新本地缓存。
   - **切换孩子**：多孩子（`children.length > 1`）时主卡底部显示「切换孩子 ▼」按钮（`onSwitchChild`），点击弹 `wx.showActionSheet` 列出所有孩子（每项 `名字 · 年龄`）并追加「+ 添加新孩子」项；选中孩子走 `app.setActiveChild(uuid)` 切换（触发 `activeChildChanged` 全局事件，主卡与统计随即刷新），选「+ 添加新孩子」打开建档弹层。
   - **孩子头像**：在编辑/添加弹层内点击头像从相册上传自定义头像（`wx.chooseMedia` 选图 → `db.uploadFile` 存云存储 → 回填 `avatarFileId`）；展示时按 `avatarFileId` 换取临时链接（`db.getTempUrls`）渲染，无则回落性别 emoji。
   - **孩子信息编辑**：点主卡「✏️ 编辑」进入编辑模式（复用建档弹层，`editingChildUuid` 区分新增/编辑，编辑走 `db.children.update`），可修改名字 / 性别 / 生日；打开弹层时 `childForm` 正确回填 `name` / `birthDate` / `gender` / `gradeOverride`。
@@ -262,7 +263,7 @@ lib/
 
 | 集合 | 归属 | 用途 | 状态 |
 | --- | --- | --- | --- |
-| `users` | ownerId | 账号 | ✅ 已实现 |
+| `users` | ownerId | 账号（新增 `role` 家长角色字段，枚举 `dad`/`mom`/`grandpa`/`grandma`/`grandpa_m`/`grandma_m`/`other`；首次进入引导选角色，选后点击家长行可修改） | ✅ 已实现 |
 | `children` | ownerId | 孩子档案（多孩子；字段 `name`〔大名或小名均可〕/`birthDate`/`avatarFileId`/`sortOrder`，P0 扩展新增 `gender`〔`boy`/`girl`/`unknown`〕/`gradeOverride`〔手动覆盖年级〕；年龄文字/年级/年龄段由 `utils/date.js` 的 `ageText`/`gradeOf`/`ageRangeOf` 派生） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
 | `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |

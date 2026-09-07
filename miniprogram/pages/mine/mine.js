@@ -11,6 +11,8 @@ Page({
     activeChildId: '',
     activeChild: null,
     stats: { records: 0, books: 0 },
+    parentLabel: '',   // 派生：「小云朵的爸爸」或「我是 Ta 的... 选一下 →」
+    parentEmoji: '😊', // 派生
     // 添加孩子弹层
     showAddChild: false,
     editingChildUuid: '',
@@ -42,6 +44,7 @@ Page({
   onShow() {
     this.setData({ user: auth.currentUser(), activeChildId: app.globalData.activeChildId });
     this.refresh();
+    this._deriveParentLabel();
   },
   onUnload() {
     app.off && app.off('userChanged', this._onUser);
@@ -67,6 +70,58 @@ Page({
     // 先加载 children 列表，再定位当前孩子主卡，再刷新统计
     this._loadActiveChild();
     this._loadStats();
+    this._deriveParentLabel();
+  },
+
+  // 派生家长副区文案与 emoji
+  _deriveParentLabel() {
+    const user = this.data.user;
+    const child = this.data.activeChild;
+    const name = (child && child._displayName) || 'Ta';
+    const ROLE_MAP = {
+      dad:       { emoji: '👨', label: `${name}的爸爸` },
+      mom:       { emoji: '👩', label: `${name}的妈妈` },
+      grandpa:   { emoji: '👴', label: `${name}的爷爷` },
+      grandma:   { emoji: '👵', label: `${name}的奶奶` },
+      grandpa_m: { emoji: '👴', label: `${name}的姥爷` },
+      grandma_m: { emoji: '👵', label: `${name}的姥姥` },
+      other:     { emoji: '🧑', label: `${name}的家长` },
+    };
+    const entry = user && user.role ? ROLE_MAP[user.role] : null;
+    this.setData({
+      parentLabel: entry ? entry.label : (user ? '我是 Ta 的... 选一下 →' : '登录后记录孩子成长'),
+      parentEmoji: entry ? entry.emoji : '😊',
+    });
+  },
+
+  // 点击家长副区：未登录先登录，否则弹出角色选择
+  onRoleSelect() {
+    if (!this.data.user) {
+      this.doLogin();
+      return;
+    }
+    const ROLES = [
+      { value: 'dad',       label: '👨 爸爸' },
+      { value: 'mom',       label: '👩 妈妈' },
+      { value: 'grandpa',   label: '👴 爷爷' },
+      { value: 'grandma',   label: '👵 奶奶' },
+      { value: 'grandpa_m', label: '👴 姥爷' },
+      { value: 'grandma_m', label: '👵 姥姥' },
+      { value: 'other',     label: '🧑 其他' },
+    ];
+    wx.showActionSheet({
+      itemList: ROLES.map(r => r.label),
+      success: async (res) => {
+        const role = ROLES[res.tapIndex].value;
+        try {
+          const updated = await auth.updateUserRole(role);
+          this.setData({ user: updated });
+          this._deriveParentLabel();
+        } catch (e) {
+          wx.showToast({ title: '保存失败', icon: 'none' });
+        }
+      },
+    });
   },
 
   // 解析孩子派生字段（_displayName / _ageText / _grade / _ageRange / _avatarEmoji / _avatarUrl）

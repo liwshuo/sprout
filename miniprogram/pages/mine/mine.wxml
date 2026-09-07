@@ -1,25 +1,8 @@
 <!-- pages/mine/mine.wxml —— 我的 -->
 <view class="container">
-  <!-- 用户 / 登录卡 -->
-  <view class="card user-card">
-    <view class="avatar">{{user ? '🙂' : '👶'}}</view>
-    <view class="flex-1">
-      <view class="user-name" wx:if="{{user}}">{{user.nickname || '成长记录家长'}}</view>
-      <view class="user-name" wx:else>未登录</view>
-      <view class="user-sub text-sub" wx:if="{{user}}">{{user.phone ? user.phone : '点击右侧绑定手机号'}}</view>
-      <view class="user-sub text-sub" wx:else>登录后云端同步，多设备共享</view>
-    </view>
-    <button wx:if="{{!user}}" class="btn-primary login-btn" bindtap="doLogin">登录</button>
-    <button
-      wx:elif="{{!user.phone}}"
-      class="btn-ghost login-btn"
-      open-type="getPhoneNumber"
-      bindgetphonenumber="onGetPhone"
-    >绑手机</button>
-  </view>
-
-  <!-- 当前孩子主卡 -->
+  <!-- 主卡：孩子主区 + 家长副区合并 -->
   <view class="card child-main-card">
+    <!-- 孩子主区 -->
     <block wx:if="{{children.length > 0}}">
       <view class="child-card-header">
         <view class="child-card-title">我的宝宝</view>
@@ -48,6 +31,30 @@
       </view>
     </block>
     <view wx:else class="child-empty-tip" bindtap="openAddChild">还没有孩子档案，点击添加 →</view>
+
+    <!-- 分割线 -->
+    <view class="parent-divider"></view>
+
+    <!-- 家长副区 -->
+    <view class="parent-row" bindtap="onRoleSelect">
+      <view class="parent-emoji">{{parentEmoji}}</view>
+      <view class="parent-label {{!user || !user.role ? 'parent-label-guide' : ''}}">{{parentLabel}}</view>
+      <view class="parent-actions">
+        <button
+          wx:if="{{!user}}"
+          class="btn-primary parent-login-btn"
+          catchtap="doLogin"
+        >登录</button>
+        <button
+          wx:elif="{{!user.phone}}"
+          class="btn-ghost parent-login-btn"
+          open-type="getPhoneNumber"
+          bindgetphonenumber="onGetPhone"
+          catchtap
+        >绑手机</button>
+        <view wx:else class="parent-phone text-sub">{{user.phone}}</view>
+      </view>
+    </view>
   </view>
 
   <!-- 统计 -->
@@ -106,7 +113,7 @@
     </view>
     <view class="form-avatar-hint text-sub">点击换头像</view>
   </view>
-  <input class="sheet-input" placeholder="宝宝叫什么呢？大名小名都可以" placeholder-class="ph" bindinput="onChildInput" />
+  <input class="sheet-input" value="{{childForm.name}}" placeholder="宝宝叫什么呢？大名小名都可以" placeholder-class="ph" bindinput="onChildInput" />
   <view class="sheet-field-label">性别</view>
   <view class="gender-chips">
     <view class="chip {{childForm.gender === 'boy' ? 'chip-active' : ''}}" bindtap="onGenderSelect" data-gender="boy">👦 男孩</view>
