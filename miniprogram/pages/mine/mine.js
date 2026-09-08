@@ -89,6 +89,15 @@ Page({
       activeChildId: app.globalData.activeChildId,
     });
     this.refresh();
+    // 异步保底：缓存没有用户但云已就绪，静默补一次登录（解决冷启动时序问题）
+    if (!u && app.globalData.cloudReady) {
+      auth.ensureLogin().then((user) => {
+        app.globalData.currentUser = user;
+        this.setData({ currentUser: user, isLoggedIn: true });
+        this._deriveParentLabel();
+        this.refresh();
+      }).catch(() => { /* ignore，用户可手动触发登录 */ });
+    }
   },
 
   onUnload() {
@@ -180,6 +189,7 @@ Page({
   // 废弃原两级 ActionSheet 嵌套：微信不允许在上一个 ActionSheet 的 success 回调里
   // 再调起 ActionSheet，第二个会被系统静默丢弃 → 表现为「点了没反应」。
   onParentRowTap() {
+    console.log('[mine] onParentRowTap triggered, isLoggedIn=', this.data.isLoggedIn, 'currentUser=', JSON.stringify(this.data.currentUser));
     if (!this.data.isLoggedIn) {
       this.doLogin();
       return;
@@ -509,5 +519,27 @@ Page({
   },
   goSettings() {
     wx.showToast({ title: '设置敬请期待', icon: 'none' });
+  },
+
+  // ==================== 退出登录 ====================
+  onLogout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '退出后本地缓存将清除，需要重新登录才能使用云同步功能',
+      confirmText: '退出',
+      confirmColor: '#FF4D4F',
+      success: (res) => {
+        if (res.confirm) {
+          auth.logout();
+          this.setData({
+            isLoggedIn: false,
+            currentUser: null,
+            parentLabel: '登录后绑定家长角色',
+            parentLabelSet: false,
+            phoneTail: '',
+          });
+        }
+      },
+    });
   },
 });

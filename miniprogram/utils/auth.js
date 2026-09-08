@@ -139,6 +139,16 @@ async function updateUserRole(role) {
   return updated;
 }
 
+/** 退出登录：清 Storage + 全局状态，并广播 userChanged(null) */
+function logout() {
+  wx.removeStorageSync('currentUser');
+  const app = getApp();
+  if (app && app.globalData) {
+    app.globalData.currentUser = null;
+    app._emit && app._emit('userChanged', null);
+  }
+}
+
 module.exports = {
   ensureLogin,
   upsertUser,
@@ -147,4 +157,5 @@ module.exports = {
   ownerId,
   isCloudFunctionMissing,
   updateUserRole,
+  logout,
 };

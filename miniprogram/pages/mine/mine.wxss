@@ -389,3 +389,8 @@
   font-size: 24rpx;
   color: #BDBDBD;
 }
+
+/* 退出登录 - 危险操作红色文字 */
+.list-item-danger .list-item-label {
+  color: #FF4D4F;
+}

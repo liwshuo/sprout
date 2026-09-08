@@ -86,6 +86,11 @@
       <view class="list-item-label">设置</view>
       <view class="list-item-arrow">›</view>
     </view>
+    <view wx:if="{{isLoggedIn}}" class="list-divider"></view>
+    <view wx:if="{{isLoggedIn}}" class="list-item list-item-danger" bindtap="onLogout">
+      <view class="list-item-icon icon-gray">🚪</view>
+      <view class="list-item-label">退出登录</view>
+    </view>
   </view>
 
   <!-- ④ 页脚 -->
