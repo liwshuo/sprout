@@ -531,9 +531,14 @@ Page({
       success: (res) => {
         if (res.confirm) {
           auth.logout();
+          // 同时清空孩子相关数据，避免退出后页面还显示孩子信息
           this.setData({
             isLoggedIn: false,
             currentUser: null,
+            children: [],
+            activeChildId: '',
+            activeChild: null,
+            stats: { records: 0, books: 0 },
             parentLabel: '登录后绑定家长角色',
             parentLabelSet: false,
             phoneTail: '',
