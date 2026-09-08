@@ -38,13 +38,11 @@
 
     <!-- 家长副区（无 emoji；称谓行点击直接选角色，手机号为独立按钮） -->
     <view class="parent-area">
-      <block wx:if="{{isLoggedIn}}">
-        <view class="parent-label {{parentLabelSet ? '' : 'parent-label-guide'}}" bindtap="onParentRowTap">
-          {{parentLabel}}<text wx:if="{{!parentLabelSet}}" class="parent-label-arrow">  选一下 →</text>
-        </view>
-        <view class="parent-phone-btn" catchtap="onBindPhone">{{phoneTail ? '尾号 ' + phoneTail : '绑手机号'}}</view>
-      </block>
-      <view wx:else class="parent-label parent-label-guide" bindtap="onParentRowTap">{{parentLabel || '登录后绑定家长角色'}}<text class="parent-label-arrow">  登录 →</text></view>
+      <view class="parent-label-row" bindtap="onParentRowTap">
+        <text class="parent-label {{parentLabelSet ? '' : 'parent-label-guide'}}">{{parentLabel || (isLoggedIn ? '我是 Ta 的...' : '登录后绑定家长角色')}}</text>
+        <text wx:if="{{!parentLabelSet}}" class="parent-label-arrow">  {{isLoggedIn ? '选一下 →' : '登录 →'}}</text>
+      </view>
+      <view wx:if="{{isLoggedIn}}" class="parent-phone-btn" catchtap="onBindPhone">{{phoneTail ? '尾号 ' + phoneTail : '绑手机号'}}</view>
     </view>
   </view>
 
