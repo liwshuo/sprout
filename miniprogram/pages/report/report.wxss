@@ -20,10 +20,53 @@
   font-weight: 600;
 }
 
+.range-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
 .range-label {
   text-align: center;
   font-size: 24rpx;
-  margin-bottom: 20rpx;
+  margin-right: 16rpx;
+}
+.source-tag {
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(143, 199, 240, 0.15);
+  color: #3C78A8;
+}
+.source-tag-local {
+  background: rgba(126, 217, 195, 0.18);
+  color: #2A7E6A;
+}
+.regen-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -8rpx 0 24rpx;
+  padding: 20rpx 24rpx;
+  background: #FFF4E6;
+  border-radius: 16rpx;
+}
+.regen-text {
+  font-size: 24rpx;
+  flex: 1;
+  margin-right: 20rpx;
+  line-height: 1.5;
+}
+.regen-btn {
+  font-size: 24rpx;
+  color: #fff;
+  background: #FF8C42;
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  flex-shrink: 0;
+}
+.regen-btn-disabled {
+  opacity: 0.5;
 }
 
 /* 概览 */
@@ -138,4 +181,17 @@
 }
 .book-item:last-child {
   border-bottom: none;
+}
+.skeleton .sk-line {
+  height: 24rpx;
+  border-radius: 8rpx;
+  background: var(--line);
+  margin: 16rpx 0;
+}
+.skeleton .sk-line.short { width: 40%; }
+.skeleton .sk-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 28rpx 24rpx;
+  margin-bottom: 20rpx;
 }

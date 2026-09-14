@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "SundayEvening",
+      "type": "timer",
+      "config": "0 0 20 * * 0"
+    }
+  ]
+}

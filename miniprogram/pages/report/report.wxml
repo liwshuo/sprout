@@ -1,18 +1,40 @@
 <!-- pages/report/report.wxml —— 成长周报 -->
 <view class="container">
+  <!-- 骨架屏 -->
+  <block wx:if="{{loading}}">
+    <view class="sk-card">
+      <view class="sk-line short"></view>
+      <view class="sk-line"></view>
+    </view>
+    <view class="sk-card">
+      <view class="sk-line"></view>
+      <view class="sk-line short"></view>
+      <view class="sk-line short"></view>
+    </view>
+  </block>
+
   <!-- 周切换 -->
   <view class="week-switch">
     <view class="switch-item {{weekOffset === 0 ? 'active' : ''}}" data-offset="0" bindtap="switchWeek">本周</view>
     <view class="switch-item {{weekOffset === -1 ? 'active' : ''}}" data-offset="-1" bindtap="switchWeek">上周</view>
   </view>
 
-  <view class="range-label text-sub">{{rangeLabel}}</view>
+  <view class="range-row">
+    <view class="range-label text-sub">{{rangeLabel}}</view>
+    <view class="source-tag" wx:if="{{dataSource === 'cloud'}}">☁️ 已保存</view>
+    <view class="source-tag source-tag-local" wx:elif="{{dataSource === 'local'}}">💡 本地计算</view>
+  </view>
 
   <!-- 概览 -->
   <view class="card overview-card">
     <view class="ov-item">
       <view class="ov-num">{{recordCount}}</view>
       <view class="ov-label text-sub">成长记录</view>
+    </view>
+    <view class="ov-divider"></view>
+    <view class="ov-item">
+      <view class="ov-num">{{activeDays}}</view>
+      <view class="ov-label text-sub">活跃天数</view>
     </view>
     <view class="ov-divider"></view>
     <view class="ov-item">
@@ -23,6 +45,16 @@
     <view class="ov-item">
       <view class="ov-num ov-emoji">{{topMood ? topMood.emoji : '—'}}</view>
       <view class="ov-label text-sub">主要心情</view>
+    </view>
+  </view>
+
+  <!-- 手动重算 / 保存 入口（非阻塞 banner） -->
+  <view class="regen-banner">
+    <view class="regen-text text-sub">
+      {{dataSource === 'cloud' ? '若有新记录尚未同步到本份周报' : '本地实时计算，可保存为周报留作纪念'}}
+    </view>
+    <view class="regen-btn {{regenerating ? 'regen-btn-disabled' : ''}}" bindtap="regenerate">
+      {{dataSource === 'cloud' ? '🔄 重新计算' : '💾 保存周报'}}
     </view>
   </view>
 
@@ -66,8 +98,12 @@
   </view>
 
   <!-- 空态 -->
-  <view class="empty card" wx:if="{{!loading && recordCount === 0}}">
-    <text class="empty-emoji">🌱</text>
-    <view class="empty-text">{{weekTitle}}还没有记录，快去记录宝贝的成长瞬间吧</view>
-  </view>
+  <empty-state
+    wx:if="{{!loading && recordCount === 0 && books.length === 0}}"
+    icon="🌱"
+    title="{{weekTitle}}还没有记录"
+    subtitle="去记录页或阅读页添加宝贝的成长瞬间，周报会自动统计"
+    action-text="📝 去记录一条"
+    bind:action="goRecords"
+  />
 </view>
