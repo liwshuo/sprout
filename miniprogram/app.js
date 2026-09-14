@@ -20,6 +20,9 @@ App({
   },
 
   onLaunch() {
+    // ⚠️ 顺序必须是：先 _initCloud → cloudReady=true → 再 ensureLogin
+    //    旧版代码中 ensureLogin 判断写在 _initCloud 之前，导致 cloudReady 永远为 false，
+    //    静默登录永远不触发，ownerId 一直为空，所有写操作走到「未登录」兜底错误。
     this._initCloud();
     // 恢复本地缓存的登录态与当前孩子，加速冷启动
     this.globalData.activeChildId = wx.getStorageSync('activeChildId') || '';
@@ -31,6 +34,7 @@ App({
         .ensureLogin()
         .then((user) => {
           this.globalData.currentUser = user;
+          try { wx.setStorageSync('currentUser', user); } catch (e) {}
           this._emit('userChanged', user);
         })
         .catch((err) => {
@@ -65,6 +69,7 @@ App({
 
   // ---- 极简全局事件总线：页面订阅 activeChildId / user 变化后自刷新 ----
   _listeners: {},
+  _emitTimers: {},
   on(evt, cb) {
     (this._listeners[evt] = this._listeners[evt] || []).push(cb);
   },
@@ -82,10 +87,16 @@ App({
     });
   },
 
-  // 切换当前孩子并广播
+  // 切换当前孩子并广播（debounce 100ms，防止5页面并发refresh）
   setActiveChild(childId) {
     this.globalData.activeChildId = childId;
-    wx.setStorageSync('activeChildId', childId);
-    this._emit('activeChildChanged', childId);
+    try { wx.setStorageSync('activeChildId', childId); } catch (e) {}
+    if (this._emitTimers.activeChildChanged) {
+      clearTimeout(this._emitTimers.activeChildChanged);
+    }
+    this._emitTimers.activeChildChanged = setTimeout(() => {
+      this._emitTimers.activeChildChanged = null;
+      this._emit('activeChildChanged', childId);
+    }, 100);
   },
 });

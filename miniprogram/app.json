@@ -9,6 +9,7 @@
     "pages/schedule/index",
     "pages/todo/todo",
     "pages/mine/mine",
+    "pages/mine/privacy/privacy",
     "pages/report/report"
   ],
   "window": {
@@ -16,7 +17,8 @@
     "navigationBarBackgroundColor": "#FF8C42",
     "navigationBarTitleText": "萌芽成长册",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#FFF8F3"
+    "backgroundColor": "#FFF8F3",
+    "libVersion": "2.14.0"
   },
   "tabBar": {
     "color": "#B0A79E",
@@ -47,5 +49,9 @@
     ]
   },
   "style": "v2",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "usingComponents": {
+    "bottom-sheet": "/components/bottom-sheet/bottom-sheet",
+    "empty-state": "/components/empty-state/empty-state"
+  }
 }

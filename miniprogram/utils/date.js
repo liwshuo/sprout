@@ -104,14 +104,34 @@ function expandWeeklySchedule(items, year, month) {
     const date = ymd(ts);
     list.forEach((item) => {
       const rec = item.recurrence || 'weekly';
-      if (rec !== 'weekly') return; // 仅 weekly；其余规则 P1/P2
+      if (rec !== 'weekly') return;
       if (Number(item.weekday) !== wd) return;
-      // 生效区间过滤（按「天」比较，右端含当天）
       if (item.startDate && ts < startOfDay(item.startDate)) return;
       if (item.endDate && ts > startOfDay(item.endDate)) return;
-      out.push({ ts, date, weekday: wd, item });
+      // excludedDates[] 过滤：命中当天则整个事件不出现在展开结果
+      // 同时在 returned item 上挂 _isExcludedToday=false 方便调用方一致判断
+      if (Array.isArray(item.excludedDates) && item.excludedDates.indexOf(date) >= 0) return;
+      out.push({ ts, date, weekday: wd, item: Object.assign({}, item, { _isExcludedToday: false }) });
     });
   }
+  return out;
+}
+
+/**
+ * 单日粒度的「课表是否今天不上」判定工具（用于课表页课程卡角标 + 灰色划线）。
+ * 在课表周视图（整周7天网格）里调用一次，把返回的 Set 挂到 grouped items 上即可。
+ * @param {Array} items schedule_items 列表
+ * @param {number|Date} dateRef 目标日期（默认今天）
+ * @returns {Set<string>} 命中 excludedDates 的 item.uuid 集合
+ */
+function markExcludedUuidsForDate(items, dateRef = new Date()) {
+  const today = ymd(dateRef);
+  const out = new Set();
+  (items || []).forEach((it) => {
+    if (Array.isArray(it.excludedDates) && it.excludedDates.indexOf(today) >= 0) {
+      out.add(it.uuid);
+    }
+  });
   return out;
 }
 
@@ -202,6 +222,7 @@ module.exports = {
   monthGrid,
   monthRange,
   expandWeeklySchedule,
+  markExcludedUuidsForDate,
   ageText,
   ageRangeOf,
   gradeOf,

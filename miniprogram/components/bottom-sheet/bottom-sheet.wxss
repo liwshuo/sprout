@@ -1,0 +1,58 @@
+/* components/bottom-sheet/bottom-sheet.wxss */
+.bs-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 30;
+}
+.bs-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 31;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+.bs-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-bottom: 28rpx;
+  color: #2E2722;
+}
+.bs-content {
+  margin-bottom: 16rpx;
+}
+.bs-actions {
+  display: flex;
+  align-items: center;
+  margin-top: 32rpx;
+}
+.bs-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+  border-radius: 999rpx;
+}
+.bs-btn:first-child {
+  margin-right: 20rpx;
+}
+.bs-btn-primary {
+  background: #FF8C42;
+  color: #fff;
+  font-weight: 600;
+}
+.bs-btn-ghost {
+  background: #F5EFE9;
+  color: #2E2722;
+}
+.bs-btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}

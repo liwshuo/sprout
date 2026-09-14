@@ -57,10 +57,13 @@ const TEMP_URL_BATCH = 50;
 /** 构造带归属过滤 + 排除软删的 where 条件 */
 function _buildWhere(opts = {}) {
   const { ownerId, childId } = scope();
+  // 未登录：一律不允许查
   if (!ownerId) return null;
+  // 要求带孩子归属（默认 true）但未选孩子：强制空结果，防止多孩子交叉泄露
+  if (opts.withChild !== false && !childId) return null;
   return Object.assign(
     { ownerId, isDeleted: _().neq(true) },
-    opts.withChild === false ? {} : childId ? { childId } : {},
+    opts.withChild === false ? {} : { childId },
     opts.where || {}
   );
 }
@@ -134,12 +137,13 @@ async function listAllPaged(col, opts = {}, cap = PAGE_CAP) {
  */
 async function listAllPublic(col, where = {}, orderBy = null, cap = 500) {
   try {
-    const hasWhere = where && Object.keys(where).length > 0;
+    const baseWhere = Object.assign({}, where, { isDeleted: _().neq(true) });
+    const hasWhere = Object.keys(baseWhere).length > 0;
     const out = [];
     let skip = 0;
     while (skip < cap) {
       let q = db().collection(col);
-      if (hasWhere) q = q.where(where);
+      if (hasWhere) q = q.where(baseWhere);
       if (orderBy) q = q.orderBy(orderBy[0], orderBy[1] || 'asc');
       // eslint-disable-next-line no-await-in-loop
       const { data } = await q.skip(skip).limit(PAGE_SIZE).get();
@@ -182,15 +186,20 @@ async function create(col, doc, { withChild = true } = {}) {
   const { ownerId, childId } = scope();
   if (!ownerId) throw new Error('未登录，无法写入');
   const now = Date.now();
+  // 归属口径与 _buildWhere 对齐：withChild=true 但 childId 空时不写 childId，
+  // 同时读层会强制 null（禁止归属模糊的写入，后续页面层会在 childId 空时拦截写操作）
+  const scopeFields = Object.assign(
+    { ownerId },
+    withChild && childId ? { childId } : {}
+  );
   const payload = Object.assign(
     {
       uuid: genUuid(),
-      ownerId,
       createdAt: now,
       updatedAt: now,
       isDeleted: false,
     },
-    withChild ? { childId } : {},
+    scopeFields,
     doc
   );
   await db().collection(col).add({ data: payload });
@@ -378,6 +387,49 @@ const series = {
   },
 };
 
+// 周报：周度汇总（V1 P1：云端云函数 generateWeeklyReport 生成，本地只读 + 手动再生成）
+// 主键：weekStart（本周一 00:00 毫秒）+ ownerId + childId 保证一周一份（云函数做幂等 upsert）
+const weeklyReports = {
+  listAll() {
+    return listAllPaged(COLLECTIONS.weeklyReports, {
+      withChild: true,
+      orderBy: ['weekStart', 'desc'],
+    });
+  },
+  listByRange(startMs, endMs) {
+    const cmd = _();
+    return listAllPaged(COLLECTIONS.weeklyReports, {
+      withChild: true,
+      where: { weekStart: cmd.gte(startMs).and(cmd.lt(endMs)) },
+      orderBy: ['weekStart', 'desc'],
+    });
+  },
+  async getByWeek(weekStartMs) {
+    try {
+      const where = _buildWhere({ withChild: true, where: { weekStart: weekStartMs } });
+      if (!where) return null;
+      const { data } = await db()
+        .collection(COLLECTIONS.weeklyReports)
+        .where(where)
+        .limit(1)
+        .get();
+      return (data && data[0]) || null;
+    } catch (err) {
+      console.warn('[db] weeklyReports.getByWeek 失败', err);
+      return null;
+    }
+  },
+  create(report) {
+    return create(COLLECTIONS.weeklyReports, report, { withChild: true });
+  },
+  update(uuid, patch) {
+    return updateByUuid(COLLECTIONS.weeklyReports, uuid, patch);
+  },
+  remove(uuid) {
+    return softDelete(COLLECTIONS.weeklyReports, uuid);
+  },
+};
+
 // 精选书库：官方/共建公共只读集合（无 ownerId/childId 归属）。
 // 与 books/series 不同，**不走 _buildWhere 归属过滤**，走 listAllPublic 分页拉全。
 // 权限约定：云开发控制台建集合时设「所有人可读」（写入由后台/导入完成）。
@@ -421,7 +473,8 @@ async function uploadFile(tempFilePath) {
   const now = new Date();
   const ym = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
   const ext = (tempFilePath.split('.').pop() || 'jpg').split('?')[0];
-  const cloudPath = `${ownerId || 'anonymous'}/${childId || 'default'}/${ym}/${genUuid()}.${ext}`;
+  const prefix = childId ? `${ownerId || 'anonymous'}/${childId}` : `no-child/${ownerId || 'anonymous'}`;
+  const cloudPath = `${prefix}/${ym}/${genUuid()}.${ext}`;
   const res = await wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath });
   return res.fileID;
 }
@@ -481,6 +534,7 @@ module.exports = {
   scheduleItems,
   readingLogs,
   series,
+  weeklyReports,
   bookLibrary,
   // 媒体
   uploadFile,

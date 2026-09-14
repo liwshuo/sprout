@@ -14,18 +14,40 @@ const dateUtil = require('../utils/date');
  */
 async function addReadingLog(childId, bookUuid, data = {}) {
   if (!bookUuid) throw new Error('缺少 bookUuid');
-  const readDate =
+  // 先取书的 totalPages/totalChapters，做 pageTo/chapterIndex 上限裁剪
+  // （失败兜底：查不到书时不裁剪，防止脏数据阻断打卡）
+  let bookMeta = null;
+  try { bookMeta = await db.books.getByUuid(bookUuid); } catch (e) { bookMeta = null; }
+  const totalPages = bookMeta && bookMeta.totalPages ? Number(bookMeta.totalPages) : null;
+  const totalChapters = bookMeta && bookMeta.totalChapters ? Number(bookMeta.totalChapters) : null;
+
+  const clamp = (v, max) => {
+    if (v == null) return v;
+    const n = Number(v);
+    if (!Number.isFinite(n)) return v;
+    if (n < 0) return 0;
+    if (max != null && n > max) return max;
+    return n;
+  };
+
+  const pageFrom = data.pageFrom != null && data.pageFrom !== '' ? clamp(Number(data.pageFrom), totalPages) : null;
+  const pageTo = data.pageTo != null && data.pageTo !== '' ? clamp(Number(data.pageTo), totalPages) : null;
+  const chapterIndex = data.chapterIndex != null && data.chapterIndex !== '' ? clamp(Number(data.chapterIndex), totalChapters != null ? totalChapters - 1 : null) : null;
+
+  const rawReadDate =
     data.readDate != null ? data.readDate : dateUtil.startOfDay(new Date());
+  const todayEnd = dateUtil.startOfNextDay(new Date());
+  const readDate = rawReadDate >= todayEnd ? dateUtil.startOfDay(new Date()) : rawReadDate;
   const log = {
     bookUuid,
     readDate,
     chapter: data.chapter || null,
-    chapterIndex: data.chapterIndex != null ? Number(data.chapterIndex) : null,
-    pageFrom: data.pageFrom != null && data.pageFrom !== '' ? Number(data.pageFrom) : null,
-    pageTo: data.pageTo != null && data.pageTo !== '' ? Number(data.pageTo) : null,
+    chapterIndex,
+    pageFrom,
+    pageTo,
     durationMinutes:
       data.durationMinutes != null && data.durationMinutes !== ''
-        ? Number(data.durationMinutes)
+        ? Math.max(0, Number(data.durationMinutes) || 0)
         : null,
     mood: data.mood || null,
     note: data.note || null,
@@ -65,20 +87,41 @@ async function _syncBookProgress(bookUuid) {
     const maxChapter = Math.max(0, ...nums((logs || []).map((l) => l.chapterIndex)));
     const lastReadDate = Math.max(0, ...nums((logs || []).map((l) => l.readDate)));
 
-    let status = book.status && book.status !== 'want' ? book.status : 'reading';
-    if (book.totalPages && maxPage >= book.totalPages) status = 'done';
-    if (book.totalChapters && maxChapter >= book.totalChapters) status = 'done';
+    const totalPages = book.totalPages ? Number(book.totalPages) : null;
+    const totalChapters = book.totalChapters ? Number(book.totalChapters) : null;
+    const finalMaxPage = totalPages != null ? Math.min(maxPage, totalPages) : maxPage;
+    const finalMaxChapter = totalChapters != null ? Math.min(maxChapter, totalChapters - 1) : maxChapter;
 
-    // TODO P1: 读完时同步 book_library.readFinishCount +1（若 book.libraryUuid 存在）
-    //   触发点：status 由非 done 跃迁为 done 时，对 book.libraryUuid 对应书库文档 inc(+1)。
-    //   注意做幂等（避免重复打卡最后一页重复计数），实现见 docs/BOOK_LIBRARY_BACKLOG.md。
+    const prevStatus = book.status || 'want';
+    let status = prevStatus !== 'want' ? prevStatus : 'reading';
+    if (totalPages && finalMaxPage >= totalPages) status = 'done';
+    if (totalChapters && finalMaxChapter >= totalChapters - 1) status = 'done';
 
     const patch = { status };
     if (lastReadDate) patch.lastReadDate = lastReadDate;
-    if (maxPage) patch.currentPage = maxPage;
-    if (maxChapter) patch.currentChapter = maxChapter;
+    if (finalMaxPage) patch.currentPage = finalMaxPage;
+    if (finalMaxChapter >= 0) patch.currentChapter = finalMaxChapter;
 
     await db.books.update(bookUuid, patch);
+
+    // V1 P1：status 首次由 非 done 跃迁为 done 时，
+    // 同步 book_library.readFinishCount +1（若该书有 libraryUuid）
+    // 注意幂等：只有 prevStatus !== 'done' 且 status === 'done' 时才触发。
+    if (prevStatus !== 'done' && status === 'done' && book.libraryUuid) {
+      try {
+        if (wx.cloud && wx.cloud.callFunction) {
+          const delta = 1;
+          if (Math.abs(delta) <= 10) {
+            await wx.cloud.callFunction({
+              name: 'bookLibraryInc',
+              data: { bookLibraryUuid: book.libraryUuid, delta, field: 'readFinishCount' },
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('[reading-service] bookLibraryInc(readFinishCount) 失败，跳过', err);
+      }
+    }
   } catch (err) {
     console.warn('[reading-service] 同步书籍进度失败（不影响打卡）', err);
   }

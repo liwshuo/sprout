@@ -1,0 +1,6 @@
+<view class="es-card card">
+  <text class="es-emoji">{{icon}}</text>
+  <view class="es-title">{{title}}</view>
+  <view class="es-subtitle text-sub" wx:if="{{subtitle}}">{{subtitle}}</view>
+  <view wx:if="{{actionText}}" class="es-action" bindtap="_onAction">{{actionText}}</view>
+</view>

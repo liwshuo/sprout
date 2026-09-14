@@ -1,0 +1,20 @@
+<view wx:if="{{show}}">
+  <view class="bs-mask" bindtap="_onMaskTap"></view>
+  <view class="bs-sheet" catchtap="_catchStop">
+    <view class="bs-title" wx:if="{{title}}">{{title}}</view>
+    <view class="bs-content">
+      <slot></slot>
+    </view>
+    <view class="bs-actions" wx:if="{{!hideCancel || true}}">
+      <view
+        wx:if="{{!hideCancel}}"
+        class="bs-btn bs-btn-ghost {{confirmDisabled ? 'bs-btn-disabled' : ''}}"
+        bindtap="_onCancel"
+      >{{cancelText}}</view>
+      <view
+        class="bs-btn bs-btn-primary {{confirmDisabled ? 'bs-btn-disabled' : ''}}"
+        bindtap="_onConfirm"
+      >{{confirmText}}</view>
+    </view>
+  </view>
+</view>

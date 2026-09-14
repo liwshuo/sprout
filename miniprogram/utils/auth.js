@@ -131,7 +131,7 @@ async function updateUserRole(role) {
   const db = wx.cloud.database();
   await db.collection('users').doc(u._id).update({ data: { role, updatedAt: Date.now() } });
   const updated = { ...u, role };
-  wx.setStorageSync('currentUser', updated);
+  try { wx.setStorageSync('currentUser', updated); } catch (e) { /* ignore quota */ }
   if (app && app.globalData) {
     app.globalData.currentUser = updated;
     app._emit && app._emit('userChanged', updated);
@@ -139,12 +139,15 @@ async function updateUserRole(role) {
   return updated;
 }
 
-/** 退出登录：清 Storage + 全局状态，并广播 userChanged(null) */
+/** 退出登录：清 Storage + 全局状态（含当前孩子），并广播 userChanged(null) / activeChildChanged("") */
 function logout() {
-  wx.removeStorageSync('currentUser');
+  try { wx.removeStorageSync('currentUser'); } catch (e) { /* ignore quota */ }
+  try { wx.clearStorageSync && wx.clearStorageSync(); } catch (e) { /* ignore quota */ }
   const app = getApp();
   if (app && app.globalData) {
     app.globalData.currentUser = null;
+    app.globalData.activeChildId = '';
+    app._emit && app._emit('activeChildChanged', '');
     app._emit && app._emit('userChanged', null);
   }
 }
