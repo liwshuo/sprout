@@ -1,0 +1,15 @@
+{
+  "name": "sprout-miniprogram",
+  "version": "1.0.0",
+  "description": "Sprout 微信小程序端单元测试工程（仅用于本地/CI 测试，不参与小程序构建）",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

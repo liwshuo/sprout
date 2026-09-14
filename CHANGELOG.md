@@ -5,6 +5,13 @@
 
 ## [Unreleased]
 ### Added
+- **小程序端单元测试工程（第一层：纯逻辑 + 鉴权）**：新增 `miniprogram/` Jest 测试工程（`npm test`），仅 `devDependencies`、不参与「构建 npm」；覆盖 58 个用例
+  - `tests/utils/date.test.js`：日期工具（起止日、ISO 周几、月历矩阵、课表周展开的起止/排除日、年龄/年级推导）
+  - `tests/utils/todo.test.js`：待办分类回落、`listAll` 登录/孩子守卫与 `childShare.listTodos` 收口
+  - `tests/utils/db.test.js`：共享数据读取收口后的 `listChildData` 入参、本地过滤/倒序、上下文守卫与云失败回退空
+  - `tests/services/calendar-service.test.js`：日历四源聚合（类型/数量、待办 `dueDate` 区间过滤、排序、分组、圆点计算）
+  - `tests/cloudfunctions/childShare.test.js`：云函数鉴权（集合白名单、成员鉴权、分页拉全、删除孩子仅创建者、待办转成长记录的未完成拦截/幂等去重/确定性 ID）
+  - 配套 `tests/setup.js`（wx/getApp 宿主桩 + `__setUser`/`__setActiveChild`）、`tests/helpers/fake-cloud.js`（内存版 CloudBase：`where/orderBy/skip/limit/get/add/doc/update/set/remove` + `neq/eq/in` + `runTransaction`）与 `tests/README.md`（四层测试策略与运行说明）
 - **多孩子全局上下文**：新增 `child-switcher` 组件，在日历、阅读、课表、成长记录、成长周报与精选书库页面持续展示当前孩子；多孩子时可直接切换，切换后页面自动刷新对应孩子的数据
 - **删除孩子档案**：创建者可在「我的 → 编辑宝宝信息」中删除孩子；二次确认后由 `childShare.deleteChild` 统一软删除孩子档案、成员关系、邀请及其全部业务数据，并自动切换到剩余孩子
 - **待办完成后可选记录成长**：勾选完成后弹出确认，选择「记录成长」进入预填表单；成长记录与来源待办双向关联，`childShare.convertTodoToRecord` 使用服务端事务原子完成待办校验、确定性记录写入及关联回写，避免并发重复与覆盖；删除关联记录会清理待办侧关联，取消完成不会删除已生成记录
