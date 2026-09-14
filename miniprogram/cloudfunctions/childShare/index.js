@@ -506,6 +506,37 @@ async function listMembers(childId, ownerId) {
   return { ok: true, members: list, selfIsOwner: !!self.isOwner, childId };
 }
 
+async function deleteChild(childId, ownerId) {
+  if (!childId) return { ok: false, error: '缺少 childId' };
+  const membership = await findMembership(childId, ownerId);
+  if (!membership || !membership.isOwner) {
+    return { ok: false, error: '仅孩子档案创建者可以删除' };
+  }
+  const childRes = await db.collection(C_CHILDREN)
+    .where({ uuid: childId, isDeleted: _.neq(true) })
+    .limit(1)
+    .get();
+  const child = childRes.data && childRes.data[0];
+  if (!child) return { ok: true, alreadyDeleted: true, childId };
+
+  const now = Date.now();
+  await Promise.all([
+    ...BIZ_COLLECTIONS.map((col) => db.collection(col)
+      .where({ childId, isDeleted: _.neq(true) })
+      .update({ data: { isDeleted: true, deletedAt: now, updatedAt: now } })),
+    db.collection(C_MEMBERS)
+      .where({ childId, isDeleted: _.neq(true) })
+      .update({ data: { isDeleted: true, deletedAt: now, updatedAt: now } }),
+    db.collection(C_INVITES)
+      .where({ childId, isDeleted: _.neq(true) })
+      .update({ data: { isDeleted: true, deletedAt: now, updatedAt: now } }),
+  ]);
+  await db.collection(C_CHILDREN).doc(child._id).update({
+    data: { isDeleted: true, deletedAt: now, updatedAt: now },
+  });
+  return { ok: true, childId };
+}
+
 /** 移除成员（仅创建者可操作，不能移除自己/其他 owner） */
 async function removeMember(childId, targetOwnerId, ownerId) {
   if (!childId || !targetOwnerId) return { ok: false, error: '参数不完整' };
@@ -557,6 +588,8 @@ exports.main = async (event = {}) => {
         return await acceptInvite(event.inviteCode, ownerId);
       case 'listMembers':
         return await listMembers(event.childId, ownerId);
+      case 'deleteChild':
+        return await deleteChild(event.childId, ownerId);
       case 'removeMember':
         return await removeMember(event.childId, event.targetOwnerId, ownerId);
       case 'leaveChild':

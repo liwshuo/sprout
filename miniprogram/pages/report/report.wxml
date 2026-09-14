@@ -1,5 +1,6 @@
 <!-- pages/report/report.wxml —— 成长周报 -->
 <view class="container">
+  <child-switcher />
   <!-- 骨架屏 -->
   <block wx:if="{{loading}}">
     <view class="sk-card">

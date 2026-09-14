@@ -160,6 +160,7 @@
       <view class="picker-val">{{childForm.birthDate || '请选择'}} ›</view>
     </picker>
   </view>
+  <view wx:if="{{editingChildUuid && canDeleteEditingChild}}" class="delete-child-btn" bindtap="onDeleteChild">删除孩子档案</view>
 </bottom-sheet>
 
 <!-- 绑定手机号弹层（getPhoneNumber 必须由 button 触发，故单独弹层承接） -->

@@ -1,5 +1,6 @@
 <!-- pages/index/index.wxml —— 日历首页（三源聚合） -->
 <view class="container">
+  <child-switcher />
   <view class="row-between header">
     <view class="page-title">{{monthLabel}}</view>
     <view class="row month-switch">

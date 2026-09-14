@@ -399,6 +399,17 @@
   color: #BDBDBD;
 }
 
+/* 删除孩子档案 */
+.delete-child-btn {
+  margin-top: 28rpx;
+  padding: 24rpx;
+  color: #FF4D4F;
+  text-align: center;
+  font-size: 28rpx;
+  border-radius: 16rpx;
+  background: #FFF1F0;
+}
+
 /* 退出登录 - 危险操作红色文字 */
 .list-item-danger .list-item-label {
   color: #FF4D4F;

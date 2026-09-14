@@ -1,5 +1,6 @@
 <!-- pages/reading/reading.wxml —— 阅读书架 -->
 <view class="container">
+  <child-switcher />
   <view class="page-title">阅读书架</view>
   <view class="page-subtitle">陪孩子一起读过的每一本好书</view>
 

@@ -31,7 +31,13 @@ Page({
   },
 
   onLoad() {
+    this._onActiveChild = () => this.loadWeek(this.data.weekOffset);
+    app.on && app.on('activeChildChanged', this._onActiveChild);
     this.loadWeek(0);
+  },
+
+  onUnload() {
+    app.off && app.off('activeChildChanged', this._onActiveChild);
   },
 
   switchWeek(e) {

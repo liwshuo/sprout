@@ -1,5 +1,6 @@
 <!-- pages/schedule/index.wxml —— 课表 -->
 <view class="container">
+  <child-switcher />
   <view class="page-title">课程表</view>
   <view class="page-subtitle">孩子每周的课程与兴趣班安排</view>
 

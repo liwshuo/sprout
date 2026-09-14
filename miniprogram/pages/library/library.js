@@ -184,7 +184,7 @@ Page({
   },
 
   /**
-   * 加入书架主流程：拉孩子 → （多孩子）选择器 → 设为当前孩子 → 写 books（系列另写私有 series）。
+   * 加入书架主流程：沿用全局当前孩子；当前孩子失效时才重新选择 → 写 books（系列另写私有 series）。
    * @param {string} libraryUuid 书库条目 uuid
    * @param {number} [volumeIndex] 仅系列书：指定加入的分册序号；不传则加入整套
    */
@@ -211,16 +211,18 @@ Page({
       return;
     }
 
-    // 2. 多孩子 → 弹选择器
-    let childId;
-    if (children.length === 1) {
-      childId = children[0].uuid;
-    } else {
-      childId = await this._pickChild(children);
-      if (!childId) return; // 用户取消
+    // 2. 优先使用页面顶部已选中的当前孩子；仅当前选择失效时才要求重新选择
+    let childId = app.globalData.activeChildId;
+    if (!children.some((child) => child.uuid === childId)) {
+      if (children.length === 1) {
+        childId = children[0].uuid;
+      } else {
+        childId = await this._pickChild(children);
+        if (!childId) return; // 用户取消
+      }
     }
 
-    // 3. 设为当前孩子（books/series 写入按 activeChildId 归属）
+    // 3. 保持当前孩子一致（books/series 写入按 activeChildId 归属）
     app.setActiveChild(childId);
 
     // 4. 写入

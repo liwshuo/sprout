@@ -1,0 +1,55 @@
+.child-context {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-bottom: 24rpx;
+  padding: 18rpx 22rpx;
+  border: 2rpx solid rgba(255, 140, 66, 0.16);
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4rpx 20rpx rgba(255, 140, 66, 0.08);
+}
+
+.child-context-switchable:active {
+  opacity: 0.72;
+}
+
+.child-context-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 50%;
+  font-size: 32rpx;
+  background: #FFF1E8;
+}
+
+.child-context-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.child-context-label {
+  color: #9A8F82;
+  font-size: 22rpx;
+  line-height: 1.2;
+}
+
+.child-context-name {
+  margin-top: 4rpx;
+  overflow: hidden;
+  color: #3E362F;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.child-context-action {
+  flex: none;
+  color: #E5702A;
+  font-size: 24rpx;
+  font-weight: 500;
+}

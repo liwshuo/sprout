@@ -50,6 +50,7 @@
   "sitemapLocation": "sitemap.json",
   "usingComponents": {
     "bottom-sheet": "/components/bottom-sheet/bottom-sheet",
-    "empty-state": "/components/empty-state/empty-state"
+    "empty-state": "/components/empty-state/empty-state",
+    "child-switcher": "/components/child-switcher/child-switcher"
   }
 }

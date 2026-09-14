@@ -84,7 +84,7 @@ auth.openid in doc.members
 - 前端若直接查询，只能读到**自己的**成员记录；正式孩子列表统一调用 `childShare.listChildren`，由云函数读取成员关系后返回可见孩子，避免安全规则查询或复合索引异常被前端静默降级为空。
 - `listChildren` 同时用 `ownerId` 校验创建者自己的孩子；发现孩子档案存在但 owner 成员关系或 `members` 缺失时自动补齐，用于修复异常中断产生的孤立数据。
 - **成员管理列表**（某孩子的全部成员）同样必须调用 `childShare` 的 `listMembers`（云函数以管理员身份读取，规则不拦）。
-- 所有写入（加入/移除/退出）一律走 `childShare` 云函数。
+- 所有写入（加入/移除/退出/删除孩子）一律走 `childShare` 云函数；`deleteChild` 仅允许档案创建者调用，并统一软删除档案、成员关系、邀请及关联业务数据。
 - 项目尚未上线，无历史数据迁移：新建孩子由 `childShare.createChild` 直接写入创建者 `openid` 与初始 `members`；受邀成员由 `acceptInvite` 写入。
 
 ### 2.4 `child_invites`（邀请码）

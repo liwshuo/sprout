@@ -1,5 +1,6 @@
 <!-- pages/library/library.wxml —— 精选书库 -->
 <view class="container">
+  <child-switcher />
   <view class="page-title">精选书库</view>
   <view class="page-subtitle">分龄挑好书，一键加入孩子书架</view>
 

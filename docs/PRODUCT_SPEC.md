@@ -113,6 +113,8 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
   - **家长副区（主卡下区，分割线分隔）**：左侧展示由 `users.role` 与当前孩子名派生的家长称谓（如「小云朵的爸爸」），未选择角色时显示「我是 Ta 的... 选一下 →」；整行点击进入角色选择。右侧仅在已绑定手机号时展示手机号末四位，手机号绑定由 `button open-type="getPhoneNumber"` 触发。
   - **登录态展示约束**：只有本次会话的 `login` 云函数成功后才视为已登录，本地缓存不能单独触发已登录 UI。未登录时主卡展示「登录后开始记录成长」及「微信登录」按钮，功能列表展示「登录账号」，隐藏「退出登录」与孩子添加入口；日历、待办、阅读、课表及成长记录页点击右下角「＋」时，若未登录则统一切换到「我的」登录引导页；点击其他需要身份的操作时先登录，成功后继续原操作。用户主动退出后写入 `manualLoggedOut` 标记并暂停静默登录，直到再次明确点击登录。
   - **切换孩子**：`onSwitchChild` 弹 `wx.showActionSheet` 列出所有孩子（每项 `名字 · 年龄`）并追加「+ 添加新孩子」项；选中孩子走 `app.setActiveChild(uuid)` 切换（触发 `activeChildChanged` 全局事件，主卡、统计与家长称谓随即刷新），选「+ 添加新孩子」打开建档弹层。
+  - **全局孩子上下文**：日历、阅读、课表、成长记录、成长周报与精选书库页面顶部统一展示「当前孩子」卡片；多孩子时可直接弹出列表切换，切换后各页面通过 `activeChildChanged` 重新加载数据。待办页沿用已有孩子 chip，始终高亮当前孩子。
+  - **删除孩子**：仅档案创建者可在编辑弹层执行删除。前端必须展示包含关联数据范围的二次确认；`childShare.deleteChild` 负责软删除孩子档案、全部成员关系、未失效邀请以及 `daily_records`、`books`、`todos`、`schedule_items`、`reading_logs`、`series`、`weekly_reports`，完成后自动切换到剩余孩子。
 - **② 统计双列卡（`stats-card`）**：左列大数字 `stats.records` +「成长记录」，竖分割线，右列大数字 `stats.books` +「共读绘本」。`records`/`books` 均在 db 层经 `scope().childId`（读取 `app.globalData.activeChildId`）自动按当前孩子过滤。
 - **③ 功能菜单（`list-section`，iOS 风格纯列表）**：每项为「左圆形彩色图标 + 菜单文字 + 右灰色箭头 ›」——📁 成长档案（蓝）/ 📊 本周成长周报（橙）/ ☁️ 云同步（绿）/ ⚙️ 设置（灰，前置更明显分割线）。
   - **孩子头像**：在编辑/添加弹层内点击头像从相册上传自定义头像（`wx.chooseMedia` 选图 → `db.uploadFile` 存云存储 → 回填 `avatarFileId`）；展示时按 `avatarFileId` 换取临时链接（`db.getTempUrls`）渲染，无则回落性别 emoji。
@@ -147,7 +149,7 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
   - **年龄段 Tab**：全部 / 0-3岁 / 3-6岁 / 6-9岁 / 9-12岁 / 官方精选（横向滚动）。
   - **两列书卡**：封面（无图走「色块 + 书名首字」兜底，按年龄段变色）、书名、作者、年龄段徽标（0-3 粉 / 3-6 橙 / 6-9 绿 / 9-12 蓝）+ 类型徽标；系列书右上角「系列 · N册」角标。含 loading 骨架屏与搜索空态。
 - **加入书架**：
-  - **单本**：点书卡弹「加入书架」面板 → 拉孩子列表（多孩子弹选择器）→ 写入用户私有 `books`（回填 `libraryUuid` + 书库快照字段），按 `libraryUuid` 去重。
+  - **单本**：点书卡弹「加入书架」面板 → 沿用页面顶部当前孩子 → 写入用户私有 `books`（回填 `libraryUuid` + 书库快照字段），按 `libraryUuid` 去重；仅当前孩子失效时重新弹出孩子选择器。
   - **系列书**（归属**方案 A**）：点书卡弹分册列表面板，可「加入某一分册」或「加入整套」；加入时在用户私有 `series` 新建一条并回填 `libraryUuid`（同孩子按 `libraryUuid` 复用，不重复建系列），分册以 `seriesUuid` + `seriesIndex` 落 `books`，天然复用书架 `series-service` 分组与系列面板。
   - `books.status` 沿用现有 `want/reading/done` 枚举，加入默认 `want`。
 - **书架 join 水合**：书架 `refresh()` 在 `groupBySeries` 之前调用 `_hydrateFromLibrary(books)`——对带 `libraryUuid` 的书一次性从 `book_library` 回填 `title/author/coverExternalUrl/ageRange/type/description`（**书自身已有手动值则保留、不覆盖**），书库改动可反哺书架展示。

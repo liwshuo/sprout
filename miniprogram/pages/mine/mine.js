@@ -46,6 +46,7 @@ Page({
     // 添加/编辑孩子弹层
     showChildSheet: false,
     editingChildUuid: '',
+    canDeleteEditingChild: false,
     childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
     formAvatarUrl: '',
 
@@ -161,6 +162,7 @@ Page({
       try { urlMap = await db.getTempUrls(fileIds); } catch (e) { /* ignore */ }
     }
     this._parseChildren(children, urlMap);
+    app.globalData.children = children;
     this.setData({ children, activeChildId });
     // 先定位当前孩子，再刷新统计，最后派生家长称谓（依赖 activeChild 名字）
     this._loadActiveChild();
@@ -420,6 +422,7 @@ Page({
     this.setData({
       showChildSheet: true,
       editingChildUuid: '',
+      canDeleteEditingChild: false,
       childForm: { name: '', birthDate: '', gender: 'unknown', gradeOverride: '', avatarFileId: '', _avatarTempPath: '' },
       formAvatarUrl: '',
     });
@@ -435,6 +438,7 @@ Page({
     this.setData({
       showChildSheet: true,
       editingChildUuid: uuid,
+      canDeleteEditingChild: child.ownerId === auth.ownerId(),
       childForm: {
         name: child.name || '',
         birthDate: birthDateStr,
@@ -457,6 +461,8 @@ Page({
   closeAddChild() {
     this.setData({
       showChildSheet: false,
+      editingChildUuid: '',
+      canDeleteEditingChild: false,
       'childForm.avatarFileId': '',
       'childForm._avatarTempPath': '',
       formAvatarUrl: '',
@@ -569,6 +575,53 @@ Page({
     } finally {
       this._unlock('saveChild');
     }
+  },
+
+  onDeleteChild() {
+    const childId = this.data.editingChildUuid;
+    const child = this.data.children.find((item) => item.uuid === childId);
+    if (!childId || !child || !this.data.canDeleteEditingChild) return;
+    wx.showModal({
+      title: '删除孩子档案？',
+      content: `将同时删除「${child._displayName || child.name || '宝贝'}」的成长记录、待办、课表、书架、阅读打卡、系列与成长周报，且所有共享家长都将无法再访问。`,
+      confirmText: '确认删除',
+      confirmColor: '#FF4D4F',
+      cancelText: '取消',
+      success: async (res) => {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '删除中...', mask: true });
+        try {
+          const response = await wx.cloud.callFunction({
+            name: 'childShare',
+            data: { action: 'deleteChild', childId },
+          });
+          const result = (response && response.result) || {};
+          if (!result.ok) throw new Error(result.error || '删除失败');
+          const children = this.data.children.filter((item) => item.uuid !== childId);
+          const nextId = children.length ? children[0].uuid : '';
+          app.globalData.children = children;
+          await new Promise((resolve) => this.setData({
+            showChildSheet: false,
+            editingChildUuid: '',
+            canDeleteEditingChild: false,
+            children,
+            activeChildId: nextId,
+            activeChild: null,
+            formAvatarUrl: '',
+          }, resolve));
+          app.setActiveChild(nextId);
+          this._loadActiveChild();
+          await this._loadStats();
+          this._deriveParentLabel();
+          wx.hideLoading();
+          wx.showToast({ title: '已删除', icon: 'success' });
+        } catch (err) {
+          wx.hideLoading();
+          console.error('[mine] deleteChild 失败', err);
+          wx.showToast({ title: err.message || '删除失败', icon: 'none' });
+        }
+      },
+    });
   },
 
   // ==================== 年级确认弹层 ====================

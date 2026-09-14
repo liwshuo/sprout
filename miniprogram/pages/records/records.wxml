@@ -1,5 +1,6 @@
 <!-- pages/records/records.wxml —— 记录列表 -->
 <view class="container">
+  <child-switcher />
   <view class="page-title">成长记录</view>
   <view class="page-subtitle">用文字和照片，留住每一个小小的成长瞬间</view>
 

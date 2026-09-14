@@ -156,6 +156,7 @@ function logout() {
     app.globalData.loginVerified = false;
     app.globalData.manualLoggedOut = true;
     app.globalData.activeChildId = '';
+    app.globalData.children = [];
     app._emit && app._emit('activeChildChanged', '');
     app._emit && app._emit('userChanged', null);
   }

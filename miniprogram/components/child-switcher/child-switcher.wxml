@@ -1,0 +1,8 @@
+<view wx:if="{{activeChild}}" class="child-context {{children.length > 1 ? 'child-context-switchable' : ''}}" bindtap="onTap">
+  <view class="child-context-icon">👶</view>
+  <view class="child-context-copy">
+    <view class="child-context-label">当前孩子</view>
+    <view class="child-context-name">{{activeChild._displayName || activeChild.name || '宝贝'}}</view>
+  </view>
+  <view wx:if="{{children.length > 1}}" class="child-context-action">切换⌄</view>
+</view>
