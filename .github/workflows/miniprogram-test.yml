@@ -1,0 +1,38 @@
+name: miniprogram-test
+
+# 小程序端单元测试：push 与 PR 时自动运行 miniprogram/ 下的 Jest 用例。
+# 仅当小程序相关文件变化时触发，避免 Flutter(app/) 改动空跑。
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'miniprogram/**'
+      - '.github/workflows/miniprogram-test.yml'
+  pull_request:
+    paths:
+      - 'miniprogram/**'
+      - '.github/workflows/miniprogram-test.yml'
+
+jobs:
+  test:
+    name: Jest（utils / services / childShare）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: miniprogram
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: miniprogram/package-lock.json
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 运行单元测试
+        run: npm test -- --ci
