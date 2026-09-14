@@ -104,9 +104,13 @@
 <!-- ⑤ 弹层区 -->
 
 <!-- 添加 / 编辑孩子弹层 -->
-<view class="mask" wx:if="{{showChildSheet}}" bindtap="closeAddChild"></view>
-<view class="sheet" wx:if="{{showChildSheet}}" catchtap>
-  <view class="sheet-title">{{editingChildUuid ? '编辑宝宝信息' : '添加宝宝'}}</view>
+<bottom-sheet
+  show="{{showChildSheet}}"
+  title="{{editingChildUuid ? '编辑宝宝信息' : '添加宝宝'}}"
+  confirm-text="保存"
+  bind:cancel="closeAddChild"
+  bind:confirm="saveChild"
+>
   <!-- 头像选择（弹层内） -->
   <view class="form-avatar-row" bindtap="onFormAvatarTap">
     <image
@@ -135,36 +139,40 @@
       <view class="picker-val">{{childForm.birthDate || '请选择'}} ›</view>
     </picker>
   </view>
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeAddChild">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveChild">保存</view>
-  </view>
-</view>
+</bottom-sheet>
 
 <!-- 绑定手机号弹层（getPhoneNumber 必须由 button 触发，故单独弹层承接） -->
-<view class="mask" wx:if="{{showPhoneSheet}}" bindtap="closePhoneSheet"></view>
-<view class="sheet" wx:if="{{showPhoneSheet}}" catchtap>
-  <view class="sheet-title">绑定 / 更换手机号</view>
+<bottom-sheet
+  show="{{showPhoneSheet}}"
+  title="绑定 / 更换手机号"
+  hide-cancel="{{true}}"
+  bind:cancel="closePhoneSheet"
+>
   <view class="phone-sheet-desc">用于账号找回与多端同步</view>
   <button class="btn-primary phone-auth-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhone">微信授权绑定手机号</button>
   <view class="btn-ghost sheet-btn phone-cancel-btn" bindtap="closePhoneSheet">取消</view>
-</view>
+</bottom-sheet>
 
 <!-- 年级确认弹层 -->
-<view class="mask" wx:if="{{showGradeConfirm}}" bindtap="onGradeConfirmOk"></view>
-<view class="sheet" wx:if="{{showGradeConfirm}}" catchtap>
-  <view class="sheet-title">📚 年级确认</view>
+<bottom-sheet
+  show="{{showGradeConfirm}}"
+  title="📚 年级确认"
+  cancel-text="✏️ 修改"
+  confirm-text="✅ 对的"
+  bind:cancel="onGradeConfirmEdit"
+  bind:confirm="onGradeConfirmOk"
+>
   <view class="grade-confirm-text">根据生日推测 Ta 是<text class="text-primary">{{gradeConfirmText}}</text>，对吗？</view>
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="onGradeConfirmEdit">✏️ 修改</view>
-    <view class="btn-primary sheet-btn" bindtap="onGradeConfirmOk">✅ 对的</view>
-  </view>
-</view>
+</bottom-sheet>
 
 <!-- 年级手动选择 picker 弹层 -->
-<view class="mask" wx:if="{{showGradePicker}}" bindtap="onGradePickerCancel"></view>
-<view class="sheet" wx:if="{{showGradePicker}}" catchtap>
-  <view class="sheet-title">选择年级</view>
+<bottom-sheet
+  show="{{showGradePicker}}"
+  title="选择年级"
+  confirm-text="确认"
+  bind:cancel="onGradePickerCancel"
+  bind:confirm="onGradePickerConfirm"
+>
   <picker-view
     class="grade-picker-view"
     value="{{[gradePickerIndex]}}"
@@ -174,8 +182,4 @@
       <view wx:for="{{gradePickerRange}}" wx:key="*this" class="picker-item">{{item}}</view>
     </picker-view-column>
   </picker-view>
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="onGradePickerCancel">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="onGradePickerConfirm">确认</view>
-  </view>
-</view>
+</bottom-sheet>

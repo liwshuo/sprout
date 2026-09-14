@@ -248,28 +248,7 @@
   margin-top: 24rpx;
 }
 
-/* ============ ⑤ 弹层通用 ============ */
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 30;
-}
-.sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
-  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 31;
-}
-.sheet-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  margin-bottom: 28rpx;
-}
+/* ============ ⑤ 弹层内内容样式（mask/sheet 由 bottom-sheet 组件承载） ============ */
 .sheet-input {
   background: var(--bg);
   border-radius: 16rpx;
@@ -291,9 +270,6 @@
 .picker-val {
   font-size: 30rpx;
   color: var(--primary-dark);
-}
-.sheet-actions {
-  margin-top: 32rpx;
 }
 .sheet-btn {
   flex: 1;

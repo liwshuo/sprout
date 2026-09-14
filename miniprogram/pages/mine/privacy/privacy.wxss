@@ -1,0 +1,38 @@
+/* pages/mine/privacy/privacy.wxss —— 与 mine iOS 风格保持一致 */
+.container { padding: 32rpx; padding-bottom: 120rpx; background: #FFF8F3; min-height: 100vh; }
+.page-title { font-size: 40rpx; font-weight: 600; color: #2A2520; }
+.page-subtitle { margin-top: 8rpx; margin-bottom: 28rpx; font-size: 26rpx; color: #9A8F82; }
+
+.card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 8rpx 28rpx;
+  margin-bottom: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.03);
+}
+.card-title { font-size: 26rpx; color: #9A8F82; padding: 24rpx 0 16rpx; }
+
+.row { display: flex; align-items: center; }
+.grow-1 { flex: 1; }
+.list-row { padding: 24rpx 0; }
+.row-icon {
+  width: 56rpx; height: 56rpx; border-radius: 16rpx; margin-right: 20rpx;
+  display: flex; align-items: center; justify-content: center; font-size: 30rpx;
+}
+.icon-blue { background: #E8F3FF; }
+.icon-green { background: #E2F7EC; }
+.icon-orange { background: #FFEEDF; }
+.icon-red { background: #FFE1E3; }
+.icon-gray { background: #F3EFEA; }
+
+.list-label { font-size: 30rpx; color: #2A2520; font-weight: 500; }
+.list-label-danger { color: #FF4D4F; }
+.list-desc { margin-top: 4rpx; font-size: 24rpx; }
+.list-arrow { color: #C9C1B6; font-size: 36rpx; margin-left: 16rpx; }
+.list-divider { height: 1rpx; background: #F3EFEA; margin-left: 76rpx; }
+
+.privacy-footer { margin-top: 40rpx; padding: 24rpx 4rpx; font-size: 22rpx; line-height: 1.8; color: #B0A79E; }
+
+.policy-intro { font-size: 28rpx; font-weight: 600; color: #2A2520; margin-bottom: 16rpx; }
+.policy-line { font-size: 26rpx; color: #5A4F42; line-height: 1.7; margin-bottom: 8rpx; }
+.policy-hint { margin-top: 16rpx; color: #FF4D4F; font-weight: 500; }

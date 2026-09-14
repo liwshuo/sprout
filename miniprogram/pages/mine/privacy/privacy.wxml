@@ -1,0 +1,100 @@
+<!-- pages/mine/privacy/privacy.wxml —— 隐私设置：合规项 4 条 -->
+<view class="container">
+  <view class="page-title">隐私与账号安全</view>
+  <view class="page-subtitle text-sub">按《个人信息保护法》(PIPL) 及 COPPA 儿童信息保护处理</view>
+
+  <view class="card">
+    <view class="card-title">📋 信息与权限</view>
+    <view class="row list-row" bindtap="onViewPolicy">
+      <view class="row grow-1">
+        <view class="row-icon icon-blue">📖</view>
+        <view>
+          <view class="list-label">《隐私政策》摘要</view>
+          <view class="list-desc text-sub">收集范围 / 存储位置 / 共享情况</view>
+        </view>
+      </view>
+      <view class="list-arrow">›</view>
+    </view>
+    <view class="list-divider"></view>
+    <view class="row list-row" bindtap="onClearCache">
+      <view class="row grow-1">
+        <view class="row-icon icon-green">🗑️</view>
+        <view>
+          <view class="list-label">清除本地缓存</view>
+          <view class="list-desc text-sub">清除 Storage + 图片缓存，云端数据不受影响</view>
+        </view>
+      </view>
+      <view class="list-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">🙋 PIPL 第 17 / 47 条权利</view>
+    <view class="row list-row" bindtap="onRevokeConsent">
+      <view class="row grow-1">
+        <view class="row-icon icon-orange">↩️</view>
+        <view>
+          <view class="list-label">撤回同意并退出登录</view>
+          <view class="list-desc text-sub">撤回 PIPL 第 13 条明示同意并清本地缓存</view>
+        </view>
+      </view>
+      <view class="list-arrow">›</view>
+    </view>
+    <view class="list-divider"></view>
+    <view class="row list-row" bindtap="onRequestDeleteAccount">
+      <view class="row grow-1">
+        <view class="row-icon icon-red">💀</view>
+        <view>
+          <view class="list-label list-label-danger">申请删除账号 / 云端数据</view>
+          <view class="list-desc text-sub">15 个工作日内清除所有孩子数据，操作不可撤销</view>
+        </view>
+      </view>
+      <view class="list-arrow">›</view>
+    </view>
+    <view class="list-divider"></view>
+    <view class="row list-row" bindtap="onFeedback">
+      <view class="row grow-1">
+        <view class="row-icon icon-gray">✉️</view>
+        <view>
+          <view class="list-label">帮助与反馈</view>
+          <view class="list-desc text-sub">复制反馈邮箱联系我们</view>
+        </view>
+      </view>
+      <view class="list-arrow">›</view>
+    </view>
+  </view>
+
+  <view class="privacy-footer text-sub">
+    · 数据存储：腾讯云 CloudBase（中国大陆境内）· 不共享第三方
+    · 儿童信息：按 COPPA 仅家长可申请访问 / 更正 / 删除
+  </view>
+</view>
+
+<!-- 隐私政策摘要弹层 -->
+<bottom-sheet
+  show="{{showPolicy}}"
+  title="隐私政策摘要"
+  confirm-text="知道了"
+  hide-cancel="{{true}}"
+  bind:cancel="closePolicy"
+  bind:confirm="closePolicy"
+>
+  <view class="policy-intro">萌芽成长册按《个人信息保护法》(PIPL)第 17 条收集必要信息：</view>
+  <view class="policy-line" wx:for="{{policyText}}" wx:key="*this">{{item}}</view>
+</bottom-sheet>
+
+<!-- 删除账号申请弹层 -->
+<bottom-sheet
+  show="{{showDeleteRequest}}"
+  title="申请删除云端数据"
+  cancel-text="取消"
+  confirm-text="复制账号标识"
+  bind:cancel="closeDeleteRequest"
+  bind:confirm="onCopyOwnerId"
+>
+  <view class="policy-line">按 PIPL 第 47 条删除权，将清除：</view>
+  <view class="policy-line">• 孩子档案 / 成长记录 / 图片附件</view>
+  <view class="policy-line">• 阅读打卡 / 书架 / 课程表 / 周报</view>
+  <view class="policy-line">• 家长身份与绑定手机号</view>
+  <view class="policy-line policy-hint">此操作不可撤销。请将账号标识（后 6 位）与删除请求通过「设置 → 帮助与反馈」提交，我们将在 15 个工作日内完成处理。</view>
+</bottom-sheet>

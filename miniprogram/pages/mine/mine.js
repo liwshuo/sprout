@@ -62,6 +62,9 @@ Page({
       '高中1年级', '高中2年级', '高中3年级',
     ],
     gradePickerIndex: 0,
+
+    // 防抖提交锁（reading/library 同款）
+    _lock: {},
   },
 
   // ==================== 生命周期 ====================
@@ -153,12 +156,18 @@ Page({
   //（scope 读取 app.globalData.activeChildId，与本页 activeChildId 保持一致），无需再手动加 childId。
   async _loadStats() {
     const childId = this.data.activeChildId;
+    // ⚠️ 没有选中的孩子（首次启动还没建档）直接短路返回 0/0，
+    //    否则 records.listAll 因为 _buildWhere 注入空 childId 的 where，走不到归属。
+    if (!childId) {
+      this.setData({ stats: { records: 0, books: 0 } });
+      return;
+    }
     const [records, allBooks] = await Promise.all([
       db.records.listAll(999),
-      childId ? db.books.listAll() : Promise.resolve([]),
+      db.books.listAll(),
     ]);
-    // 共读绘本仅统计「已读完」，不含加入书架但未读完的
-    const finishedBooks = allBooks.filter((b) => b.status === 'finished');
+    // 共读绘本仅统计「已读完」，不含加入书架但未读完的；BOOK_STATUS 枚举统一 'done' 不使用 finished
+    const finishedBooks = allBooks.filter((b) => b.status === 'done');
     this.setData({ stats: { records: records.length, books: finishedBooks.length } });
   },
 
@@ -391,13 +400,16 @@ Page({
   },
 
   async saveChild() {
+    if (this._tryLock('saveChild', 2000)) return;
     const { name, birthDate, gender } = this.data.childForm;
     const editingUuid = this.data.editingChildUuid;
     if (!name.trim()) {
+      this._unlock('saveChild');
       wx.showToast({ title: '请填写宝宝名字', icon: 'none' });
       return;
     }
     if (!auth.ownerId()) {
+      this._unlock('saveChild');
       wx.showToast({ title: '请先登录', icon: 'none' });
       return;
     }
@@ -451,6 +463,8 @@ Page({
       wx.hideLoading();
       console.error('[mine] saveChild 失败', err);
       wx.showToast({ title: '保存失败', icon: 'none' });
+    } finally {
+      this._unlock('saveChild');
     }
   },
 
@@ -487,9 +501,15 @@ Page({
   },
 
   async onGradePickerConfirm() {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('gradeOverride', 1000)) return;
     const grade = this.data.gradePickerRange[this.data.gradePickerIndex];
     const uuid = this.data.pendingGradeChildUuid;
     if (!uuid || !grade) {
+      this._unlock('gradeOverride');
       this.setData({ showGradePicker: false });
       return;
     }
@@ -500,6 +520,8 @@ Page({
       wx.showToast({ title: '年级已更新', icon: 'success' });
     } catch (err) {
       wx.showToast({ title: '更新失败', icon: 'none' });
+    } finally {
+      this._unlock('gradeOverride');
     }
   },
 
@@ -521,20 +543,19 @@ Page({
     wx.showToast({ title: '云同步敬请期待', icon: 'none' });
   },
   goSettings() {
-    wx.showToast({ title: '设置敬请期待', icon: 'none' });
+    wx.navigateTo({ url: '/pages/mine/privacy/privacy' });
   },
 
   // ==================== 退出登录 ====================
   onLogout() {
-    wx.showModal({
-      title: '退出登录',
-      content: '退出后本地缓存将清除，需要重新登录才能使用云同步功能',
-      confirmText: '退出',
-      confirmColor: '#FF4D4F',
+    // 无弹窗约定（DECISION_LOG §2）：用非阻塞 ActionSheet 替代二级 modal
+    if (this._tryLock('logout', 1000)) return;
+    wx.showActionSheet({
+      itemList: ['确认退出登录并清除本地缓存', '取消'],
+      itemColor: '#FF4D4F',
       success: (res) => {
-        if (res.confirm) {
+        if (res.tapIndex === 0) {
           auth.logout();
-          // 同时清空孩子相关数据，避免退出后页面还显示孩子信息
           this.setData({
             isLoggedIn: false,
             currentUser: null,
@@ -546,8 +567,25 @@ Page({
             parentLabelSet: false,
             phoneTail: '',
           });
+          wx.showToast({ title: '已退出登录', icon: 'none' });
         }
       },
+      complete: () => this._unlock('logout'),
     });
+  },
+
+  // 防抖提交锁（reading/library 同款）
+  _tryLock(key, ms = 1000) {
+    const now = Date.now();
+    const lock = this.data._lock || {};
+    if (lock[key] && now - lock[key] < ms) return true;
+    lock[key] = now;
+    this.setData({ _lock: lock });
+    return false;
+  },
+  _unlock(key) {
+    const lock = Object.assign({}, this.data._lock || {});
+    delete lock[key];
+    this.setData({ _lock: lock });
   },
 });
