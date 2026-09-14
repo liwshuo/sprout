@@ -38,6 +38,7 @@ Page({
     searchKeyword: '',
     displayBooks: [],
     loading: false,
+    _lock: {},
 
     // 单本「加入书架」面板
     showAddPanel: false,
@@ -52,7 +53,9 @@ Page({
     this.loadLibrary();
   },
   onPullDownRefresh() {
-    this.loadLibrary().then(() => wx.stopPullDownRefresh());
+    this.loadLibrary()
+      .then(() => wx.stopPullDownRefresh())
+      .catch(() => wx.stopPullDownRefresh());
   },
 
   // ============ 取数 / 渲染 ============
@@ -84,7 +87,7 @@ Page({
   applyFilter() {
     const { selectedAge, searchKeyword } = this.data;
     const kw = (searchKeyword || '').trim().toLowerCase();
-    let list = this._allBooks || [];
+    let list = (this._allBooks || []).slice();
     if (selectedAge === 'official') {
       list = list.filter((b) => b.isOfficial);
     } else if (selectedAge !== 'all') {
@@ -97,6 +100,18 @@ Page({
           (b.author || '').toLowerCase().indexOf(kw) >= 0
       );
     }
+    // 排序口径：官方精选优先 → 热度降序 → 更新时间降序（与运营陈列策略一致）
+    list.sort((a, b) => {
+      const oa = a.isOfficial ? 1 : 0;
+      const ob = b.isOfficial ? 1 : 0;
+      if (oa !== ob) return ob - oa;
+      const ha = a.hotScore ? Number(a.hotScore) : 0;
+      const hb = b.hotScore ? Number(b.hotScore) : 0;
+      if (ha !== hb) return hb - ha;
+      const ua = a.updatedAt ? Number(a.updatedAt) : 0;
+      const ub = b.updatedAt ? Number(b.updatedAt) : 0;
+      return ub - ua;
+    });
     this.setData({ displayBooks: list });
   },
 
@@ -174,8 +189,15 @@ Page({
    * @param {number} [volumeIndex] 仅系列书：指定加入的分册序号；不传则加入整套
    */
   async onAddToShelf(libraryUuid, volumeIndex) {
+    if (this._tryLock('onAddToShelf', 2500)) return;
     const book = (this._allBooks || []).find((b) => b.uuid === libraryUuid);
-    if (!book) return;
+    if (!book) { this._unlock('onAddToShelf'); return; }
+
+    // 前置登录态：防止 ownerId 空导致写库抛「未登录，无法写入」
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
+      return;
+    }
 
     // 1. 拉孩子列表
     let children = [];
@@ -216,6 +238,18 @@ Page({
       });
       if (result.added > 0) {
         wx.showToast({ title: '已加入书架 📚', icon: 'none' });
+        // 加入成功：对 book_library.hotScore 原子自增 +1（±10 前端拦截）
+        try {
+          const delta = 1;
+          if (Math.abs(delta) <= 10) {
+            await wx.cloud.callFunction({
+              name: 'bookLibraryInc',
+              data: { bookLibraryUuid: libraryUuid, delta, field: 'hotScore' },
+            });
+          }
+        } catch (incErr) {
+          console.warn('[library] bookLibraryInc 失败', incErr);
+        }
       } else if (result.dup > 0) {
         wx.showToast({ title: '这本已在书架里啦～', icon: 'none' });
       } else {
@@ -225,7 +259,24 @@ Page({
       wx.hideLoading();
       console.error('[library] 加入书架失败', err);
       wx.showToast({ title: '加入失败，请重试', icon: 'none' });
+    } finally {
+      this._unlock('onAddToShelf');
     }
+  },
+
+  // 防抖提交锁（reading 同款）
+  _tryLock(key, ms = 1000) {
+    const now = Date.now();
+    const lock = this.data._lock || {};
+    if (lock[key] && now - lock[key] < ms) return true;
+    lock[key] = now;
+    this.setData({ _lock: lock });
+    return false;
+  },
+  _unlock(key) {
+    const lock = Object.assign({}, this.data._lock || {});
+    delete lock[key];
+    this.setData({ _lock: lock });
   },
 
   // 弹出孩子选择器，返回选中的 childId（取消返回 null）

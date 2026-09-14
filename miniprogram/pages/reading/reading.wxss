@@ -93,28 +93,7 @@
   opacity: 0.75;
 }
 
-/* 弹层 */
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 50;
-}
-.sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #fff;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 51;
-}
-.sheet-title {
-  font-size: 34rpx;
-  font-weight: 700;
-  margin-bottom: 28rpx;
-}
+/* 弹层内公共内容样式（mask/sheet 由 bottom-sheet 组件承载） */
 .sheet-input {
   background: var(--bg);
   border-radius: var(--radius);
@@ -124,19 +103,6 @@
 }
 .ph {
   color: var(--ink-weak);
-}
-.sheet-actions {
-  margin-top: 12rpx;
-}
-.sheet-btn {
-  flex: 1;
-  height: 88rpx;
-  line-height: 88rpx;
-  text-align: center;
-  font-size: 30rpx;
-}
-.sheet-btn:first-child {
-  margin-right: 20rpx;
 }
 
 /* 打卡弹层专用 */
@@ -285,26 +251,7 @@
   margin-top: 12rpx;
 }
 
-/* ---- 系列面板 sheet（层级低于打卡 sheet、高于普通 mask） ---- */
-.series-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 40;
-}
-.series-sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #fff;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 40rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 41;
-  max-height: 82vh;
-  display: flex;
-  flex-direction: column;
-}
+/* ---- 系列面板：层级与滚动由 bottom-sheet 组件承载，此处仅保留内容样式 ---- */
 .series-panel-head {
   margin-bottom: 20rpx;
 }
@@ -368,4 +315,7 @@
 }
 .series-add-btn {
   margin-top: 24rpx;
+}
+.list-footer {
+  height: 120rpx;
 }

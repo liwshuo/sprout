@@ -44,13 +44,27 @@
     <view class="text-primary add-link" bindtap="goAdd">+ 记一笔</view>
   </view>
 
-  <view class="empty card" wx:if="{{dayEvents.length === 0}}">
-    <text class="empty-emoji">🌱</text>
-    <view class="empty-text">这一天还没有安排，点上方「记一笔」开始吧</view>
-  </view>
+  <!-- 骨架屏 -->
+  <block wx:if="{{loading}}">
+    <view class="sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="sk-line"></view>
+      <view class="sk-line short"></view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:if="{{!loading && dayEvents.length === 0}}"
+    icon="🌱"
+    title="这一天还没有安排"
+    subtitle="点上方「+ 记一笔」开始记录宝贝的成长瞬间"
+    action-text="＋ 记一笔"
+    bind:action="goAdd"
+  />
 
   <!-- 统一事件卡片列表（record / schedule / reading，按类型分色） -->
   <event-card wx:for="{{dayEvents}}" wx:key="sourceId" event="{{item}}" />
+
+  <view class="list-footer"></view>
 </view>
 
 <view class="fab" bindtap="goAdd">＋</view>

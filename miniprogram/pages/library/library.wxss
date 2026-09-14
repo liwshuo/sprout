@@ -167,40 +167,7 @@
   width: 50%;
 }
 
-/* ============ 弹层（底部抽屉） ============ */
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 50;
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.mask.show {
-  visibility: visible;
-  opacity: 1;
-}
-.sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #fff;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: 24rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  z-index: 51;
-  max-height: 82vh;
-  display: flex;
-  flex-direction: column;
-}
-.sheet-handle {
-  width: 72rpx;
-  height: 8rpx;
-  border-radius: 4rpx;
-  background: var(--line);
-  margin: 0 auto 28rpx;
-}
+/* ============ 弹层内内容样式（mask/sheet 由 bottom-sheet 组件承载） ============ */
 .sheet .btn-primary {
   width: 100%;
   height: 92rpx;
@@ -303,4 +270,7 @@
 }
 .vol-add:active {
   opacity: 0.75;
+}
+.list-footer {
+  height: 120rpx;
 }

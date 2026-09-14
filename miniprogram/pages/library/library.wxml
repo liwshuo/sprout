@@ -38,10 +38,12 @@
   </view>
 
   <!-- 空态 -->
-  <view class="empty card" wx:if="{{!loading && displayBooks.length === 0}}">
-    <text class="empty-emoji">🔎</text>
-    <view class="empty-text">没有找到相关书籍，换个关键词试试～</view>
-  </view>
+  <empty-state
+    wx:if="{{!loading && displayBooks.length === 0}}"
+    icon="🔎"
+    title="没有找到相关书籍"
+    subtitle="换个关键词或年龄段试试吧～"
+  />
 
   <!-- 书卡网格（两列） -->
   <view class="book-grid" wx:if="{{!loading && displayBooks.length > 0}}">
@@ -75,12 +77,17 @@
       </view>
     </view>
   </view>
+  <view class="list-footer"></view>
 </view>
 
 <!-- ============ 单本「加入书架」面板 ============ -->
-<view class="mask {{showAddPanel ? 'show' : ''}}" bindtap="closeAddPanel">
-  <view class="sheet" catchtap="noop" wx:if="{{activeBook}}">
-    <view class="sheet-handle"></view>
+<bottom-sheet
+  show="{{showAddPanel}}"
+  title=""
+  hide-cancel="{{true}}"
+  bind:cancel="closeAddPanel"
+>
+  <block wx:if="{{activeBook}}">
     <view class="detail">
       <view class="detail-cover">
         <image
@@ -104,13 +111,17 @@
     </view>
     <view class="detail-desc" wx:if="{{activeBook.description}}">{{activeBook.description}}</view>
     <button class="btn-primary" bindtap="onAddSingle">加入书架</button>
-  </view>
-</view>
+  </block>
+</bottom-sheet>
 
 <!-- ============ 系列分册面板 ============ -->
-<view class="mask {{showSeriesPanel ? 'show' : ''}}" bindtap="closeSeriesPanel">
-  <view class="sheet" catchtap="noop" wx:if="{{seriesPanel}}">
-    <view class="sheet-handle"></view>
+<bottom-sheet
+  show="{{showSeriesPanel}}"
+  title=""
+  hide-cancel="{{true}}"
+  bind:cancel="closeSeriesPanel"
+>
+  <block wx:if="{{seriesPanel}}">
     <view class="series-head">
       <view class="series-title">{{seriesPanel.title}}</view>
       <view class="series-sub">
@@ -118,7 +129,7 @@
       </view>
     </view>
     <scroll-view class="vol-list" scroll-y="true">
-      <view class="vol-item" wx:for="{{seriesPanel.volumes}}" wx:key="index">
+      <view class="vol-item" wx:for="{{seriesPanel.volumes}}" wx:key="uuid">
         <view class="vol-info">
           <text class="vol-idx">第{{item.index}}册</text>
           <text class="vol-name">{{item.title}}</text>
@@ -132,5 +143,5 @@
       </view>
     </scroll-view>
     <button class="btn-primary" bindtap="onAddWholeSeries">加入整套 📚</button>
-  </view>
-</view>
+  </block>
+</bottom-sheet>

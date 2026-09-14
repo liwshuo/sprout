@@ -40,7 +40,9 @@ Page({
   },
 
   onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+    this.refresh()
+      .then(() => wx.stopPullDownRefresh())
+      .catch(() => wx.stopPullDownRefresh());
   },
 
   // 构建当月网格骨架
@@ -60,6 +62,14 @@ Page({
     const { year, month } = this.data;
     this.setData({ loading: true });
     const childId = app.globalData.activeChildId;
+    if (!childId) {
+      const cells = this.data.cells.map((c) => ({ ...c, dots: [] }));
+      this._events = [];
+      this._byDay = {};
+      this.setData({ cells, loading: false });
+      this._loadDay(this.data.selectedDate || dateUtil.ymd(new Date()));
+      return;
+    }
     const events = await calendarService.fetchMonthEvents(childId, year, month);
     this._events = events;
     this._byDay = calendarService.groupByDay(events);

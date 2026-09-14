@@ -18,6 +18,7 @@ Page({
     activeTab: 'all',
     renderList: [], // 混合渲染：系列卡片(isSeries:true) + 单本书(isSeries:false)
     loading: false,
+    _lock: {},
 
     // 添加方式选择弹层（手动 / 扫码 / 新建系列）
     showAddChoice: false,
@@ -54,12 +55,22 @@ Page({
     app.off && app.off('activeChildChanged', this._onChild);
   },
   onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+    this.refresh()
+      .then(() => wx.stopPullDownRefresh())
+      .catch(() => wx.stopPullDownRefresh());
   },
 
   // ============ 取数 / 渲染 ============
   async refresh() {
     this.setData({ loading: true });
+    const childId = app.globalData.activeChildId;
+    if (!childId) {
+      this._all = [];
+      this._seriesList = [];
+      this._grouped = {};
+      this.setData({ renderList: [], loading: false });
+      return;
+    }
     const [books, seriesList] = await Promise.all([
       db.books.listAll(),
       db.series.listAll(),
@@ -196,8 +207,13 @@ Page({
         }
         this._lookupIsbn(isbn);
       },
-      fail: () => {
-        // 用户主动取消扫码：静默，不打扰
+      fail: (err) => {
+        const errMsg = (err && err.errMsg) || '';
+        if (errMsg.indexOf('cancel') < 0 && errMsg.indexOf('auth deny') >= 0) {
+          wx.showToast({ title: '无法使用相机，请手动录入', icon: 'none' });
+          this._volumeCtx = null;
+          this.setData({ showAdd: true, form: { title: '', author: '' } });
+        }
       },
     });
   },
@@ -245,8 +261,14 @@ Page({
     });
   },
   async saveScanBook() {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('saveScanBook', 1500)) return;
     const { scanForm } = this.data;
     if (!scanForm.title || !scanForm.title.trim()) {
+      this._unlock('saveScanBook');
       wx.showToast({ title: '请填写书名', icon: 'none' });
       return;
     }
@@ -256,7 +278,7 @@ Page({
         scanForm.totalPages !== '' && scanForm.totalPages != null
           ? Number(scanForm.totalPages) || null
           : null;
-      await db.books.create({
+      const created = await db.books.create({
         title: scanForm.title.trim(),
         author: (scanForm.author || '').trim() || null,
         isbn: scanForm.isbn || null,
@@ -268,14 +290,42 @@ Page({
       wx.hideLoading();
       this.setData({ showScanConfirm: false });
       wx.showToast({ title: '已加入书架', icon: 'success' });
+      // 加入书架成功后：对 book_library.hotScore 原子自增（若该书库条目存在）
+      this._incLibraryHotScoreByIsbn(scanForm.isbn, created.uuid);
       this.refresh();
     } catch (err) {
       wx.hideLoading();
       console.error('[reading] 保存扫码书籍失败', err);
       wx.showToast({ title: '添加失败', icon: 'none' });
+    } finally {
+      this._unlock('saveScanBook');
     }
   },
 
+  // 扫码加入书架后：尝试用 isbn 在 book_library 里找对应条目，命中则 +1 热度
+  // 失败静默（不影响加入书架的用户体验；热度属于锦上添花字段）
+  async _incLibraryHotScoreByIsbn(isbn, createdBookUuid) {
+    try {
+      if (!isbn) return;
+      const list = Array.isArray(this._libraryList)
+        ? this._libraryList
+        : (await db.bookLibrary.listAll());
+      this._libraryList = list;
+      const hit = list.find((lb) => lb.isbn === isbn);
+      if (!hit) return;
+      const delta = 1;
+      if (Math.abs(delta) > 10) {
+        console.warn('[reading] bookLibraryInc delta 超 ±10 上限，拦截', delta);
+        return;
+      }
+      await wx.cloud.callFunction({
+        name: 'bookLibraryInc',
+        data: { bookLibraryUuid: hit.uuid, delta },
+      });
+    } catch (err) {
+      console.warn('[reading] bookLibraryInc(hotScore) 失败，跳过', err);
+    }
+  },
   // ============ 手动新增书籍 ============
   openAdd() {
     this._volumeCtx = null;
@@ -290,8 +340,14 @@ Page({
     this.setData({ [`form.${field}`]: e.detail.value });
   },
   async saveBook() {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('saveBook', 1500)) return;
     const { title, author } = this.data.form;
     if (!title.trim()) {
+      this._unlock('saveBook');
       wx.showToast({ title: '请填写书名', icon: 'none' });
       return;
     }
@@ -322,17 +378,33 @@ Page({
       wx.hideLoading();
       console.error('[reading] 添加书籍失败', err);
       wx.showToast({ title: '添加失败', icon: 'none' });
+    } finally {
+      this._unlock('saveBook');
     }
   },
 
   // 切换阅读状态：want → reading → done → want（单本卡片封面点击）
   cycleStatus(e) {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('cycleStatus', 600)) {
+      wx.showToast({ title: '操作太频繁啦～', icon: 'none' });
+      return;
+    }
     const uuid = e.currentTarget.dataset.uuid;
     const book = (this._all || []).find((b) => b.uuid === uuid);
-    if (!book) return;
+    if (!book) { this._unlock('cycleStatus'); return; }
     const next =
       book.status === 'want' ? 'reading' : book.status === 'reading' ? 'done' : 'want';
-    db.books.update(uuid, { status: next }).then(() => this.refresh());
+    db.books.update(uuid, { status: next })
+      .then(() => this.refresh())
+      .catch((err) => {
+        console.error('[reading] cycleStatus 失败', err);
+        wx.showToast({ title: err.message || '更新失败', icon: 'none' });
+      })
+      .finally(() => this._unlock('cycleStatus'));
   },
 
   // ============ 线 B：系列面板 ============
@@ -364,8 +436,14 @@ Page({
     this.setData({ [`seriesForm.${field}`]: e.detail.value });
   },
   async saveCreateSeries() {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('saveCreateSeries', 2000)) return;
     const { name, totalVolumes } = this.data.seriesForm;
     if (!name || !name.trim()) {
+      this._unlock('saveCreateSeries');
       wx.showToast({ title: '请填写系列名', icon: 'none' });
       return;
     }
@@ -384,6 +462,8 @@ Page({
       wx.hideLoading();
       console.error('[reading] 创建系列失败', err);
       wx.showToast({ title: '创建失败', icon: 'none' });
+    } finally {
+      this._unlock('saveCreateSeries');
     }
   },
 
@@ -415,19 +495,31 @@ Page({
     this.setData({ 'checkinForm.date': e.detail.value });
   },
   async saveCheckin() {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
+    if (this._tryLock('saveCheckin', 1500)) return;
     const { checkinBookId, checkinForm } = this.data;
-    if (!checkinBookId) return;
+    if (!checkinBookId) { this._unlock('saveCheckin'); return; }
     const hasContent =
       checkinForm.pageFrom || checkinForm.pageTo || checkinForm.chapter || checkinForm.note;
     if (!hasContent) {
+      this._unlock('saveCheckin');
       wx.showToast({ title: '填点内容再打卡吧～', icon: 'none' });
       return;
     }
     wx.showLoading({ title: '打卡中...', mask: true });
     try {
-      const readDate = dateUtil.startOfDay(
-        new Date((checkinForm.date || dateUtil.ymd(new Date())).replace(/-/g, '/'))
-      );
+      const readDateStr = checkinForm.date || dateUtil.ymd(new Date());
+      const readDate = dateUtil.startOfDay(new Date(readDateStr.replace(/-/g, '/')));
+      const todayEnd = dateUtil.startOfNextDay(new Date());
+      if (readDate >= todayEnd) {
+        this._unlock('saveCheckin');
+        wx.hideLoading();
+        wx.showToast({ title: '打卡日期不能晚于今天', icon: 'none' });
+        return;
+      }
       await readingService.addReadingLog(app.globalData.activeChildId, checkinBookId, {
         readDate,
         pageFrom: checkinForm.pageFrom,
@@ -451,6 +543,23 @@ Page({
       wx.hideLoading();
       console.error('[reading] 打卡失败', err);
       wx.showToast({ title: '打卡失败，请重试', icon: 'none' });
+    } finally {
+      this._unlock('saveCheckin');
     }
+  },
+
+  // 防抖提交锁（mine/library 同款）
+  _tryLock(key, ms = 1000) {
+    const now = Date.now();
+    const lock = this.data._lock || {};
+    if (lock[key] && now - lock[key] < ms) return true;
+    lock[key] = now;
+    this.setData({ _lock: lock });
+    return false;
+  },
+  _unlock(key) {
+    const lock = Object.assign({}, this.data._lock || {});
+    delete lock[key];
+    this.setData({ _lock: lock });
   },
 });

@@ -115,11 +115,14 @@ function buildPanelVM(seriesUuid, books, seriesList) {
         indexLabel: `第${b.seriesIndex || '?'}册`,
       });
     });
+  const progress = deriveProgress(seriesUuid, books);
+  const progressPct = progress.total ? Math.min(100, Math.round((progress.done * 100) / progress.total)) : 0;
   return {
     seriesUuid,
     name: (meta && meta.name) || '未命名系列',
     totalVolumes: (meta && meta.totalVolumes) || volumes.length,
-    progress: deriveProgress(seriesUuid, books),
+    progress,
+    progressPct,
     volumes,
   };
 }

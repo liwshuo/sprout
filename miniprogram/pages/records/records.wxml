@@ -3,10 +3,22 @@
   <view class="page-title">成长记录</view>
   <view class="page-subtitle">用文字和照片，留住每一个小小的成长瞬间</view>
 
-  <view class="empty card" wx:if="{{!loading && records.length === 0}}">
-    <text class="empty-emoji">📖</text>
-    <view class="empty-text">还没有记录，点右下角开始记录第一条吧</view>
-  </view>
+  <!-- 骨架屏 -->
+  <block wx:if="{{loading}}">
+    <view class="card record-card skeleton" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="sk-line"></view>
+      <view class="sk-line short"></view>
+    </view>
+  </block>
+
+  <empty-state
+    wx:if="{{!loading && records.length === 0}}"
+    icon="📖"
+    title="还没有记录"
+    subtitle="点右下角 + 开始记录宝贝的第一个成长瞬间吧"
+    action-text="＋ 添加第一条记录"
+    bind:action="goAdd"
+  />
 
   <view class="card record-card" wx:for="{{records}}" wx:key="uuid">
     <view class="row-between">
@@ -42,6 +54,7 @@
       <view class="del-btn" data-uuid="{{item.uuid}}" catchtap="onDelete">删除</view>
     </view>
   </view>
+  <view class="list-footer"></view>
 </view>
 
 <view class="fab" bindtap="goAdd">＋</view>

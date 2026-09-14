@@ -52,3 +52,13 @@
   color: var(--ink-weak);
   padding: 4rpx 12rpx;
 }
+.list-footer {
+  height: 120rpx;
+}
+.skeleton .sk-line {
+  height: 24rpx;
+  border-radius: 8rpx;
+  background: var(--line);
+  margin-top: 16rpx;
+}
+.skeleton .sk-line.short { width: 55%; }

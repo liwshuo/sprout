@@ -12,21 +12,25 @@ Page({
     moods: MOODS,
     category: '日常',
     mood: '',
-    eventDate: '', // 'YYYY-MM-DD'
-    localImages: [], // 本地临时路径
+    eventDate: '',
+    localImages: [],
     submitting: false,
-    // 编辑模式
-    recordId: '', // 非空表示编辑已有记录
+    recordId: '',
     isEdit: false,
-    existingImageIds: [], // 编辑模式下保留的云端图片 fileID
-    existingImageUrls: [], // 与 existingImageIds 一一对应的临时预览链接
+    isDetail: false,
+    existingImageIds: [],
+    existingImageUrls: [],
     loading: false,
   },
 
   onLoad(query) {
     const recordId = query.recordId || '';
-    if (recordId) {
-      // 编辑模式：加载已有记录填入表单
+    const disabled = query.disabled === 'true';
+    if (recordId && disabled) {
+      this.setData({ recordId, isEdit: true, isDetail: true, loading: true });
+      wx.setNavigationBarTitle({ title: '记录详情' });
+      this._loadRecord(recordId);
+    } else if (recordId) {
       this.setData({ recordId, isEdit: true, loading: true });
       wx.setNavigationBarTitle({ title: '编辑记录' });
       this._loadRecord(recordId);
@@ -72,8 +76,9 @@ Page({
     }
   },
 
-  // 移除一张已存在的云端图片（仅从本次保存的列表中剔除）
+  // 移除一张已存在的云端图片（只读详情模式下禁用）
   removeExistingImage(e) {
+    if (this.data.isDetail) return;
     const idx = e.currentTarget.dataset.idx;
     const existingImageIds = this.data.existingImageIds.slice();
     const existingImageUrls = this.data.existingImageUrls.slice();
@@ -88,27 +93,33 @@ Page({
   },
 
   onTitleInput(e) {
+    if (this.data.isDetail) return;
     this.setData({ title: e.detail.value });
   },
   onNoteInput(e) {
+    if (this.data.isDetail) return;
     this.setData({ note: e.detail.value });
   },
   onDateChange(e) {
+    if (this.data.isDetail) return;
     this.setData({ eventDate: e.detail.value });
   },
   selectCategory(e) {
+    if (this.data.isDetail) return;
     this.setData({ category: e.currentTarget.dataset.cat });
   },
   selectMood(e) {
+    if (this.data.isDetail) return;
     const key = e.currentTarget.dataset.mood;
     this.setData({ mood: this.data.mood === key ? '' : key });
   },
 
-  // 选择图片（最多 9 张）
   chooseImage() {
-    const remain = 9 - this.data.localImages.length;
+    if (this.data.isDetail) return;
+    const existCount = (this.data.existingImageIds || []).length;
+    const remain = 9 - existCount - this.data.localImages.length;
     if (remain <= 0) {
-      wx.showToast({ title: '最多 9 张', icon: 'none' });
+      wx.showToast({ title: '最多 9 张图片', icon: 'none' });
       return;
     }
     wx.chooseMedia({
@@ -124,6 +135,7 @@ Page({
   },
 
   removeImage(e) {
+    if (this.data.isDetail) return;
     const idx = e.currentTarget.dataset.idx;
     const localImages = this.data.localImages.slice();
     localImages.splice(idx, 1);
@@ -136,6 +148,7 @@ Page({
   },
 
   async onSubmit() {
+    if (this.data.isDetail) return;
     const {
       title, note, category, mood, eventDate, localImages, submitting,
       isEdit, recordId, existingImageIds,
@@ -150,6 +163,11 @@ Page({
     if (!auth.ownerId()) {
       wx.showToast({ title: '请先到「我的」登录后再保存', icon: 'none' });
       console.warn('[add] 未登录（ownerId 为空），无法保存。请确认 login 云函数已部署并登录成功');
+      return;
+    }
+    const totalImages = (existingImageIds || []).length + localImages.length;
+    if (totalImages > 9) {
+      wx.showToast({ title: '最多 9 张图片', icon: 'none' });
       return;
     }
     this.setData({ submitting: true });

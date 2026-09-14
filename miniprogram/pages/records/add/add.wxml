@@ -1,5 +1,5 @@
 <!-- pages/records/add/add.wxml —— 添加记录 -->
-<view class="container">
+<view class="container {{isDetail ? 'detail-mode' : ''}}">
   <!-- 标题 -->
   <view class="card">
     <input
@@ -9,6 +9,7 @@
       value="{{title}}"
       bindinput="onTitleInput"
       maxlength="40"
+      disabled="{{isDetail}}"
     />
     <textarea
       class="note-input"
@@ -18,6 +19,7 @@
       bindinput="onNoteInput"
       maxlength="500"
       auto-height
+      disabled="{{isDetail}}"
     />
   </view>
 
@@ -25,16 +27,16 @@
   <view class="card">
     <view class="field-label">照片</view>
     <view class="img-grid">
-      <!-- 编辑模式下已有的云端图片 -->
+      <!-- 编辑/详情模式下已有的云端图片（详情模式下不显示删除角标） -->
       <view class="grid-item" wx:for="{{existingImageUrls}}" wx:key="*this" wx:for-index="eidx">
         <image class="grid-img" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewExisting" />
-        <view class="remove-badge" data-idx="{{eidx}}" catchtap="removeExistingImage">×</view>
+        <view class="remove-badge" wx:if="{{!isDetail}}" data-idx="{{eidx}}" catchtap="removeExistingImage">×</view>
       </view>
       <view class="grid-item" wx:for="{{localImages}}" wx:key="*this">
         <image class="grid-img" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewLocal" />
-        <view class="remove-badge" data-idx="{{index}}" catchtap="removeImage">×</view>
+        <view class="remove-badge" wx:if="{{!isDetail}}" data-idx="{{index}}" catchtap="removeImage">×</view>
       </view>
-      <view class="add-img" wx:if="{{localImages.length < 9}}" bindtap="chooseImage">＋</view>
+      <view class="add-img" wx:if="{{!isDetail && existingImageIds.length + localImages.length < 9}}" bindtap="chooseImage">＋</view>
     </view>
   </view>
 
@@ -43,7 +45,7 @@
     <view class="field-label">分类</view>
     <view class="chip-wrap">
       <view
-        class="chip {{category === item ? 'active' : ''}}"
+        class="chip {{category === item ? 'active' : ''}} {{isDetail ? 'chip-disabled' : ''}}"
         wx:for="{{categories}}"
         wx:key="*this"
         data-cat="{{item}}"
@@ -57,7 +59,7 @@
     <view class="field-label">心情</view>
     <view class="mood-wrap">
       <view
-        class="mood-item {{mood === item.key ? 'active' : ''}}"
+        class="mood-item {{mood === item.key ? 'active' : ''}} {{isDetail ? 'mood-disabled' : ''}}"
         wx:for="{{moods}}"
         wx:key="key"
         data-mood="{{item.key}}"
@@ -71,7 +73,7 @@
 
   <!-- 日期 -->
   <view class="card">
-    <picker mode="date" value="{{eventDate}}" bindchange="onDateChange">
+    <picker mode="date" value="{{eventDate}}" bindchange="onDateChange" disabled="{{isDetail}}">
       <view class="row-between date-picker">
         <view class="field-label" style="margin:0">日期</view>
         <view class="text-primary">{{eventDate}} ›</view>
@@ -79,5 +81,6 @@
     </picker>
   </view>
 
-  <button class="btn-primary btn-block submit-btn" bindtap="onSubmit" loading="{{submitting}}">{{isEdit ? '保存修改' : '保存记录'}}</button>
+  <button wx:if="{{!isDetail}}" class="btn-primary btn-block submit-btn" bindtap="onSubmit" loading="{{submitting}}">{{isEdit ? '保存修改' : '保存记录'}}</button>
+  <view wx:if="{{isDetail}}" class="detail-tip text-sub">只读模式 · 点击「✎」可进入编辑</view>
 </view>

@@ -1,6 +1,7 @@
 // pages/records/records.js —— 记录列表：文字 + 图片卡片
 const app = getApp();
 const db = require('../../utils/db');
+const auth = require('../../utils/auth');
 const dateUtil = require('../../utils/date');
 const { categoryColor, moodEmoji } = require('../../utils/constants');
 
@@ -24,11 +25,18 @@ Page({
   },
 
   onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh());
+    this.refresh()
+      .then(() => wx.stopPullDownRefresh())
+      .catch(() => wx.stopPullDownRefresh());
   },
 
   async refresh() {
     this.setData({ loading: true });
+    const childId = app.globalData.activeChildId;
+    if (!childId) {
+      this.setData({ records: [], loading: false });
+      return;
+    }
     const list = await db.records.listAll(100);
     const records = list.map((r) => ({
       ...r,
@@ -69,13 +77,16 @@ Page({
   },
 
   onDelete(e) {
+    if (!auth.ownerId()) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
     const uuid = e.currentTarget.dataset.uuid;
-    wx.showModal({
-      title: '删除记录',
-      content: '确定删除这条成长记录吗？',
-      confirmColor: '#E5702A',
+    wx.showActionSheet({
+      itemList: ['确认删除该记录', '取消'],
+      itemColor: '#E5702A',
       success: (res) => {
-        if (!res.confirm) return;
+        if (res.tapIndex !== 0) return;
         db.records
           .remove(uuid)
           .then(() => {

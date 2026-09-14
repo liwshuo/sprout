@@ -145,3 +145,19 @@
   margin-left: 20rpx;
   flex-shrink: 0;
 }
+.list-footer {
+  height: 120rpx;
+}
+.skeleton .sk-line {
+  height: 24rpx;
+  border-radius: 8rpx;
+  background: var(--line);
+  margin-top: 16rpx;
+}
+.skeleton .sk-line.short { width: 50%; }
+.skeleton .sk-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}

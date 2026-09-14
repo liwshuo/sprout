@@ -14,10 +14,14 @@
     >{{item.label}}</view>
   </view>
 
-  <view class="empty card" wx:if="{{!loading && renderList.length === 0}}">
-    <text class="empty-emoji">📚</text>
-    <view class="empty-text">书架还空着，点右下角添加第一本书</view>
-  </view>
+  <empty-state
+    wx:if="{{!loading && renderList.length === 0}}"
+    icon="📚"
+    title="书架还空着"
+    subtitle="点右下角 + 添加孩子的第一本绘本"
+    action-text="＋ 添加第一本书"
+    bind:action="openAddChoice"
+  />
 
   <!-- 书籍/系列网格 -->
   <view class="book-grid">
@@ -55,37 +59,45 @@
       </view>
     </block>
   </view>
+  <view class="list-footer"></view>
 </view>
 
 <view class="fab" bindtap="openAddChoice">＋</view>
 
 <!-- 添加方式选择弹层 -->
-<view class="mask" wx:if="{{showAddChoice}}" bindtap="closeAddChoice"></view>
-<view class="sheet" wx:if="{{showAddChoice}}" catchtap>
-  <view class="sheet-title">添加书籍</view>
+<bottom-sheet
+  show="{{showAddChoice}}"
+  title="添加书籍"
+  hide-cancel="{{true}}"
+  bind:cancel="closeAddChoice"
+>
   <view class="choice-item" bindtap="goLibrary">📚 精选书库</view>
   <view class="choice-item" bindtap="chooseManual">✍️ 手动录入</view>
   <view class="choice-item" bindtap="chooseScan">📷 扫码添加</view>
   <view class="choice-item" bindtap="chooseCreateSeries">📚 新建系列</view>
   <view class="choice-item choice-cancel" bindtap="closeAddChoice">取消</view>
-</view>
+</bottom-sheet>
 
 <!-- 手动新增书籍弹层 -->
-<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
-<view class="sheet" wx:if="{{showAdd}}" catchtap>
-  <view class="sheet-title">添加书籍</view>
+<bottom-sheet
+  show="{{showAdd}}"
+  title="添加书籍"
+  confirm-text="加入书架"
+  bind:cancel="closeAdd"
+  bind:confirm="saveBook"
+>
   <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{form.title}}" bindinput="onFormInput" />
   <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{form.author}}" bindinput="onFormInput" />
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveBook">加入书架</view>
-  </view>
-</view>
+</bottom-sheet>
 
 <!-- 扫码确认弹层 -->
-<view class="mask" wx:if="{{showScanConfirm}}" bindtap="closeScanConfirm"></view>
-<view class="sheet" wx:if="{{showScanConfirm}}" catchtap>
-  <view class="sheet-title">确认书籍信息</view>
+<bottom-sheet
+  show="{{showScanConfirm}}"
+  title="确认书籍信息"
+  confirm-text="保存"
+  bind:cancel="closeScanConfirm"
+  bind:confirm="saveScanBook"
+>
   <view class="scan-preview">
     <image wx:if="{{scanForm.cover}}" class="scan-cover" src="{{scanForm.cover}}" mode="aspectFill" />
     <view wx:else class="scan-cover scan-cover-ph">无封面</view>
@@ -94,27 +106,27 @@
   <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{scanForm.title}}" bindinput="onScanInput" />
   <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{scanForm.author}}" bindinput="onScanInput" />
   <input class="sheet-input" type="number" placeholder="总页数（选填）" placeholder-class="ph" data-field="totalPages" value="{{scanForm.totalPages}}" bindinput="onScanInput" />
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeScanConfirm">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveScanBook">保存</view>
-  </view>
-</view>
+</bottom-sheet>
 
 <!-- 新建系列弹层 -->
-<view class="mask" wx:if="{{showCreateSeries}}" bindtap="closeCreateSeries"></view>
-<view class="sheet" wx:if="{{showCreateSeries}}" catchtap>
-  <view class="sheet-title">新建系列</view>
+<bottom-sheet
+  show="{{showCreateSeries}}"
+  title="新建系列"
+  confirm-text="创建"
+  bind:cancel="closeCreateSeries"
+  bind:confirm="saveCreateSeries"
+>
   <input class="sheet-input" placeholder="系列名（如 神奇校车）" placeholder-class="ph" data-field="name" value="{{seriesForm.name}}" bindinput="onSeriesFormInput" />
   <input class="sheet-input" type="number" placeholder="总册数（选填）" placeholder-class="ph" data-field="totalVolumes" value="{{seriesForm.totalVolumes}}" bindinput="onSeriesFormInput" />
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeCreateSeries">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveCreateSeries">创建</view>
-  </view>
-</view>
+</bottom-sheet>
 
 <!-- 系列面板 -->
-<view class="series-mask" wx:if="{{showSeriesPanel}}" bindtap="closeSeries"></view>
-<view class="series-sheet" wx:if="{{showSeriesPanel}}" catchtap>
+<bottom-sheet
+  show="{{showSeriesPanel}}"
+  title=""
+  hide-cancel="{{true}}"
+  bind:cancel="closeSeries"
+>
   <view class="series-panel-head">
     <view class="series-panel-title ellipsis">{{seriesPanel.name}}</view>
     <view class="series-panel-progress">
@@ -136,13 +148,16 @@
   </scroll-view>
 
   <view class="btn-primary btn-block series-add-btn" data-uuid="{{seriesPanel.seriesUuid}}" bindtap="addVolume">＋ 添加分册</view>
-</view>
+</bottom-sheet>
 
 <!-- 阅读打卡弹层 -->
-<view class="mask" wx:if="{{showCheckin}}" bindtap="closeCheckin"></view>
-<view class="sheet {{showCheckin ? 'sheet-show' : ''}}" wx:if="{{showCheckin}}" catchtap>
-  <view class="sheet-title">阅读打卡 · {{checkinBookTitle}}</view>
-
+<bottom-sheet
+  show="{{showCheckin}}"
+  title="阅读打卡 · {{checkinBookTitle}}"
+  confirm-text="保存打卡"
+  bind:cancel="closeCheckin"
+  bind:confirm="saveCheckin"
+>
   <view class="row checkin-row">
     <input
       class="sheet-input flex-1 checkin-half"
@@ -187,9 +202,4 @@
       <view class="picker-val">{{checkinForm.date}} ›</view>
     </picker>
   </view>
-
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeCheckin">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveCheckin">保存打卡</view>
-  </view>
-</view>
+</bottom-sheet>
