@@ -1,4 +1,4 @@
-<!-- components/event-card/event-card.wxml —— 可复用事件卡片（record/schedule/todo） -->
+<!-- components/event-card/event-card.wxml —— 可复用事件卡片（record/schedule/todo/reading） -->
 <view class="event-card evt-{{event.type}}">
   <!-- 类型色条 -->
   <view class="evt-bar" style="background:{{event.color}}"></view>

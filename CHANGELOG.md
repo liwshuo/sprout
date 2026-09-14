@@ -6,12 +6,11 @@
 ## [Unreleased]
 ### Changed
 - 底部导航「记录」Tab 替换为「待办」Tab（`pages/records/records` → `pages/todo/todo`）；原记录页降级为次级页面，仍可经日历「+ 记一笔」入口访问
-- 日历页（`pages/index`）升级为**课程 + 待办 + 成长记录**三源综合视图：
-  - 带 `dueDate` 的待办按截止日落到日历对应日期，与课程、成长记录共同打点（每天最多 3 个圆点：橙=成长记录、蓝=课程、紫=待办）
-  - 阅读打卡移出日历聚合（阅读记录仍在「阅读」Tab 内独立维护）
+- 日历页（`pages/index`）升级为**课程 + 待办 + 成长记录 + 阅读打卡**四源综合视图：
+  - 带 `dueDate` 的待办按截止日落到日历对应日期，与课程、成长记录、阅读打卡共同打点（每天最多 4 个圆点：橙=成长记录、蓝=课程、紫=待办、绿=阅读打卡）
   - `event-card` 支持待办完成态：标题划线置灰 + 右侧 ✅
-  - 图例更新为 成长记录 / 课程 / 待办
-- `constants.js` 日历事件类型令牌由 `reading`（薄荷绿）改为 `todo`（丁香紫 `#B7A5F0`）；`calendar-service` 第三源由 `reading_logs` 改为 `todos`
+  - 图例更新为 成长记录 / 课程 / 待办 / 阅读打卡
+- `constants.js` 日历事件类型令牌新增 `todo`（丁香紫 `#B7A5F0`）；`calendar-service` 由三源扩展为四源聚合（`daily_records` + `schedule_items` + `todos` + `reading_logs`），圆点上限由 3 提升至 4
 
 ### Added
 - 新增「孩子待办（Todo）」功能：`pages/todo` 待办清单页 + `utils/todo.js` 云数据库封装 + `todos` 云集合

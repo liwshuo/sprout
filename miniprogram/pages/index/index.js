@@ -1,6 +1,6 @@
-// pages/index/index.js —— 日历首页：月历「三源聚合」打点 + 当天事件卡片列表
-// 数据来自 services/calendar-service（成长记录 + 课表周展开 + 待办），
-// 每天最多 3 个彩色圆点，点击某天在下方展示统一事件卡片（record/schedule/todo）。
+// pages/index/index.js —— 日历首页：月历「四源聚合」打点 + 当天事件卡片列表
+// 数据来自 services/calendar-service（成长记录 + 课表周展开 + 待办 + 阅读打卡），
+// 每天最多 4 个彩色圆点，点击某天在下方展示统一事件卡片（record/schedule/todo/reading）。
 const app = getApp();
 const dateUtil = require('../../utils/date');
 const calendarService = require('../../services/calendar-service');
@@ -11,16 +11,17 @@ Page({
     month: 0, // 0-based
     monthLabel: '',
     weekHeaders: ['一', '二', '三', '四', '五', '六', '日'],
-    cells: [], // 42 格，含 dots:[color,...]（最多 3）
+    cells: [], // 42 格，含 dots:[color,...]（最多 4）
     selectedDate: '', // 'YYYY-MM-DD'
     selectedLabel: '',
-    dayEvents: [], // 当天三源事件（CalendarEvent[]）
+    dayEvents: [], // 当天四源事件（CalendarEvent[]）
     loading: false,
-    // 图例：橙=成长记录 / 蓝=课程 / 紫=待办
+    // 图例：橙=成长记录 / 蓝=课程 / 紫=待办 / 绿=阅读打卡
     legend: [
       { color: '#FF8C42', label: '成长记录' },
       { color: '#8FC7F0', label: '课程' },
       { color: '#B7A5F0', label: '待办' },
+      { color: '#7ED9C3', label: '阅读打卡' },
     ],
   },
 
