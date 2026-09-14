@@ -276,6 +276,34 @@ async function listTodos(childId, ownerId) {
 }
 
 /**
+ * 当前成员读取指定孩子的共享业务集合。
+ * 集合名严格限制在 BIZ_COLLECTIONS，前端只负责本地过滤/排序，避免列表查询被安全规则拒绝。
+ */
+async function listChildData(collection, childId, ownerId) {
+  if (!BIZ_COLLECTIONS.includes(collection)) return { ok: false, error: '不支持的集合' };
+  if (!childId) return { ok: false, error: '缺少 childId' };
+  const membership = await findMembership(childId, ownerId);
+  if (!membership) return { ok: false, error: '无权访问该孩子的数据' };
+  const items = [];
+  const pageSize = 100;
+  let offset = 0;
+  while (true) {
+    // eslint-disable-next-line no-await-in-loop
+    const res = await db.collection(collection)
+      .where({ childId, isDeleted: _.neq(true) })
+      .orderBy('_id', 'asc')
+      .skip(offset)
+      .limit(pageSize)
+      .get();
+    const page = res.data || [];
+    items.push(...page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return { ok: true, items };
+}
+
+/**
  * 把已完成待办原子转换为成长记录。
  * 事务同时校验待办、创建确定性 ID 的记录并回写 convertedRecordId；并发请求只会保留一条记录。
  */
@@ -603,6 +631,8 @@ exports.main = async (event = {}) => {
         return await listChildren(ctxOpenid(), ownerId);
       case 'listTodos':
         return await listTodos(event.childId, ownerId);
+      case 'listChildData':
+        return await listChildData(event.collection, event.childId, ownerId);
       case 'convertTodoToRecord':
         return await convertTodoToRecord(event, ownerId, ctxOpenid());
       case 'createInvite':

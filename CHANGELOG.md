@@ -27,6 +27,7 @@
   - mine 页新增「家庭共享」入口与成员管理弹层：成员列表（创建者/我标签）、分享给家人（转发一次性邀请链接）、生成邀请二维码（可保存相册）、创建者移除成员、非创建者退出共享
   - 支持两种加入方式：分享链接（`?invite=CODE`）与扫描小程序码（`scene=CODE`）；进入 mine 页自动识别并调用 `acceptInvite` 加入
 ### Fixed
+- 收口共享业务集合列表读取：`daily_records`、`books`、`schedule_items`、`reading_logs`、`series`、`weekly_reports` 统一通过 `childShare.listChildData` 校验成员后读取，消除日历等页面持续出现的 `DATABASE_PERMISSION_DENIED`
 - 修复待办新增成功后列表仍为空的问题：`todo.listAll()` 改走 `childShare.listTodos` 受信端查询并校验孩子成员身份，避免前端安全规则拒绝后被静默降级为空；待办页新增「今天截止 / 已逾期」前台提醒条
 - 修复“我的”页新增孩子后刷新仍展示空状态、从而可重复添加的问题：孩子列表改走 `childShare.listChildren` 受信端查询，绕开前端安全规则/索引查询失败被静默降级为空；创建者自己的异常孤立档案会自动补齐 `child_members` 与 `members`，创建成功后仍即时更新页面状态
 - 修正“我的”页登录态展示：仅云端 `login` 成功后显示「退出登录」；未登录展示登录引导与「登录账号」，添加孩子时先登录并在成功后继续；用户主动退出后暂停自动静默登录

@@ -154,6 +154,39 @@ async function listAllPaged(col, opts = {}, cap = PAGE_CAP) {
 }
 
 /**
+ * 通过受信云函数读取当前孩子的共享业务集合。
+ * 列表读取不再依赖前端安全规则的查询可证明性；云函数会校验 child_members。
+ */
+async function listSharedData(col) {
+  const { ownerId, childId } = scope();
+  if (!ownerId || !childId) return [];
+  try {
+    const response = await wx.cloud.callFunction({
+      name: 'childShare',
+      data: { action: 'listChildData', collection: col, childId },
+    });
+    const result = (response && response.result) || {};
+    if (!result.ok) throw new Error(result.error || `读取 ${col} 失败`);
+    return Array.isArray(result.items) ? result.items : [];
+  } catch (err) {
+    console.warn(`[db] listSharedData(${col}) 失败，返回空`, err);
+    return [];
+  }
+}
+
+function sortByField(items, field, direction = 'asc') {
+  const factor = direction === 'desc' ? -1 : 1;
+  return items.slice().sort((a, b) => {
+    const av = a[field];
+    const bv = b[field];
+    if (av === bv) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return (av < bv ? -1 : 1) * factor;
+  });
+}
+
+/**
  * 公共集合分页全量拉取（**不做 ownerId/childId 归属过滤**）。
  * 用于 book_library 等「所有人可读」的公共只读集合，破除单次 20 条上限。
  * @param {string} col 集合名
@@ -278,21 +311,19 @@ async function softDelete(col, uuid) {
 // ============================================================
 
 const records = {
-  /** 某日/某月记录列表，按 eventDate 倒序（分页拉全，破 20 条上限） */
-  listByRange(startMs, endMs) {
-    const cmd = _();
-    return listAllPaged(COLLECTIONS.dailyRecords, {
-      where: { eventDate: cmd.gte(startMs).and(cmd.lt(endMs)) },
-      orderBy: ['eventDate', 'desc'],
-    });
-  },
-  /** 全部记录（倒序，分页拉全）。cap 控制最大拉取条数，默认 200 */
-  listAll(cap = 200) {
-    return listAllPaged(
-      COLLECTIONS.dailyRecords,
-      { orderBy: ['eventDate', 'desc'] },
-      cap
+  /** 某日/某月记录列表，按 eventDate 倒序 */
+  async listByRange(startMs, endMs) {
+    const items = await listSharedData(COLLECTIONS.dailyRecords);
+    return sortByField(
+      items.filter((item) => item.eventDate >= startMs && item.eventDate < endMs),
+      'eventDate',
+      'desc'
     );
+  },
+  /** 全部记录（倒序）。cap 控制最大返回条数，默认 200 */
+  async listAll(cap = 200) {
+    const items = await listSharedData(COLLECTIONS.dailyRecords);
+    return sortByField(items, 'eventDate', 'desc').slice(0, cap);
   },
   create(rec) {
     // rec: { title, note, tags[], imageFileIds[], category, mood, source, eventDate, durationMinutes }
@@ -307,14 +338,13 @@ const records = {
 };
 
 const books = {
-  listAll() {
-    return listAllPaged(COLLECTIONS.books, { orderBy: ['updatedAt', 'desc'] });
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.books);
+    return sortByField(items, 'updatedAt', 'desc');
   },
-  listByStatus(status) {
-    return listAllPaged(COLLECTIONS.books, {
-      where: { status },
-      orderBy: ['updatedAt', 'desc'],
-    });
+  async listByStatus(status) {
+    const items = await listSharedData(COLLECTIONS.books);
+    return sortByField(items.filter((item) => item.status === status), 'updatedAt', 'desc');
   },
   getByUuid(uuid) {
     return getByUuid(COLLECTIONS.books, uuid);
@@ -415,8 +445,9 @@ const children = {
 // 课表：规则集合（数据量小，仍走分页兜底）
 const scheduleItems = {
   /** 全部课表项，按开始时间升序 */
-  listAll() {
-    return listAllPaged(COLLECTIONS.scheduleItems, { orderBy: ['startTime', 'asc'] });
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.scheduleItems);
+    return sortByField(items, 'startTime', 'asc');
   },
   create(item) {
     // item: { courseName, type, location, teacher, weekday, recurrence, startTime, endTime, startDate, endDate, emoji, color }
@@ -432,24 +463,24 @@ const scheduleItems = {
 
 // 阅读打卡：日历第三源上游数据（补齐写入闭环）
 const readingLogs = {
-  /** 某时间范围内的打卡（按 readDate 聚合），分页拉全 */
-  listByRange(startMs, endMs) {
-    const cmd = _();
-    return listAllPaged(COLLECTIONS.readingLogs, {
-      where: { readDate: cmd.gte(startMs).and(cmd.lt(endMs)) },
-      orderBy: ['readDate', 'desc'],
-    });
+  /** 某时间范围内的打卡（按 readDate 聚合） */
+  async listByRange(startMs, endMs) {
+    const items = await listSharedData(COLLECTIONS.readingLogs);
+    return sortByField(
+      items.filter((item) => item.readDate >= startMs && item.readDate < endMs),
+      'readDate',
+      'desc'
+    );
   },
-  /** 某本书的全部打卡历史（按 readDate 倒序），分页拉全 */
-  listByBook(bookUuid) {
-    return listAllPaged(COLLECTIONS.readingLogs, {
-      where: { bookUuid },
-      orderBy: ['readDate', 'desc'],
-    });
+  /** 某本书的全部打卡历史（按 readDate 倒序） */
+  async listByBook(bookUuid) {
+    const items = await listSharedData(COLLECTIONS.readingLogs);
+    return sortByField(items.filter((item) => item.bookUuid === bookUuid), 'readDate', 'desc');
   },
   /** 全部打卡 */
-  listAll() {
-    return listAllPaged(COLLECTIONS.readingLogs, { orderBy: ['readDate', 'desc'] });
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.readingLogs);
+    return sortByField(items, 'readDate', 'desc');
   },
   create(log) {
     // log: { bookUuid, readDate, chapter, chapterIndex, pageFrom, pageTo, durationMinutes, mood, note, source }
@@ -464,12 +495,12 @@ const readingLogs = {
 };
 
 // 套书/系列：一套书的元信息（已读册数不冗余存储，由 books 聚合派生）
-// 与 books 风格一致：listAll / getByUuid / create / update / remove，
-// 均走 listAllPaged（破 20 条上限）+ 权限/软删/ownerId 三件套（由通用层保障）。
+// 与 books 风格一致：列表读取走受信云函数，写入/更新沿用通用 CRUD。
 const series = {
-  /** 当前孩子的全部系列（按创建时间升序，分页拉全） */
-  listAll() {
-    return listAllPaged(COLLECTIONS.series, { orderBy: ['createdAt', 'asc'] });
+  /** 当前孩子的全部系列（按创建时间升序） */
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.series);
+    return sortByField(items, 'createdAt', 'asc');
   },
   getByUuid(uuid) {
     return getByUuid(COLLECTIONS.series, uuid);
@@ -489,34 +520,21 @@ const series = {
 // 周报：周度汇总（V1 P1：云端云函数 generateWeeklyReport 生成，本地只读 + 手动再生成）
 // 主键：weekStart（本周一 00:00 毫秒）+ ownerId + childId 保证一周一份（云函数做幂等 upsert）
 const weeklyReports = {
-  listAll() {
-    return listAllPaged(COLLECTIONS.weeklyReports, {
-      withChild: true,
-      orderBy: ['weekStart', 'desc'],
-    });
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.weeklyReports);
+    return sortByField(items, 'weekStart', 'desc');
   },
-  listByRange(startMs, endMs) {
-    const cmd = _();
-    return listAllPaged(COLLECTIONS.weeklyReports, {
-      withChild: true,
-      where: { weekStart: cmd.gte(startMs).and(cmd.lt(endMs)) },
-      orderBy: ['weekStart', 'desc'],
-    });
+  async listByRange(startMs, endMs) {
+    const items = await listSharedData(COLLECTIONS.weeklyReports);
+    return sortByField(
+      items.filter((item) => item.weekStart >= startMs && item.weekStart < endMs),
+      'weekStart',
+      'desc'
+    );
   },
   async getByWeek(weekStartMs) {
-    try {
-      const where = _buildWhere({ withChild: true, where: { weekStart: weekStartMs } });
-      if (!where) return null;
-      const { data } = await db()
-        .collection(COLLECTIONS.weeklyReports)
-        .where(where)
-        .limit(1)
-        .get();
-      return (data && data[0]) || null;
-    } catch (err) {
-      console.warn('[db] weeklyReports.getByWeek 失败', err);
-      return null;
-    }
+    const items = await listSharedData(COLLECTIONS.weeklyReports);
+    return items.find((item) => item.weekStart === weekStartMs) || null;
   },
   create(report) {
     return create(COLLECTIONS.weeklyReports, report, { withChild: true });

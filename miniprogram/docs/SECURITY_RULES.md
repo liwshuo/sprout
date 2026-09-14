@@ -81,7 +81,7 @@ auth.openid in doc.members
 }
 ```
 
-- 前端若直接查询，只能读到**自己的**成员记录；正式孩子列表统一调用 `childShare.listChildren`，待办列表统一调用 `childShare.listTodos`，由云函数校验成员身份后返回数据，避免安全规则查询或复合索引异常被前端静默降级为空。
+- 前端若直接查询，只能读到**自己的**成员记录；正式孩子列表统一调用 `childShare.listChildren`，待办列表调用 `childShare.listTodos`，其余共享业务集合列表调用 `childShare.listChildData`。云函数先校验成员身份再返回数据，避免复杂范围查询/排序无法通过前端规则证明而被静默降级为空。
 - `listChildren` 同时用 `ownerId` 校验创建者自己的孩子；发现孩子档案存在但 owner 成员关系或 `members` 缺失时自动补齐，用于修复异常中断产生的孤立数据。
 - **成员管理列表**（某孩子的全部成员）同样必须调用 `childShare` 的 `listMembers`（云函数以管理员身份读取，规则不拦）。
 - 所有写入（加入/移除/退出/删除孩子）一律走 `childShare` 云函数；`deleteChild` 仅允许档案创建者调用，并统一软删除档案、成员关系、邀请及关联业务数据。
