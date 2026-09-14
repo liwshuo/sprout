@@ -109,6 +109,7 @@ function _toReadingEvent(log, bookTitleMap) {
  * @returns {Promise<CalendarEvent[]>} 已按 ts / time 升序排列
  */
 async function fetchMonthEvents(childId, year, month) {
+  if (!childId) return [];
   const [start, end] = dateUtil.monthRange(year, month);
 
   // 三源 + 书名映射并发拉取（均走 listAllPaged 破 20 条上限）

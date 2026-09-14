@@ -3,47 +3,88 @@
   <view class="page-title">课程表</view>
   <view class="page-subtitle">孩子每周的课程与兴趣班安排</view>
 
+  <!-- 骨架屏 -->
+  <block wx:if="{{loading}}">
+    <view class="sk-day-block" wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
+      <view class="sk-line short"></view>
+      <view class="sk-line"></view>
+      <view class="sk-line short"></view>
+    </view>
+  </block>
+
   <view class="day-block" wx:for="{{grouped}}" wx:key="weekday">
     <view class="day-head">
       <view class="day-label">{{item.label}}</view>
       <view class="day-line"></view>
     </view>
 
-    <view class="empty-day text-sub" wx:if="{{item.items.length === 0}}">这天没有安排～</view>
+    <empty-state
+      wx:if="{{!loading && item.items.length === 0}}"
+      icon="📅"
+      title="{{item.label}}没有安排"
+      subtitle=""
+      size="small"
+    />
 
-    <view class="course-card card" wx:for="{{item.items}}" wx:for-item="course" wx:key="uuid">
+    <view class="course-card card {{course._todayOff ? 'course-card-off' : ''}}" wx:for="{{item.items}}" wx:for-item="course" wx:key="uuid">
       <view class="time-col">
         <view class="time-start">{{course.startTime}}</view>
         <view class="time-end text-sub">{{course.endTime}}</view>
       </view>
       <view class="course-line" style="background:{{course.type === 'school' ? '#8FC7F0' : '#FF8C42'}}"></view>
       <view class="flex-1">
-        <view class="course-name ellipsis">{{course.courseName}}</view>
+        <view class="row course-name-row">
+          <view class="course-name ellipsis">{{course.courseName}}</view>
+          <view class="off-badge" wx:if="{{course._todayOff}}">今天不上</view>
+        </view>
         <view class="course-meta text-sub">
           <text class="type-tag">{{course.type === 'school' ? '校内' : '兴趣班'}}</text>
+          <text wx:if="{{course.teacher}}"> · {{course.teacher}}老师</text>
           <text wx:if="{{course.location}}"> · {{course.location}}</text>
         </view>
+        <view class="course-range text-sub" wx:if="{{course.startDate || course.endDate}}">
+          {{course.startDate || '不限'}} — {{course.endDate || '不限'}}
+        </view>
       </view>
-      <view class="del-btn" data-uuid="{{course.uuid}}" catchtap="onDelete">删除</view>
+      <view class="course-actions">
+        <view class="edit-btn" data-uuid="{{course.uuid}}" catchtap="openEdit">编辑</view>
+        <view class="del-btn" data-uuid="{{course.uuid}}" catchtap="onDelete">删除</view>
+      </view>
     </view>
   </view>
+  <view class="list-footer"></view>
 </view>
 
 <view class="fab" bindtap="openAdd">＋</view>
 
-<!-- 新增课程弹层 -->
-<view class="mask" wx:if="{{showAdd}}" bindtap="closeAdd"></view>
-<view class="sheet" wx:if="{{showAdd}}" catchtap>
-  <view class="sheet-title">添加课程</view>
-  <input class="sheet-input" placeholder="课程名称" placeholder-class="ph" data-field="courseName" bindinput="onFormInput" />
-  <input class="sheet-input" placeholder="地点（选填）" placeholder-class="ph" data-field="location" bindinput="onFormInput" />
+<!-- 新增/编辑课程弹层（showAdd 与 showEdit 复用同一个 bottom-sheet） -->
+<bottom-sheet
+  show="{{showAdd || showEdit}}"
+  title="{{showEdit ? '编辑课程' : '添加课程'}}"
+  cancel-text="取消"
+  confirm-text="{{showEdit ? '保存修改' : '确认添加'}}"
+  confirm-disabled="{{submitting}}"
+  bind:cancel="closeAdd"
+  bind:confirm="saveCourse"
+>
+  <input class="sheet-input" placeholder="课程名称 *" placeholder-class="ph" value="{{form.courseName}}" data-field="courseName" bindinput="onFormInput" />
+  <input class="sheet-input" placeholder="授课老师（选填）" placeholder-class="ph" value="{{form.teacher}}" data-field="teacher" bindinput="onFormInput" />
+  <input class="sheet-input" placeholder="地点（选填）" placeholder-class="ph" value="{{form.location}}" data-field="location" bindinput="onFormInput" />
+
+  <!-- 校内/课外 type chip -->
+  <view class="sheet-field-label text-sub row-label">课程类型</view>
+  <view class="type-chip-row">
+    <view class="type-chip {{form.type === 'school' ? 'type-chip-active type-chip-school' : ''}}" data-type="school" bindtap="onTypeSelect">校内课程</view>
+    <view class="type-chip {{form.type === 'extra' ? 'type-chip-active type-chip-extra' : ''}}" data-type="extra" bindtap="onTypeSelect">课外兴趣班</view>
+  </view>
 
   <view class="row-between sheet-field">
     <view class="sheet-field-label">星期</view>
-    <picker mode="selector" range="{{weekdays}}" bindchange="onWeekdayChange">
+    <picker mode="selector" range="{{weekdays}}" value="{{form.weekday - 1}}" bindchange="onWeekdayChange">
       <view class="picker-val">周{{weekdays[form.weekday - 1]}} ›</view>
     </picker>
   </view>
+
   <view class="row-between sheet-field">
     <view class="sheet-field-label">时间</view>
     <view class="row">
@@ -57,8 +98,25 @@
     </view>
   </view>
 
-  <view class="row sheet-actions">
-    <view class="btn-ghost sheet-btn" bindtap="closeAdd">取消</view>
-    <view class="btn-primary sheet-btn" bindtap="saveCourse">保存</view>
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">开始日期</view>
+    <picker mode="date" value="{{form.startDate}}" start="{{minStartDate}}" bindchange="onStartDateChange">
+      <view class="picker-val">{{form.startDate || '不限'}} ›</view>
+    </picker>
   </view>
-</view>
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">结束日期</view>
+    <picker mode="date" value="{{form.endDate}}" start="{{form.startDate || minStartDate}}" bindchange="onEndDateChange">
+      <view class="picker-val">{{form.endDate || '不限'}} ›</view>
+    </picker>
+  </view>
+
+  <!-- 今天不上（excludedDates 简化入口） -->
+  <view class="today-off-row">
+    <view class="today-off-label">
+      <text class="today-off-title">今天不上课</text>
+      <text class="text-sub today-off-sub">仅本次（{{todayStr}}）临时停课</text>
+    </view>
+    <switch checked="{{form.excludedDates.indexOf(todayStr) >= 0}}" bindchange="onToggleTodayOff" color="#FF8C42" />
+  </view>
+</bottom-sheet>
