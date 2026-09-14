@@ -72,9 +72,10 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 
 - **首页问候头部**：`Hi，{昵称}妈妈 👋` + 副标题 + 🐣 头像；右上角「回到今天」快捷键。
 - **月历视图**：table_calendar，支持月 / 周切换，周一为每周首日；当天出现的分类去重后以彩色圆点标记（最多 3 个）。
-- **图例**：日常 / 阅读 / 课表 / 运动 / 才艺 分类色说明。
-- **当日成长足迹**：选中日期下方按创建时间倒序展示当天记录卡片（时间轴样式），点击进入该日详情页。
-- **空态兜底**：当天无记录时展示「这一天还没有记录」引导。
+- **三源综合视图**：日历同时聚合展示 **课程 / 待办 / 成长记录** 三类事项（每天最多 3 个圆点：橙=成长记录、蓝=课程、紫=待办），点击某天在下方以统一事件卡片展开当天三类详情。
+- **图例**：成长记录（橙）/ 课程（蓝）/ 待办（紫）分类色说明。
+- **当日综合安排**：选中日期下方按「记录→课表→待办」顺序展示当天事件卡片（时间轴样式）；待办已完成时标题划线置灰并显示 ✅。
+- **空态兜底**：当天无安排时展示「这一天还没有安排」引导。
 
 ### 4.2 日常记录（记录 Tab）— 已实现
 
@@ -151,9 +152,10 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 - **书架 join 水合**：书架 `refresh()` 在 `groupBySeries` 之前调用 `_hydrateFromLibrary(books)`——对带 `libraryUuid` 的书一次性从 `book_library` 回填 `title/author/coverExternalUrl/ageRange/type/description`（**书自身已有手动值则保留、不覆盖**），书库改动可反哺书架展示。
 - **热度计数（P1 预留）**：`book_library` 含 `addCount/likeCount/readFinishCount` 字段（当前恒为 0）；打卡完成同步 `readFinishCount +1` 已在 `reading-service._syncBookProgress` 留 `TODO P1`，其余见 `docs/BOOK_LIBRARY_BACKLOG.md`。
 
-### 4.9 待办清单（我的 → 待办）— 已实现
+### 4.9 待办清单（底部 Tab「待办」）— 已实现
 
-- **入口**：mine 页功能菜单「待办」，跳转 `pages/todo/todo`。
+- **入口（小程序端）**：底部导航「待办」Tab 直达 `pages/todo/todo`（原「记录」Tab 降级为次级页面 `pages/records/records`，仍可经日历「+ 记一笔」/ 相关入口访问）；mine 页功能菜单亦保留「待办」入口。
+- **日历联动**：带 `dueDate` 的待办会同步落到日历对应日期，与课程、成长记录共同构成日历三源综合视图（详见 §4.1 / §8.3）。
 - **孩子维度待办**：待办强制关联当前孩子（`childId`），复用全局 `activeChild` 归属；多孩子时顶部提供孩子过滤 chip，切换即切库。
 - **分类体系**：作业 / 生活 / 兴趣 / 其他四类，各带 emoji 与马卡龙分类色；顶部「全部 + 四分类」筛选 tab。
 - **勾选完成**：圆形勾选圈一键切换完成 / 未完成（乐观更新，先本地翻转再落库）；顶部完成进度条展示 `已完成 / 总数`。
@@ -295,10 +297,12 @@ lib/
 
 ### 8.3 日历聚合口径（核心业务）
 
-日历（`pages/index`）通过 `calendar-service` 把三类数据归一为统一 `CalendarEvent`（`{ date, type, title, color, sourceId, raw }`，`type: record/schedule/reading`）后按天分组、多彩点展示（每天最多 3 个圆点：橙=成长记录、蓝=课外班、绿=阅读打卡）：
+日历（`pages/index`）通过 `calendar-service` 把三类数据归一为统一 `CalendarEvent`（`{ date, type, title, color, sourceId, raw }`，`type: record/schedule/todo`）后按天分组、多彩点展示（每天最多 3 个圆点：橙=成长记录、蓝=课外班、紫=待办）：
 - **成长记录**：`daily_records` 按 `eventDate` 直接落点。
-- **课外班**：`schedule_items` 的周期规则（当前落地 weekly；biweekly/monthly/once 属 P1/P2）按展示月份**动态推算成具体日期，不落库**（`date.expandWeeklySchedule`）。
-- **阅读日志**：`reading_logs` 按 `readDate` 落点，join `books` 取书名。
+- **课外班/课程**：`schedule_items` 的周期规则（当前落地 weekly；biweekly/monthly/once 属 P1/P2）按展示月份**动态推算成具体日期，不落库**（`date.expandWeeklySchedule`）。
+- **待办**：`todos` 中带 `dueDate` 的待办按截止日落点（无 `dueDate` 的待办不进日历，仅在待办 Tab 展示）；完成态在事件卡片上以划线 + ✅ 呈现。
+
+> 说明：阅读打卡（`reading_logs`）不再进入日历聚合，阅读记录仍在「阅读」Tab 内独立维护；如需在日历上恢复阅读源可扩展第四源。
 
 > **wx.cloud 硬约束**：小程序端 `collection.get()` 单次最多返回 20 条。日历三源聚合、记录/书籍/打卡等列表一律走 `db.listAllPaged`（`skip/limit(20)` 循环，默认 cap 200）破除该上限，保证数据完整；`getTempFileURL` 单次上限 50，`db.getTempUrls` 已自动分批。
 
@@ -306,7 +310,7 @@ lib/
 
 ### 8.4 当前迭代待办
 
-1. ~~**日历聚合展示**（成长记录 + 课外班 + 阅读日志）— P0~~ ✅ 已落地（`calendar-service` 三源聚合 + 多彩点 + `event-card` 事件卡片）
+1. ~~**日历聚合展示**（成长记录 + 课外班 + 阅读日志）— P0~~ ✅ 已落地；**三源已调整为「成长记录 + 课程 + 待办」**（阅读日志移出日历，改由 `todos` 按 `dueDate` 落点，见 §8.3）
 2. ~~**书架 → 阅读打卡闭环**（补 `reading_logs` 写入 + 状态跃迁 + 进度派生）— P1~~ ✅ 已落地（`reading-service.addReadingLog` + 书架打卡弹层）
 3. ~~**课外班日历推算**（weekday + recurrence 展开日期）— P0~~ ✅ 已落地（`date.expandWeeklySchedule`，weekly）
 4. ~~**书架扫码录入**（`wx.scanCode` + `bookLookup` 云函数 ISBN 查书）+ **系列书面板**（`series` 集合 + `series-service` 聚合 + 叠层卡片/面板）— P1~~ ✅ 已落地

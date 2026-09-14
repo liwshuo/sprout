@@ -1,11 +1,11 @@
-<!-- components/event-card/event-card.wxml —— 可复用事件卡片（record/schedule/reading） -->
+<!-- components/event-card/event-card.wxml —— 可复用事件卡片（record/schedule/todo） -->
 <view class="event-card evt-{{event.type}}">
   <!-- 类型色条 -->
   <view class="evt-bar" style="background:{{event.color}}"></view>
 
   <view class="evt-body">
     <view class="evt-head">
-      <text class="evt-title ellipsis">{{event.title}}</text>
+      <text class="evt-title ellipsis {{event.done ? 'evt-done' : ''}}">{{event.title}}</text>
       <text class="evt-mood" wx:if="{{event.mood}}">{{event.mood}}</text>
       <text
         class="evt-tag"

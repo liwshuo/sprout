@@ -4,6 +4,15 @@
 > 约定：每次功能改动都应同步更新本文件与 `docs/PRODUCT_SPEC.md`。最新变更置于顶部。
 
 ## [Unreleased]
+### Changed
+- 底部导航「记录」Tab 替换为「待办」Tab（`pages/records/records` → `pages/todo/todo`）；原记录页降级为次级页面，仍可经日历「+ 记一笔」入口访问
+- 日历页（`pages/index`）升级为**课程 + 待办 + 成长记录**三源综合视图：
+  - 带 `dueDate` 的待办按截止日落到日历对应日期，与课程、成长记录共同打点（每天最多 3 个圆点：橙=成长记录、蓝=课程、紫=待办）
+  - 阅读打卡移出日历聚合（阅读记录仍在「阅读」Tab 内独立维护）
+  - `event-card` 支持待办完成态：标题划线置灰 + 右侧 ✅
+  - 图例更新为 成长记录 / 课程 / 待办
+- `constants.js` 日历事件类型令牌由 `reading`（薄荷绿）改为 `todo`（丁香紫 `#B7A5F0`）；`calendar-service` 第三源由 `reading_logs` 改为 `todos`
+
 ### Added
 - 新增「孩子待办（Todo）」功能：`pages/todo` 待办清单页 + `utils/todo.js` 云数据库封装 + `todos` 云集合
   - 待办与孩子关联（`childId`），支持按孩子过滤（多孩子顶部 chip 切换，复用全局 `activeChild` 归属）

@@ -54,18 +54,18 @@ const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 // 日历事件三源 → 主题色（日历彩色圆点 / 事件卡片色条），对齐设计方案 P0-b
 //  record   = 成长记录（暖橙）
 //  schedule = 课表/课外班（天蓝）
-//  reading  = 阅读打卡（薄荷绿）
+//  todo     = 待办（丁香紫）
 const EVENT_TYPE_COLORS = {
   record: '#FF8C42',
   schedule: '#8FC7F0',
-  reading: '#7ED9C3',
+  todo: '#B7A5F0',
 };
 
 // 事件类型中文名（卡片/图例用）
 const EVENT_TYPE_LABELS = {
   record: '成长记录',
   schedule: '课外班',
-  reading: '阅读打卡',
+  todo: '待办',
 };
 
 function eventTypeColor(type) {

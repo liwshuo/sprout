@@ -29,6 +29,12 @@
   flex: 1;
   min-width: 0;
 }
+/* 待办已完成：标题划线置灰 */
+.evt-done {
+  text-decoration: line-through;
+  color: var(--ink-sub);
+  font-weight: 400;
+}
 .evt-mood {
   font-size: 32rpx;
   margin-left: 12rpx;

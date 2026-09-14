@@ -31,8 +31,8 @@
         "text": "日历"
       },
       {
-        "pagePath": "pages/records/records",
-        "text": "记录"
+        "pagePath": "pages/todo/todo",
+        "text": "待办"
       },
       {
         "pagePath": "pages/reading/reading",
