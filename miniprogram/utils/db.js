@@ -373,6 +373,17 @@ const children = {
   async listAll() {
     const { ownerId } = scope();
     if (!ownerId) return [];
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'childShare',
+        data: { action: 'listChildren' },
+      });
+      const result = (res && res.result) || {};
+      if (result.ok && Array.isArray(result.children)) return result.children;
+      console.warn('[db] childShare.listChildren 未成功，回退前端查询', result.error || result);
+    } catch (err) {
+      console.warn('[db] childShare.listChildren 调用失败，回退前端查询', err);
+    }
     const mem = await childMembers.listMine();
     const childIds = Array.from(new Set(mem.map((m) => m.childId).filter(Boolean)));
     if (!childIds.length) return [];

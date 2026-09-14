@@ -189,6 +189,70 @@ async function createChild(input, ownerId, openid) {
 }
 
 /**
+ * 返回当前登录家长可见的孩子列表。
+ * 由云函数读取成员关系，避免前端安全规则查询与复合索引缺失导致列表被静默降级为空。
+ */
+async function listChildren(openid, ownerId) {
+  if (!openid) return { ok: false, error: '未获取到 openid' };
+  const memberRes = await db.collection(C_MEMBERS)
+    .where({ openid })
+    .limit(100)
+    .get();
+  const memberRows = memberRes.data || [];
+  const childIds = Array.from(new Set(memberRows
+    .filter((member) => !member.isDeleted && member.childId)
+    .map((member) => member.childId)));
+
+  // 兼容创建成员关系失败但孩子档案已落库的异常数据：创建者可见自己的孩子，并补齐成员关系。
+  const ownedRes = await db.collection(C_CHILDREN)
+    .where({ ownerId, isDeleted: _.neq(true) })
+    .limit(100)
+    .get();
+  const now = Date.now();
+  for (const child of (ownedRes.data || [])) {
+    if (!child.uuid) continue;
+    if (childIds.indexOf(child.uuid) === -1) childIds.push(child.uuid);
+    if (!Array.isArray(child.members) || child.members.indexOf(openid) === -1) {
+      child.members = Array.from(new Set((child.members || []).concat(openid)));
+      // eslint-disable-next-line no-await-in-loop
+      await db.collection(C_CHILDREN).doc(child._id).update({
+        data: { members: child.members, updatedAt: now },
+      });
+    }
+    const membership = memberRows.find((member) => member.childId === child.uuid);
+    if (!membership) {
+      // eslint-disable-next-line no-await-in-loop
+      await db.collection(C_MEMBERS).add({ data: {
+        uuid: genUuid(), childId: child.uuid, ownerId, openid, role: 'other', isOwner: true,
+        joinedAt: now, createdAt: now, updatedAt: now, isDeleted: false,
+      } });
+    } else if (membership.isDeleted) {
+      // eslint-disable-next-line no-await-in-loop
+      await db.collection(C_MEMBERS).doc(membership._id).update({ data: {
+        ownerId, openid, isOwner: true, isDeleted: false, updatedAt: now,
+      } });
+    }
+  }
+  if (!childIds.length) return { ok: true, children: [] };
+
+  const children = [];
+  const chunkSize = 10;
+  for (let i = 0; i < childIds.length; i += chunkSize) {
+    const chunk = childIds.slice(i, i + chunkSize);
+    // eslint-disable-next-line no-await-in-loop
+    const childRes = await db.collection(C_CHILDREN)
+      .where({ uuid: _.in(chunk) })
+      .limit(chunkSize)
+      .get();
+    children.push(...(childRes.data || []).filter((child) => (
+      !child.isDeleted && Array.isArray(child.members) && child.members.indexOf(openid) !== -1
+    )));
+  }
+  children.sort((a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0));
+  return { ok: true, children };
+}
+
+/**
  * 把已完成待办原子转换为成长记录。
  * 事务同时校验待办、创建确定性 ID 的记录并回写 convertedRecordId；并发请求只会保留一条记录。
  */
@@ -481,6 +545,8 @@ exports.main = async (event = {}) => {
     switch (action) {
       case 'createChild':
         return await createChild(event.child, ownerId, ctxOpenid());
+      case 'listChildren':
+        return await listChildren(ctxOpenid(), ownerId);
       case 'convertTodoToRecord':
         return await convertTodoToRecord(event, ownerId, ctxOpenid());
       case 'createInvite':
