@@ -24,7 +24,7 @@ Page({
     // 列表
     todos: [],          // 当前孩子全部待办（已挂派生字段、已排序）
     displayTodos: [],   // 经分类筛选后的展示列表
-    stats: { total: 0, done: 0 },
+    stats: { total: 0, done: 0, dueToday: 0, overdue: 0 },
     loading: false,
 
     // 新增 / 编辑弹层
@@ -89,7 +89,7 @@ Page({
         activeChildName: '',
         todos: [],
         displayTodos: [],
-        stats: { total: 0, done: 0 },
+        stats: { total: 0, done: 0, dueToday: 0, overdue: 0 },
         loading: false,
       });
       return;
@@ -97,12 +97,13 @@ Page({
 
     const raw = await todo.listAll();
     const list = this._decorate(raw);
+    const stats = this._buildStats(list);
     this.setData({
       children,
       activeChildId,
       activeChildName: (activeChild && (activeChild.name || '宝贝')) || '',
       todos: list,
-      stats: { total: list.length, done: list.filter((t) => t.done).length },
+      stats,
       loading: false,
     });
     this._applyFilter();
@@ -120,6 +121,7 @@ Page({
         _catColor: meta.color,
         _catLabel: t.category || '其他',
         _dueLabel: t.dueDate ? (dueSoon ? '今天' : t.dueDate) : '',
+        _dueToday: dueSoon,
         _overdue: overdue,
       });
     });
@@ -132,6 +134,15 @@ Page({
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
     return out;
+  },
+
+  _buildStats(list) {
+    return {
+      total: list.length,
+      done: list.filter((item) => item.done).length,
+      dueToday: list.filter((item) => item._dueToday).length,
+      overdue: list.filter((item) => item._overdue).length,
+    };
   },
 
   _applyFilter() {
@@ -168,7 +179,7 @@ Page({
     // 乐观更新：先本地翻转，再落库
     const todos = this.data.todos.map((t) => (t.uuid === uuid ? Object.assign({}, t, { done: next }) : t));
     const sorted = this._decorate(todos);
-    this.setData({ todos: sorted, stats: { total: sorted.length, done: sorted.filter((t) => t.done).length } }, () => this._applyFilter());
+    this.setData({ todos: sorted, stats: this._buildStats(sorted) }, () => this._applyFilter());
     try {
       await todo.toggleDone(uuid, next);
       if (next) this._offerGrowthRecord(item);

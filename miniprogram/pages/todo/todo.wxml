@@ -14,6 +14,19 @@
     >{{item._displayName}}</view>
   </scroll-view>
 
+  <!-- 前台到期提示：进入待办页即可看到，不依赖系统通知授权 -->
+  <view wx:if="{{stats.overdue > 0 || stats.dueToday > 0}}" class="reminder-banner">
+    <view class="reminder-icon">🔔</view>
+    <view class="reminder-copy">
+      <view class="reminder-title">待办提醒</view>
+      <view class="reminder-text">
+        <text wx:if="{{stats.overdue > 0}}">{{stats.overdue}} 项已逾期</text>
+        <text wx:if="{{stats.overdue > 0 && stats.dueToday > 0}}"> · </text>
+        <text wx:if="{{stats.dueToday > 0}}">{{stats.dueToday}} 项今天截止</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 完成进度条 -->
   <view class="progress-card card" wx:if="{{stats.total > 0}}">
     <view class="progress-text">

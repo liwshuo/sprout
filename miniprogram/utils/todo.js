@@ -37,7 +37,21 @@ function categoryMeta(category) {
 
 const todo = {
   /** 当前孩子的全部待办（按创建时间倒序，分页拉全破 20 条上限） */
-  listAll() {
+  async listAll() {
+    const app = getApp();
+    const childId = app && app.globalData && app.globalData.activeChildId;
+    if (!childId) return [];
+    try {
+      const response = await wx.cloud.callFunction({
+        name: 'childShare',
+        data: { action: 'listTodos', childId },
+      });
+      const result = (response && response.result) || {};
+      if (result.ok && Array.isArray(result.todos)) return result.todos;
+      console.warn('[todo] childShare.listTodos 未成功，回退前端查询', result.error || result);
+    } catch (err) {
+      console.warn('[todo] childShare.listTodos 调用失败，回退前端查询', err);
+    }
     return db.listAllPaged(COL, { orderBy: ['createdAt', 'desc'] });
   },
 

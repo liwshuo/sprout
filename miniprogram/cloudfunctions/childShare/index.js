@@ -252,6 +252,29 @@ async function listChildren(openid, ownerId) {
   return { ok: true, children };
 }
 
+/** 当前成员读取指定孩子的全部待办，绕开前端安全规则查询被拒绝时的空列表问题。 */
+async function listTodos(childId, ownerId) {
+  if (!childId) return { ok: false, error: '缺少 childId' };
+  const membership = await findMembership(childId, ownerId);
+  if (!membership) return { ok: false, error: '无权访问该孩子的待办' };
+  const todos = [];
+  const pageSize = 100;
+  let offset = 0;
+  while (true) {
+    // eslint-disable-next-line no-await-in-loop
+    const res = await db.collection(C_TODOS)
+      .where({ childId, isDeleted: _.neq(true) })
+      .skip(offset)
+      .limit(pageSize)
+      .get();
+    const page = res.data || [];
+    todos.push(...page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return { ok: true, todos };
+}
+
 /**
  * 把已完成待办原子转换为成长记录。
  * 事务同时校验待办、创建确定性 ID 的记录并回写 convertedRecordId；并发请求只会保留一条记录。
@@ -578,6 +601,8 @@ exports.main = async (event = {}) => {
         return await createChild(event.child, ownerId, ctxOpenid());
       case 'listChildren':
         return await listChildren(ctxOpenid(), ownerId);
+      case 'listTodos':
+        return await listTodos(event.childId, ownerId);
       case 'convertTodoToRecord':
         return await convertTodoToRecord(event, ownerId, ctxOpenid());
       case 'createInvite':

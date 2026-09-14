@@ -22,6 +22,34 @@
   box-shadow: var(--shadow-primary);
 }
 
+/* ===== 到期提示 ===== */
+.reminder-banner {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin: 4rpx 0 20rpx;
+  padding: 22rpx 26rpx;
+  border: 2rpx solid #FFD4C7;
+  border-radius: 20rpx;
+  background: #FFF2ED;
+}
+.reminder-icon {
+  font-size: 36rpx;
+}
+.reminder-copy {
+  flex: 1;
+}
+.reminder-title {
+  color: #C84F2D;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.reminder-text {
+  margin-top: 4rpx;
+  color: #8C5E50;
+  font-size: 24rpx;
+}
+
 /* ===== 完成进度卡 ===== */
 .progress-card {
   padding: 24rpx 28rpx;
