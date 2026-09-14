@@ -92,8 +92,16 @@ Page({
     };
     app.on && app.on('userChanged', this._onUser);
     this._onActiveChild = (id) => {
-      this.setData({ activeChildId: id });
-      this.refresh();
+      this.setData({ activeChildId: id }, () => {
+        // 当前页已经持有该孩子时直接更新派生状态，避免重复查询把刚创建的本地状态覆盖掉。
+        if (this.data.children.some((child) => child.uuid === id)) {
+          this._loadActiveChild();
+          this._loadStats();
+          this._deriveParentLabel();
+        } else {
+          this.refresh();
+        }
+      });
     };
     app.on && app.on('activeChildChanged', this._onActiveChild);
   },
@@ -533,9 +541,24 @@ Page({
           sortOrder: this.data.children.length,
         });
         wx.hideLoading();
-        this.setData({ showChildSheet: false, editingChildUuid: '', formAvatarUrl: '' });
+        const avatarUrlMap = {};
+        if (avatarFileId && this.data.childForm._avatarTempPath) {
+          avatarUrlMap[avatarFileId] = this.data.childForm._avatarTempPath;
+        }
+        this._parseChildren([child], avatarUrlMap);
+        const nextChildren = this.data.children.concat(child);
+        app.globalData.children = nextChildren;
+        await new Promise((resolve) => this.setData({
+          showChildSheet: false,
+          editingChildUuid: '',
+          formAvatarUrl: '',
+          children: nextChildren,
+          activeChildId: child.uuid,
+        }, resolve));
         app.setActiveChild(child.uuid);
-        await this.refresh();
+        this._loadActiveChild();
+        await this._loadStats();
+        this._deriveParentLabel();
         wx.showToast({ title: '已添加', icon: 'success' });
         this._maybeConfirmGrade(child.uuid);
       }
