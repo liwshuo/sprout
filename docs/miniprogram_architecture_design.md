@@ -1,10 +1,14 @@
 # 萌芽成长册 · 微信小程序全局架构 Review 与重设计方案
 
-> 版本：v2.1（全局版，经批判性 review 修订；覆盖 v2.0 / v1.0）
+> 版本：**v2.2**（对齐 2026-09-10 方案校准决策）
 > 范围：`miniprogram/` 全量代码（云环境 `cloud1-d3gh6o81f2ba198c9`）
 > 目标：在不推翻现有合理设计的前提下，补齐**服务层 / 组件层**两个缺失分层，规范目录与编码约定，并把当前待办（日历聚合、阅读打卡闭环）纳入统一架构。
 >
-> **v2.1 修订要点**：① 补上 wx.cloud 硬约束（**小程序端单次查询 20 条上限**）及其对日历聚合/列表的影响与对策；② 课表推算 P0 收敛为「仅 weekly」，biweekly/monthly/once 降级到 P1/P2（现有数据只产 weekly，避免投机实现）；③ 统一伪代码命名为现状的 `db.*`（`collections.js` 拆分为 P2）；④ 新增「风险点与边界 case」章节。
+> **双端策略（路径 A，见 docs/DECISION_LOG_20260910.md §0）**：本小程序端为**全家主入口**（家人/非技术用户），数据 100% 在 CloudBase（云数据库/云存储/云函数），微信随手可用。Flutter App 端本人使用的「离线可用 + AI 润色」高级版独立，数据不打通共享（列入 V3 远期目标），**业务口径 100% 对齐 `docs/AGGREGATION_RULES.md`**。
+>
+> **v2.2 修订要点**：① 双端路径 A 定版（本架构文档只管小程序端，Flutter 端见技术方案 v1.5）；② generateWeeklyReport 云函数从 P2 升 P1（与 Flutter 端对齐），空周不生成 + 幂等 + 周报口径抽 service 复用；③ 扫码主源：探数（TANSHU_KEY）+ Google Books 兜底；④ 排除 excludedDates[] 简化版停课（V1 P1），独立 CourseExceptions 集合列 V2。
+>
+> **v2.1 保留修订要点**：① 补上 wx.cloud 硬约束（**小程序端单次查询 20 条上限**）及其对日历聚合/列表的影响与对策；② 课表推算 P0 收敛为「仅 weekly」，biweekly/monthly/once 降级到 P1/P2；③ 统一伪代码命名为现状的 `db.*`（`collections.js` 拆分为 P2）；④ 新增「风险点与边界 case」章节。
 >
 > **结论先行（三句话）：**
 > 1. 底子好：数据层（同步三件套 + 双归属）、设计令牌（`app.wxss` CSS 变量）、登录链路都规范，**不需要大改**。
@@ -328,8 +332,11 @@ users(ownerId) 1─N children(uuid)
 | --- | --- | --- |
 | `login` | 解析 openid → upsert users | ✅ 够用，保持 |
 | `bindPhone` | code/cloudID → 手机号 → 写 users.phone | ✅ 够用，保持 |
-| `generateWeeklyReport` | 无 | **P2 新增**：定时触发（周日 20:00）跨集合聚合当周 records/reading_logs/schedule → 写 weekly_reports；空周不生成，weekStart 幂等 |
-| `sendReminder`（可选） | 无 | **后续**：订阅消息推送（打卡提醒/周报就绪），需前端申请订阅 |
+| `bookLookup` | 探数（TANSHU_KEY 主源）+ Google Books 兜底查书 | ✅ 够用，保持；密钥由云环境变量注入（不再硬编码） |
+| `generateWeeklyReport` | 无 | **✅ P1 新增（与 Flutter 对齐）**：定时触发（周日 20:00）跨集合聚合当周 records/reading_logs/schedule → 写 weekly_reports；空周不生成；幂等键 `childId + weekStart`；内部**复用 services/report-service.js** 口径，避免与客户端页面重复实现。 |
+| `bookLibraryInc`（热度计数） | 无 | **P1 新增**：`readFinishCount` / `addCount` / `likeCount` 的安全 inc，走管理员权限；前端 reading-service 触发 |
+| `exportData`（数据导出/备份） | 无 | **P2 新增**：按 ownerId 拉所有集合未软删记录 → 打包 JSON zip → 上传云存储 → 返回下载链接；与 PRIVACY_COMPLIANCE.md 的「删除入口」配合 |
+| `sendReminder`（可选） | 无 | **后续 V2**：订阅消息推送（打卡提醒/周报就绪），需前端申请订阅 |
 
 > 判断依据：**只要是"不可信客户端不该做"或"跨用户/需管理员权限/定时"的逻辑才上云函数**。日历聚合、课表展开是纯读+纯计算，放客户端 service 即可，不必上云函数。
 

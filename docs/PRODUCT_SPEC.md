@@ -171,12 +171,12 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 | 活动计时器（TimerPage） | **入口已移除，路由保留** | `/records/timer` 路由与页面仍在，UI 入口已下线；`DailyRecords`/`ReadingLogs` 保留 `source='timer'` 口径 |
 | 语音识别记录 | **待开发** | speech_to_text 依赖已引入，`source='voice'` 口径已预留，功能未落地 |
 | 扫码识别书籍 | **小程序端已落地** | `wx.scanCode` + 云函数 `bookLookup`（探数 + Google Books）；Flutter 端 mobile_scanner 待落地 |
-| 调课 / 停课 | **待开发** | 课表当前仅支持增删整门课，暂无单次调课/停课 |
-| AI 周报文案 | **预留接口** | 无 API Key 时走本地模板降级 |
-| 通知提醒 | **部分预留** | flutter_local_notifications 已引入，围绕周报/提醒场景待完善 |
-| 分享周报 | **预留** | share_plus 已引入 |
+| 调课 / 停课 | **P1 简化版（excludedDates[]）** | V1 支持单日停课（schedule_items.excludedDates[] 存停课日期）；独立 CourseExceptions 集合（调课改签/改时段）列入 V2 |
+| AI 周报文案 | **V2** | 无 API Key 时走本地模板降级；国内 LLM API Key 配置入口列入 V2 |
+| 通知提醒 | **部分预留** | flutter_local_notifications 已引入，围绕周报/提醒场景待完善；小程序端走服务通知/订阅消息 |
+| 分享周报 | **V2** | 等 AI 润色文案 + editedText 编辑版落地后，再做 canvas 长图导出分享；V1 支持系统级截图 |
 | 深色模式 | **降级处理** | V1 仅浅色，深色主题降级为浅色以保持暖橙风格一致 |
-| 多孩子档案 | **未规划** | V1 单孩子只存一行 |
+| 多孩子档案 | **✅ 小程序端已落地（V1 P0）；Flutter 端 V1 P1** | 小程序端支持多孩子切换 + 家长角色 + 多孩子 ActionSheet；Flutter 端 schema 需扩展 sortOrder/gender/gradeOverride，schemaVersion→3 |
 
 ---
 
@@ -254,7 +254,9 @@ lib/
 
 ## 8. 微信小程序端架构（分层规范）
 
-> 小程序端与 Flutter App 是**各自独立端**，经 CloudBase（云数据库/云存储/云函数）打通共享同一份云数据。完整设计见 [`miniprogram_architecture_design.md`](./miniprogram_architecture_design.md)，本节为摘要索引。
+> **双端策略（路径 A，见 docs/DECISION_LOG_20260910.md §0）**：小程序端为全家主入口（家人/非技术用户），数据 100% 在 CloudBase；Flutter App 端为本人使用的「离线可用 + AI 润色」高级版，数据完全独立（Local-First SQLite + 系统级备份 iCloud / Android Auto Backup），不引入 CloudBase SDK。双端打通共享列为 V3 远期目标。无论双端是否打通，**业务口径必须 100% 一致**，跨端统一规则见 [`AGGREGATION_RULES.md`](./AGGREGATION_RULES.md)。
+>
+> 完整小程序架构详见 [`miniprogram_architecture_design.md`](./miniprogram_architecture_design.md)，本节为摘要索引。
 
 ### 8.1 分层模型
 
@@ -287,7 +289,7 @@ lib/
 | `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
 | `series` | ownerId+childId | 套书元信息（`name`/`totalVolumes`/`libraryUuid`；已读册数由 books 聚合派生，不冗余存储） | ✅ 已实现（`series-service` 分组聚合 + 系列面板） |
 | `book_library` | **公共（无归属）** | 精选书库公共只读集合（分龄书单，含 `volumes[]`/`ageRange`/`type`/`isOfficial`/热度计数）；走 `db.listAllPublic` **不过滤归属** | ✅ 已实现（P0，`pages/library` + 加入书架 + 书架 join 水合） |
-| `weekly_reports` | ownerId+childId | 周报快照 | ⏳ 后续（云函数聚合） |
+| `weekly_reports` | ownerId+childId | 周报快照（自动生成+历史归档，含 editedText 编辑版） | ⏳ **P1（与 Flutter 对齐）**：generateWeeklyReport 云函数周日 20:00 自动生成；空周不生成；幂等键 childId+weekStart |
 
 字段与索引明细见架构文档 §2.3。权限：业务集合统一「仅创建者可读写」；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。
 
@@ -309,8 +311,8 @@ lib/
 3. ~~**课外班日历推算**（weekday + recurrence 展开日期）— P0~~ ✅ 已落地（`date.expandWeeklySchedule`，weekly）
 4. ~~**书架扫码录入**（`wx.scanCode` + `bookLookup` 云函数 ISBN 查书）+ **系列书面板**（`series` 集合 + `series-service` 聚合 + 叠层卡片/面板）— P1~~ ✅ 已落地
 5. ~~**精选书库 P0**（`book_library` 公共集合 + `pages/library` 分龄浏览 + 加入书架单本/系列 + 书架 join 水合）~~ ✅ 已落地（P1 热度计数/共建投稿见 `docs/BOOK_LIBRARY_BACKLOG.md`）
-6. 组件抽取（month-calendar / bottom-sheet 进一步收敛）/ store 规范 / 周报口径迁移到 service — P1
-7. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合 — P1/P2
+6. 组件抽取（month-calendar / bottom-sheet / empty-state 进一步收敛）/ store 规范 / **周报口径迁移到 report-service 复用** / **generateWeeklyReport 云函数（周日 20:00 自动生成，空周不生成，幂等）** — P1
+7. 课外班 biweekly/monthly/once 推算、`reading_logs` 详情页、多孩子聚合视图 — P1/P2
 
 ### 8.5 编码规范要点
 

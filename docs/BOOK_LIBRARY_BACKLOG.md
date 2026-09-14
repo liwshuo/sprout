@@ -23,7 +23,7 @@
 ## P2（数据量和用户量足够后实施）
 
 - [ ] **热度榜**：榜单形式，固定 Top N；只统计最近 30 天行为，引入时间衰减（近期行为权重更高），避免老书长期霸榜。
-- [ ] **想读清单**：`books.status` 字段支持 `wishlist | reading | finished`（对齐现有 `want/reading/done` 语义，需统一口径），书架新增「想读」Tab。
+- [ ] **想读清单**：`books.status` 字段支持 `want | reading | done`（对齐现有 BOOK_STATUS 常量口径，**统一使用 `want`/`reading`/`done`，不再使用 `finished`**），书架「想读」Tab 对应 status=want（已存在）。
 - [ ] **章节书支持**：`book_library.type: "chapter_book"`，`chapters[]` 章节列表内嵌；`reading_logs.chapterIndex` 已存在，作为可选字段承接章节打卡粒度。
 - [ ] **搜索优化**：当前为前端内存搜索；数据量变大后考虑服务端搜索或倒排索引（云函数 + 关键词索引集合）。
 - [ ] **封面转存云存储**：当前用 `coverExternalUrl` 外链，稳定后可批量转存到云存储（防外链失效、加速加载），保留 `coverExternalUrl` 作为兜底。
