@@ -2,6 +2,7 @@
 const app = getApp();
 const db = require('../../utils/db');
 const auth = require('../../utils/auth');
+const { todo } = require('../../utils/todo');
 const dateUtil = require('../../utils/date');
 const { categoryColor, moodEmoji } = require('../../utils/constants');
 
@@ -68,6 +69,7 @@ Page({
   },
 
   goAdd() {
+    if (auth.openLoginPage()) return;
     wx.navigateTo({ url: '/pages/records/add/add' });
   },
 
@@ -82,18 +84,23 @@ Page({
       return;
     }
     const uuid = e.currentTarget.dataset.uuid;
+    const item = this.data.records.find((record) => record.uuid === uuid);
     wx.showActionSheet({
       itemList: ['确认删除该记录', '取消'],
       itemColor: '#E5702A',
-      success: (res) => {
+      success: async (res) => {
         if (res.tapIndex !== 0) return;
-        db.records
-          .remove(uuid)
-          .then(() => {
-            wx.showToast({ title: '已删除', icon: 'success' });
-            this.refresh();
-          })
-          .catch(() => wx.showToast({ title: '删除失败', icon: 'none' }));
+        try {
+          await db.records.remove(uuid);
+          if (item && item.sourceType === 'todo' && item.sourceTodoId) {
+            await todo.markConverted(item.sourceTodoId, null).catch(() => {});
+          }
+          wx.showToast({ title: '已删除', icon: 'success' });
+          this.refresh();
+        } catch (err) {
+          console.error('[records] 删除记录失败', err);
+          wx.showToast({ title: '删除失败', icon: 'none' });
+        }
       },
     });
   },

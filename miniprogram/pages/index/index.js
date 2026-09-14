@@ -3,6 +3,7 @@
 // 每天最多 4 个彩色圆点，点击某天在下方展示统一事件卡片（record/schedule/todo/reading）。
 const app = getApp();
 const dateUtil = require('../../utils/date');
+const auth = require('../../utils/auth');
 const calendarService = require('../../services/calendar-service');
 
 Page({
@@ -125,6 +126,7 @@ Page({
   },
 
   goAdd() {
+    if (auth.openLoginPage()) return;
     const d = this.data.selectedDate;
     wx.navigateTo({ url: `/pages/records/add/add?date=${d}` });
   },

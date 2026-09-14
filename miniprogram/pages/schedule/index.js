@@ -83,6 +83,7 @@ Page({
   },
 
   openAdd() {
+    if (auth.openLoginPage()) return;
     this.setData({
       showAdd: true,
       showEdit: false,

@@ -171,6 +171,7 @@ Page({
     this.setData({ todos: sorted, stats: { total: sorted.length, done: sorted.filter((t) => t.done).length } }, () => this._applyFilter());
     try {
       await todo.toggleDone(uuid, next);
+      if (next) this._offerGrowthRecord(item);
     } catch (err) {
       console.error('[todo] toggleDone 失败', err);
       wx.showToast({ title: '操作失败', icon: 'none' });
@@ -178,8 +179,32 @@ Page({
     }
   },
 
+  async _offerGrowthRecord(item) {
+    if (item.convertedRecordId) {
+      const existing = await db.getByUuid(db.COLLECTIONS.dailyRecords, item.convertedRecordId);
+      if (existing && !existing.isDeleted) {
+        wx.showToast({ title: '已记录到成长档案', icon: 'none' });
+        return;
+      }
+      await todo.markConverted(item.uuid, null).catch(() => {});
+    }
+    wx.showModal({
+      title: '完成啦 🎉',
+      content: '要把这次完成记录到成长档案吗？',
+      confirmText: '记录成长',
+      cancelText: '暂不记录',
+      success: (res) => {
+        if (!res.confirm) return;
+        wx.navigateTo({
+          url: `/pages/records/add/add?sourceTodoId=${encodeURIComponent(item.uuid)}`,
+        });
+      },
+    });
+  },
+
   // ==================== 新增 / 编辑 ====================
   openAdd() {
+    if (auth.openLoginPage()) return;
     if (!this.data.activeChildId) {
       wx.showToast({ title: '请先在「我的」添加孩子', icon: 'none' });
       return;

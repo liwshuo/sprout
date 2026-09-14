@@ -27,6 +27,8 @@ const C_MEMBERS = 'child_members';
 const C_INVITES = 'child_invites';
 const C_CHILDREN = 'children';
 const C_USERS = 'users';
+const C_TODOS = 'todos';
+const C_RECORDS = 'daily_records';
 
 // 受「以孩子为锚点」共享的业务集合：成员变更时需同步回填 members(openid) 数组
 const BIZ_COLLECTIONS = [
@@ -184,6 +186,84 @@ async function createChild(input, ownerId, openid) {
     throw err;
   }
   return { ok: true, child: doc };
+}
+
+/**
+ * 把已完成待办原子转换为成长记录。
+ * 事务同时校验待办、创建确定性 ID 的记录并回写 convertedRecordId；并发请求只会保留一条记录。
+ */
+async function convertTodoToRecord(event, ownerId, openid) {
+  const sourceTodoId = String(event.sourceTodoId || '').trim();
+  const input = event.record && typeof event.record === 'object' ? event.record : {};
+  const title = String(input.title || '').trim();
+  if (!sourceTodoId) return { ok: false, error: '缺少来源待办' };
+  if (!title) return { ok: false, error: '成长记录标题不能为空' };
+  if (!openid) return { ok: false, error: '未获取到 openid，无法记录成长' };
+
+  const todoQuery = await db.collection(C_TODOS)
+    .where({ uuid: sourceTodoId, isDeleted: false })
+    .limit(1)
+    .get();
+  const todoDoc = todoQuery.data && todoQuery.data[0];
+  if (!todoDoc) return { ok: false, error: '来源待办不存在' };
+  if (!Array.isArray(todoDoc.members) || todoDoc.members.indexOf(openid) === -1) {
+    return { ok: false, error: '无权操作该待办' };
+  }
+
+  const recordId = `todo_${sourceTodoId}`;
+  const txResult = await db.runTransaction(async (transaction) => {
+    const currentTodoRes = await transaction.collection(C_TODOS).doc(todoDoc._id).get();
+    const currentTodo = currentTodoRes && currentTodoRes.data;
+    if (!currentTodo || currentTodo.isDeleted) throw new Error('来源待办不存在');
+    if (!Array.isArray(currentTodo.members) || currentTodo.members.indexOf(openid) === -1) {
+      throw new Error('无权操作该待办');
+    }
+    if (!currentTodo.done) throw new Error('仅已完成待办可记录成长');
+
+    let existing = null;
+    try {
+      const existingRes = await transaction.collection(C_RECORDS).doc(recordId).get();
+      existing = existingRes && existingRes.data;
+    } catch (err) {
+      const msg = `${(err && (err.errMsg || err.message)) || err}`;
+      if (!/not exist|not found|不存在/i.test(msg)) throw err;
+    }
+    if (existing && !existing.isDeleted) {
+      if (currentTodo.convertedRecordId !== existing.uuid) {
+        await transaction.collection(C_TODOS).doc(todoDoc._id).update({
+          data: { convertedRecordId: existing.uuid, updatedAt: Date.now() },
+        });
+      }
+      return { ok: true, alreadyConverted: true, record: existing };
+    }
+
+    const now = Date.now();
+    const record = {
+      uuid: recordId,
+      ownerId,
+      childId: currentTodo.childId,
+      members: currentTodo.members.slice(),
+      title,
+      note: input.note ? String(input.note).trim() : null,
+      tags: Array.isArray(input.tags) ? input.tags.slice(0, 20) : [],
+      category: input.category || null,
+      mood: input.mood || null,
+      imageFileIds: Array.isArray(input.imageFileIds) ? input.imageFileIds.slice(0, 9) : [],
+      eventDate: Number(input.eventDate) || now,
+      source: 'todo',
+      sourceType: 'todo',
+      sourceTodoId,
+      createdAt: now,
+      updatedAt: now,
+      isDeleted: false,
+    };
+    await transaction.collection(C_RECORDS).doc(recordId).set({ data: record });
+    await transaction.collection(C_TODOS).doc(todoDoc._id).update({
+      data: { convertedRecordId: recordId, updatedAt: now },
+    });
+    return { ok: true, alreadyConverted: false, record };
+  });
+  return (txResult && txResult.result) || txResult;
 }
 
 /** 生成一个未与现存有效邀请码冲突的新码（最多重试 5 次） */
@@ -401,6 +481,8 @@ exports.main = async (event = {}) => {
     switch (action) {
       case 'createChild':
         return await createChild(event.child, ownerId, ctxOpenid());
+      case 'convertTodoToRecord':
+        return await convertTodoToRecord(event, ownerId, ctxOpenid());
       case 'createInvite':
         return await createInvite(event.childId, ownerId);
       case 'getQrCode':

@@ -9,6 +9,8 @@
 //   done     {boolean} 是否已完成
 //   dueDate  {string}  截止日期 'YYYY-MM-DD'（选填，空表示不限）
 //   remark   {string}  备注（选填）
+//   completedAt {number|null} 最近一次完成时间
+//   convertedRecordId {string|null} 由该待办生成的成长记录 uuid
 // 通用层自动补：uuid / ownerId / childId / createdAt / updatedAt / isDeleted。
 
 const db = require('./db');
@@ -55,7 +57,14 @@ const todo = {
     return db.create(
       COL,
       Object.assign(
-        { category: DEFAULT_CATEGORY, done: false, dueDate: null, remark: '' },
+        {
+          category: DEFAULT_CATEGORY,
+          done: false,
+          dueDate: null,
+          remark: '',
+          completedAt: null,
+          convertedRecordId: null,
+        },
         item
       )
     );
@@ -66,9 +75,17 @@ const todo = {
     return db.updateByUuid(COL, uuid, patch);
   },
 
-  /** 勾选 / 取消完成 */
+  /** 勾选 / 取消完成；取消完成仅清完成时间，不删除已生成的成长记录。 */
   toggleDone(uuid, done) {
-    return db.updateByUuid(COL, uuid, { done: !!done });
+    return db.updateByUuid(COL, uuid, {
+      done: !!done,
+      completedAt: done ? Date.now() : null,
+    });
+  },
+
+  /** 记录该待办已转换出的成长记录，防止重复创建。 */
+  markConverted(uuid, recordUuid) {
+    return db.updateByUuid(COL, uuid, { convertedRecordId: recordUuid });
   },
 
   /** 软删除 */

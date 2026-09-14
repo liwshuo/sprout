@@ -168,6 +168,7 @@ Page({
 
   // ============ 添加方式选择 ============
   openAddChoice() {
+    if (auth.openLoginPage()) return;
     this.setData({ showAddChoice: true });
   },
   closeAddChoice() {

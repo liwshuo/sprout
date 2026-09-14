@@ -107,6 +107,24 @@ function openid() {
   return (u && u.openid) || '';
 }
 
+/** 当前会话是否已通过云端 login 校验；缓存用户不能单独视为已登录。 */
+function isLoginVerified() {
+  const app = getApp();
+  return !!(
+    app &&
+    app.globalData &&
+    app.globalData.loginVerified &&
+    app.globalData.currentUser
+  );
+}
+
+/** 未登录时统一跳转到「我的」登录引导页。 */
+function openLoginPage() {
+  if (isLoginVerified()) return false;
+  wx.switchTab({ url: '/pages/mine/mine' });
+  return true;
+}
+
 /**
  * 更新家长角色：将 role 字段写入 users 集合当前用户文档，并更新本地缓存。
  * @param {string} role  dad | mom | grandpa | grandma | grandpa_m | grandma_m | other
@@ -149,6 +167,8 @@ module.exports = {
   currentUser,
   ownerId,
   openid,
+  isLoginVerified,
+  openLoginPage,
   isCloudFunctionMissing,
   updateUserRole,
   logout,

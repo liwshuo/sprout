@@ -2,6 +2,7 @@
 const db = require('../../../utils/db');
 const auth = require('../../../utils/auth');
 const dateUtil = require('../../../utils/date');
+const { todo } = require('../../../utils/todo');
 const { CATEGORIES, MOODS } = require('../../../utils/constants');
 
 Page({
@@ -16,6 +17,7 @@ Page({
     localImages: [],
     submitting: false,
     recordId: '',
+    sourceTodoId: '',
     isEdit: false,
     isDetail: false,
     existingImageIds: [],
@@ -36,7 +38,51 @@ Page({
       this._loadRecord(recordId);
     } else {
       const date = query.date || dateUtil.ymd(new Date());
-      this.setData({ eventDate: date });
+      const sourceTodoId = query.sourceTodoId || '';
+      this.setData({ eventDate: date, sourceTodoId });
+      if (sourceTodoId) {
+        wx.setNavigationBarTitle({ title: '记录成长' });
+        this._loadTodoSource(sourceTodoId);
+      }
+    }
+  },
+
+  async _loadTodoSource(sourceTodoId) {
+    this.setData({ loading: true });
+    try {
+      const [sourceTodo, existingRecords] = await Promise.all([
+        db.getByUuid(db.COLLECTIONS.todos, sourceTodoId),
+        db.list(db.COLLECTIONS.dailyRecords, { where: { sourceTodoId }, limit: 1 }),
+      ]);
+      const existing = existingRecords && existingRecords[0];
+      if (existing) {
+        if (sourceTodo && sourceTodo.convertedRecordId !== existing.uuid) {
+          todo.markConverted(sourceTodoId, existing.uuid).catch(() => {});
+        }
+        wx.showToast({ title: '该待办已记录成长', icon: 'none' });
+        setTimeout(() => wx.navigateBack(), 600);
+        return;
+      }
+      if (sourceTodo && sourceTodo.convertedRecordId) {
+        await todo.markConverted(sourceTodoId, null).catch(() => {});
+      }
+      if (!sourceTodo || !sourceTodo.done) {
+        wx.showToast({ title: '仅已完成待办可记录成长', icon: 'none' });
+        setTimeout(() => wx.navigateBack(), 600);
+        return;
+      }
+      const categoryMap = { 兴趣: '才艺', 其他: '其他' };
+      this.setData({
+        title: `完成「${sourceTodo.title || '待办'}」`,
+        note: sourceTodo.remark || '',
+        category: categoryMap[sourceTodo.category] || '日常',
+        eventDate: dateUtil.ymd(new Date(sourceTodo.completedAt || Date.now())),
+        loading: false,
+      });
+    } catch (err) {
+      console.error('[add] 加载来源待办失败', err);
+      wx.showToast({ title: '待办信息加载失败', icon: 'none' });
+      this.setData({ loading: false });
     }
   },
 
@@ -151,7 +197,7 @@ Page({
     if (this.data.isDetail) return;
     const {
       title, note, category, mood, eventDate, localImages, submitting,
-      isEdit, recordId, existingImageIds,
+      isEdit, recordId, sourceTodoId, existingImageIds,
     } = this.data;
     if (submitting) return;
     if (!title.trim()) {
@@ -173,6 +219,20 @@ Page({
     this.setData({ submitting: true });
     wx.showLoading({ title: '保存中...', mask: true });
     try {
+      if (!isEdit && sourceTodoId) {
+        const existingRecords = await db.list(db.COLLECTIONS.dailyRecords, {
+          where: { sourceTodoId },
+          limit: 1,
+        });
+        const existing = existingRecords && existingRecords[0];
+        if (existing) {
+          await todo.markConverted(sourceTodoId, existing.uuid).catch(() => {});
+          wx.hideLoading();
+          wx.showToast({ title: '该待办已记录成长', icon: 'none' });
+          setTimeout(() => wx.navigateBack(), 600);
+          return;
+        }
+      }
       let newImageIds = [];
       if (localImages.length) {
         newImageIds = await db.uploadFiles(localImages);
@@ -190,6 +250,34 @@ Page({
           imageFileIds,
           eventDate: eventTs,
         });
+      } else if (sourceTodoId) {
+        const response = await wx.cloud.callFunction({
+          name: 'childShare',
+          data: {
+            action: 'convertTodoToRecord',
+            sourceTodoId,
+            record: {
+              title: title.trim(),
+              note: note.trim() || null,
+              tags: category ? [category] : [],
+              category: category || null,
+              mood: mood || null,
+              imageFileIds: newImageIds,
+              eventDate: eventTs,
+            },
+          },
+        });
+        const result = (response && response.result) || {};
+        if (!result.ok) throw new Error(result.error || '待办转成长记录失败');
+        if (result.alreadyConverted) {
+          if (newImageIds.length && wx.cloud.deleteFile) {
+            wx.cloud.deleteFile({ fileList: newImageIds }).catch(() => {});
+          }
+          wx.hideLoading();
+          wx.showToast({ title: '该待办已记录成长', icon: 'none' });
+          setTimeout(() => wx.navigateBack(), 600);
+          return;
+        }
       } else {
         await db.records.create({
           title: title.trim(),
@@ -200,6 +288,8 @@ Page({
           imageFileIds: newImageIds,
           eventDate: eventTs,
           source: 'manual',
+          sourceType: null,
+          sourceTodoId: null,
         });
       }
       wx.hideLoading();
