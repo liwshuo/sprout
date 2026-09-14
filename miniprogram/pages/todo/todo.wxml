@@ -1,0 +1,123 @@
+<!-- pages/todo/todo.wxml —— 孩子待办清单 -->
+<view class="container">
+  <view class="page-title">待办清单</view>
+  <view class="page-subtitle">记录 {{activeChildName || '宝贝'}} 的作业、生活与兴趣安排</view>
+
+  <!-- 顶部孩子过滤 chip（多孩子时展示） -->
+  <scroll-view wx:if="{{children.length > 1}}" class="child-chip-row" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      class="child-chip {{item.uuid === activeChildId ? 'child-chip-active' : ''}}"
+      wx:for="{{children}}"
+      wx:key="uuid"
+      data-uuid="{{item.uuid}}"
+      bindtap="onSwitchChild"
+    >{{item._displayName}}</view>
+  </scroll-view>
+
+  <!-- 完成进度条 -->
+  <view class="progress-card card" wx:if="{{stats.total > 0}}">
+    <view class="progress-text">
+      <text class="progress-done">{{stats.done}}</text>
+      <text class="progress-total"> / {{stats.total}} 已完成</text>
+    </view>
+    <view class="progress-track">
+      <view class="progress-fill" style="width:{{stats.total ? (stats.done * 100 / stats.total) : 0}}%"></view>
+    </view>
+  </view>
+
+  <!-- 分类筛选 tab -->
+  <scroll-view class="filter-row" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      class="filter-chip {{item === activeFilter ? 'filter-chip-active' : ''}}"
+      wx:for="{{filterTabs}}"
+      wx:key="*this"
+      data-key="{{item}}"
+      bindtap="onFilterTap"
+    >{{item}}</view>
+  </scroll-view>
+
+  <!-- 骨架屏 -->
+  <block wx:if="{{loading}}">
+    <view class="sk-item" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="sk-line short"></view>
+      <view class="sk-line"></view>
+    </view>
+  </block>
+
+  <!-- 空态 -->
+  <empty-state
+    wx:if="{{!loading && displayTodos.length === 0}}"
+    icon="📝"
+    title="{{activeChildId ? '还没有待办' : '还没有孩子档案'}}"
+    subtitle="{{activeChildId ? '点右下角 ＋ 添加第一条待办吧' : '请先到「我的」页面添加孩子'}}"
+  />
+
+  <!-- 待办列表 -->
+  <view class="todo-list" wx:if="{{!loading}}">
+    <view class="todo-card card {{item.done ? 'todo-card-done' : ''}}" wx:for="{{displayTodos}}" wx:key="uuid">
+      <!-- 勾选圈 -->
+      <view class="check {{item.done ? 'check-on' : ''}}" data-uuid="{{item.uuid}}" catchtap="onToggleDone">
+        <text wx:if="{{item.done}}" class="check-mark">✓</text>
+      </view>
+      <!-- 分类色条 -->
+      <view class="todo-line" style="background:{{item._catColor}}"></view>
+      <!-- 内容 -->
+      <view class="flex-1 todo-body" data-uuid="{{item.uuid}}" catchtap="openEdit">
+        <view class="todo-title-row">
+          <text class="todo-title {{item.done ? 'todo-title-done' : ''}}">{{item.title}}</text>
+        </view>
+        <view class="todo-meta">
+          <text class="cat-tag" style="color:{{item._catColor}}">{{item._catEmoji}} {{item._catLabel}}</text>
+          <text wx:if="{{item._dueLabel}}" class="due-tag {{item._overdue ? 'due-overdue' : ''}}"> · 📅 {{item._dueLabel}}{{item._overdue ? ' 已过期' : ''}}</text>
+        </view>
+        <view class="todo-remark ellipsis" wx:if="{{item.remark}}">{{item.remark}}</view>
+      </view>
+      <!-- 删除 -->
+      <view class="del-btn" data-uuid="{{item.uuid}}" catchtap="onDelete">删除</view>
+    </view>
+    <view class="list-footer"></view>
+  </view>
+</view>
+
+<!-- 悬浮添加按钮 -->
+<view class="fab" bindtap="openAdd">＋</view>
+
+<!-- 新增 / 编辑待办弹层 -->
+<bottom-sheet
+  show="{{showSheet}}"
+  title="{{editingUuid ? '编辑待办' : '添加待办'}}"
+  cancel-text="取消"
+  confirm-text="{{editingUuid ? '保存修改' : '确认添加'}}"
+  confirm-disabled="{{submitting}}"
+  bind:cancel="closeSheet"
+  bind:confirm="saveTodo"
+>
+  <input class="sheet-input" placeholder="要做什么？例如：完成语文作业" placeholder-class="ph" value="{{form.title}}" bindinput="onTitleInput" />
+
+  <!-- 分类 chip -->
+  <view class="sheet-field-label row-label">分类</view>
+  <view class="cat-chip-row">
+    <view
+      class="cat-chip {{form.category === item.key ? 'cat-chip-active' : ''}}"
+      style="{{form.category === item.key ? 'background:' + item.color + ';color:#fff;' : ''}}"
+      wx:for="{{categories}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="onCategorySelect"
+    >{{item.emoji}} {{item.key}}</view>
+  </view>
+
+  <!-- 截止日期 -->
+  <view class="row-between sheet-field">
+    <view class="sheet-field-label">截止日期</view>
+    <view class="row">
+      <picker mode="date" value="{{form.dueDate}}" bindchange="onDueDateChange">
+        <view class="picker-val">{{form.dueDate || '不限'}} ›</view>
+      </picker>
+      <text wx:if="{{form.dueDate}}" class="due-clear" catchtap="onClearDueDate">清除</text>
+    </view>
+  </view>
+
+  <!-- 备注 -->
+  <textarea class="sheet-textarea" placeholder="备注（选填）" placeholder-class="ph" value="{{form.remark}}" bindinput="onRemarkInput" maxlength="200" />
+</bottom-sheet>

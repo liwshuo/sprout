@@ -151,6 +151,17 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 - **书架 join 水合**：书架 `refresh()` 在 `groupBySeries` 之前调用 `_hydrateFromLibrary(books)`——对带 `libraryUuid` 的书一次性从 `book_library` 回填 `title/author/coverExternalUrl/ageRange/type/description`（**书自身已有手动值则保留、不覆盖**），书库改动可反哺书架展示。
 - **热度计数（P1 预留）**：`book_library` 含 `addCount/likeCount/readFinishCount` 字段（当前恒为 0）；打卡完成同步 `readFinishCount +1` 已在 `reading-service._syncBookProgress` 留 `TODO P1`，其余见 `docs/BOOK_LIBRARY_BACKLOG.md`。
 
+### 4.9 待办清单（我的 → 待办）— 已实现
+
+- **入口**：mine 页功能菜单「待办」，跳转 `pages/todo/todo`。
+- **孩子维度待办**：待办强制关联当前孩子（`childId`），复用全局 `activeChild` 归属；多孩子时顶部提供孩子过滤 chip，切换即切库。
+- **分类体系**：作业 / 生活 / 兴趣 / 其他四类，各带 emoji 与马卡龙分类色；顶部「全部 + 四分类」筛选 tab。
+- **勾选完成**：圆形勾选圈一键切换完成 / 未完成（乐观更新，先本地翻转再落库）；顶部完成进度条展示 `已完成 / 总数`。
+- **增删改**：右下角 FAB 触发底部弹层新增；点击卡片进入编辑；卡片右侧「删除」走二次确认软删。字段含标题、分类、截止日期（选填）、备注（选填）。
+- **截止日期**：`dueDate`（`YYYY-MM-DD`），支持「今天」高亮与逾期红色提醒；列表排序「未完成在前 → 按截止日期升序 → 按创建时间倒序，已完成沉底」。
+- **空态兜底**：无孩子档案时引导先去「我的」建档；无待办时引导点 FAB 添加。
+- **数据封装**：`utils/todo.js` 基于 `utils/db.js` 通用 CRUD 二次封装（`listAll`/`listByCategory`/`create`/`update`/`toggleDone`/`remove`），并导出 `TODO_CATEGORIES`/`categoryMeta` 展示令牌。
+
 ---
 
 ## 5. 暂未实现 / 已移除入口的功能清单
@@ -259,7 +270,7 @@ lib/
 
 依赖方向单向：`pages → components / services → utils → wx.cloud`。禁止 services 依赖 pages、utils 依赖 services。
 
-### 8.2 云数据库集合（9 个，CloudBase 文档型）
+### 8.2 云数据库集合（10 个，CloudBase 文档型）
 
 - 归属体系：`ownerId`（unionid 优先否则 openid）+ 业务集合加 `childId`（指向 `children.uuid`）。
 - 同步三件套：`uuid`（跨端业务主键）/ `updatedAt`（毫秒时间戳）/ `isDeleted`（软删）。
@@ -271,6 +282,7 @@ lib/
 | `children` | ownerId | 孩子档案（多孩子；字段 `name`〔大名或小名均可〕/`birthDate`/`avatarFileId`/`sortOrder`，P0 扩展新增 `gender`〔`boy`/`girl`/`unknown`〕/`gradeOverride`〔手动覆盖年级〕；年龄文字/年级/年龄段由 `utils/date.js` 的 `ageText`/`gradeOf`/`ageRangeOf` 派生） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
 | `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
+| `todos` | ownerId+childId | 孩子待办（字段 `title`/`category`〔作业/生活/兴趣/其他〕/`done`/`dueDate`〔YYYY-MM-DD 选填〕/`remark`；`utils/todo.js` 封装 CRUD + 勾选完成） | ✅ 已实现 |
 | `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl`/`libraryUuid` 字段） | ✅ 已实现 |
 | `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
 | `series` | ownerId+childId | 套书元信息（`name`/`totalVolumes`/`libraryUuid`；已读册数由 books 聚合派生，不冗余存储） | ✅ 已实现（`series-service` 分组聚合 + 系列面板） |

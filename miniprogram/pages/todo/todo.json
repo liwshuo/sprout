@@ -1,0 +1,9 @@
+{
+  "usingComponents": {
+    "bottom-sheet": "/components/bottom-sheet/bottom-sheet",
+    "empty-state": "/components/empty-state/empty-state"
+  },
+  "navigationBarTitleText": "待办清单",
+  "enablePullDownRefresh": true,
+  "backgroundColorTop": "#FFF8F3"
+}

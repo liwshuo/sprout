@@ -14,6 +14,7 @@ const COLLECTIONS = {
   books: 'books',
   readingLogs: 'reading_logs',
   scheduleItems: 'schedule_items',
+  todos: 'todos',
   weeklyReports: 'weekly_reports',
   // 公共只读集合：官方/共建精选书库（无 ownerId/childId 归属，所有人可读）
   bookLibrary: 'book_library',

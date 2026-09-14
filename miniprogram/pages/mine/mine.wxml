@@ -61,6 +61,12 @@
 
   <!-- ③ 功能菜单（iOS 风格纯列表） -->
   <view class="list-section">
+    <view class="list-item" bindtap="goTodo">
+      <view class="list-item-icon icon-orange">📝</view>
+      <view class="list-item-label">待办</view>
+      <view class="list-item-arrow">›</view>
+    </view>
+    <view class="list-divider"></view>
     <view class="list-item" bindtap="goArchive">
       <view class="list-item-icon icon-blue">📁</view>
       <view class="list-item-label">成长档案</view>

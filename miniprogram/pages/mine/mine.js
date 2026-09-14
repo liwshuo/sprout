@@ -508,6 +508,9 @@ Page({
   },
 
   // ==================== 功能菜单 ====================
+  goTodo() {
+    wx.navigateTo({ url: '/pages/todo/todo' });
+  },
   goArchive() {
     wx.showToast({ title: '成长档案敬请期待', icon: 'none' });
   },

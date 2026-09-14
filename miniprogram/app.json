@@ -7,6 +7,7 @@
     "pages/reading/reading",
     "pages/library/library",
     "pages/schedule/index",
+    "pages/todo/todo",
     "pages/mine/mine",
     "pages/report/report"
   ],
