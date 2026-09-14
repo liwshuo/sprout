@@ -4,8 +4,15 @@
   <!-- ① 顶部一体主卡：孩子主区 + 分割线 + 家长副区 -->
   <view class="child-main-card">
 
+    <!-- 未登录：优先展示明确登录引导，不展示孩子添加入口 -->
+    <view wx:if="{{!isLoggedIn}}" class="login-guide" catchtap="doLogin">
+      <view class="login-guide-title">登录后开始记录成长</view>
+      <view class="login-guide-sub">同步孩子档案，并与家人共同记录</view>
+      <view class="login-guide-btn">微信登录</view>
+    </view>
+
     <!-- 孩子主区 -->
-    <block wx:if="{{children.length > 0}}">
+    <block wx:elif="{{children.length > 0}}">
       <view class="child-main-area">
         <view class="child-avatar">
           <image wx:if="{{activeChild._avatarUrl}}" src="{{activeChild._avatarUrl}}" class="child-avatar-img" mode="aspectFill" />
@@ -84,7 +91,21 @@
       <view class="list-item-label">云同步</view>
       <view class="list-item-arrow">›</view>
     </view>
+    <view wx:if="{{children.length > 0}}" class="list-divider"></view>
+    <view wx:if="{{children.length > 0}}" class="list-item" bindtap="openMembersSheet">
+      <view class="list-item-icon icon-pink">👨‍👩‍👧</view>
+      <view class="list-item-label">家庭共享</view>
+      <view class="list-item-sub">邀请家人一起记录</view>
+      <view class="list-item-arrow">›</view>
+    </view>
     <view class="list-divider-major"></view>
+    <view wx:if="{{!isLoggedIn}}" class="list-item login-list-item" bindtap="doLogin">
+      <view class="list-item-icon icon-orange">👤</view>
+      <view class="list-item-label">登录账号</view>
+      <view class="list-item-sub">同步并保护成长记录</view>
+      <view class="list-item-arrow">›</view>
+    </view>
+    <view wx:if="{{!isLoggedIn}}" class="list-divider"></view>
     <view class="list-item" bindtap="goSettings">
       <view class="list-item-icon icon-gray">⚙️</view>
       <view class="list-item-label">设置</view>
@@ -182,4 +203,81 @@
       <view wx:for="{{gradePickerRange}}" wx:key="*this" class="picker-item">{{item}}</view>
     </picker-view-column>
   </picker-view>
+</bottom-sheet>
+
+<!-- ==================== 家庭共享：成员管理弹层 ==================== -->
+<bottom-sheet
+  show="{{showMembersSheet}}"
+  title="家庭共享"
+  hide-cancel="{{true}}"
+  confirm-text="完成"
+  bind:cancel="closeMembersSheet"
+  bind:confirm="closeMembersSheet"
+>
+  <view class="members-sheet">
+    <view class="members-subtitle">
+      「{{membersChildName}}」的家长（{{members.length}}）
+    </view>
+
+    <view wx:if="{{membersLoading}}" class="members-loading">加载中...</view>
+
+    <view wx:else class="members-list">
+      <view class="member-row" wx:for="{{members}}" wx:key="ownerId">
+        <view class="member-avatar">
+          <image wx:if="{{item.avatar}}" src="{{item.avatar}}" class="member-avatar-img" mode="aspectFill" />
+          <text wx:else class="member-avatar-emoji">{{item.isOwner ? '👑' : '👤'}}</text>
+        </view>
+        <view class="member-info">
+          <view class="member-name ellipsis">
+            {{item.displayName}}
+            <text wx:if="{{item.isSelf}}" class="member-tag member-tag-self">我</text>
+            <text wx:if="{{item.isOwner}}" class="member-tag member-tag-owner">创建者</text>
+          </view>
+          <view class="member-meta">{{item.roleLabel}}{{item.phoneTail ? ' · 尾号' + item.phoneTail : ''}}</view>
+        </view>
+        <!-- 仅创建者可移除「非自己、非创建者」的成员 -->
+        <view
+          wx:if="{{selfIsOwner && !item.isOwner && !item.isSelf}}"
+          class="member-remove"
+          data-owner="{{item.ownerId}}"
+          data-name="{{item.displayName}}"
+          catchtap="onRemoveMember"
+        >移除</view>
+      </view>
+    </view>
+
+    <!-- 邀请操作区 -->
+    <view class="members-actions">
+      <button class="invite-btn invite-btn-primary" open-type="share">
+        <text class="invite-btn-icon">🔗</text> 分享给家人
+      </button>
+      <view class="invite-btn invite-btn-ghost" bindtap="openQrCode">
+        <text class="invite-btn-icon">📱</text> 生成邀请二维码
+      </view>
+    </view>
+    <view class="members-tip">邀请链接/二维码 24 小时内有效，每次仅可邀请一位家长</view>
+
+    <!-- 非创建者：退出共享 -->
+    <view wx:if="{{!selfIsOwner}}" class="member-leave" bindtap="onLeaveChild">退出该孩子的共享</view>
+  </view>
+</bottom-sheet>
+
+<!-- ==================== 邀请二维码弹层 ==================== -->
+<bottom-sheet
+  show="{{showQrSheet}}"
+  title="邀请二维码"
+  hide-cancel="{{true}}"
+  confirm-text="关闭"
+  bind:cancel="closeQrSheet"
+  bind:confirm="closeQrSheet"
+>
+  <view class="qr-sheet">
+    <view wx:if="{{qrLoading}}" class="qr-loading">二维码生成中...</view>
+    <block wx:else>
+      <image wx:if="{{qrImageUrl}}" src="{{qrImageUrl}}" class="qr-image" mode="aspectFit" show-menu-by-longpress="{{true}}" />
+      <view wx:if="{{qrInviteCode}}" class="qr-code-text">邀请码：{{qrInviteCode}}</view>
+      <view class="qr-tip">让家人用微信「扫一扫」扫描此码，即可加入共享</view>
+      <view wx:if="{{qrImageUrl}}" class="qr-save-btn" bindtap="onSaveQr">保存到相册</view>
+    </block>
+  </view>
 </bottom-sheet>

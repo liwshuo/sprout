@@ -110,7 +110,8 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 - **mine 页信息架构**：从上到下为 ①顶部一体主卡（孩子主区 + 分割线 + 家长副区，合并为一张卡）→ ②统计双列卡 → ③功能菜单（iOS 风格纯列表）→ ④页脚。统计数字**只在统计卡展示**，主卡内不再重复展示「已读 N 本 · 打卡 N 次」，避免与统计卡数字重复。整页背景 `#FFF8F3`、卡片白底大圆角 `16px`（32rpx）+ 柔和阴影 `0 2px 12px rgba(255,140,66,.08)`，左右边距统一 28rpx 对齐。
 - **① 一体主卡（`child-main-card`）**：
   - **孩子主区**：以当前 `activeChild` 档案呈现 —— 左侧圆形头像（有 `avatarFileId` 换取临时链接展示，无则按性别 emoji 兜底）、右侧名字（`_displayName`）+ 年龄/年级（「X 岁 Y 个月 · 小学N年级」，由生日与 `gradeOverride` 派生）。右上角提供「✏️ 编辑」（`onEditChild`，编辑当前孩子）与「+ 添加」（`openAddChild`）两个胶囊按钮。多孩子（`children.length > 1`）时右下角显示「切换孩子 ▼」按钮（`onSwitchChild`）。无孩子（`children.length === 0`）时孩子主区显示「还没有孩子档案，点这里添加 +」引导态。
-  - **家长副区（主卡下区，分割线分隔）**：**纯文字、无 emoji**。左侧为家长称谓文案（`parentLabel`），右侧仅在已绑定手机号时显示手机号末四位（`phoneTail`）。家长称谓由 `users.role` 与当前孩子名派生（如「小云朵的爸爸」）；`role` 枚举值：`dad / mom / grandpa / grandma / grandpa_m / grandma_m / other`（分别对应 爸爸 / 妈妈 / 爷爷 / 奶奶 / 姥爷 / 姥姥 / 其他）。首次进入（`role` 为 null，`parentLabelSet=false`）显示「我是 Ta 的... 选一下 →」主动引导态。**整行点击**（`onParentRowTap`）弹二级菜单 `wx.showActionSheet(['选择我的角色','绑定/更换手机号'])`：选「选择我的角色」再弹角色 ActionSheet（7 项，`onRoleSelect`），选完经 `auth.updateUserRole(role)` 写入 `users` 集合、更新本地缓存与 `app.globalData.currentUser` 并重新派生称谓；选「绑定/更换手机号」弹绑定弹层（内含 `getPhoneNumber` 按钮，微信规定该授权必须由 `button open-type` 触发）。副区不再内嵌 `button open-type`，避免按钮吃掉整行 `bindtap` 事件。未登录时副区显示「登录后记录孩子成长」，点击走登录流程。
+  - **家长副区（主卡下区，分割线分隔）**：左侧展示由 `users.role` 与当前孩子名派生的家长称谓（如「小云朵的爸爸」），未选择角色时显示「我是 Ta 的... 选一下 →」；整行点击进入角色选择。右侧仅在已绑定手机号时展示手机号末四位，手机号绑定由 `button open-type="getPhoneNumber"` 触发。
+  - **登录态展示约束**：只有本次会话的 `login` 云函数成功后才视为已登录，本地缓存不能单独触发已登录 UI。未登录时主卡展示「登录后开始记录成长」及「微信登录」按钮，功能列表展示「登录账号」，隐藏「退出登录」与孩子添加入口；点击需要身份的操作时先登录，成功后继续原操作。用户主动退出后写入 `manualLoggedOut` 标记并暂停静默登录，直到再次明确点击登录。
   - **切换孩子**：`onSwitchChild` 弹 `wx.showActionSheet` 列出所有孩子（每项 `名字 · 年龄`）并追加「+ 添加新孩子」项；选中孩子走 `app.setActiveChild(uuid)` 切换（触发 `activeChildChanged` 全局事件，主卡、统计与家长称谓随即刷新），选「+ 添加新孩子」打开建档弹层。
 - **② 统计双列卡（`stats-card`）**：左列大数字 `stats.records` +「成长记录」，竖分割线，右列大数字 `stats.books` +「共读绘本」。`records`/`books` 均在 db 层经 `scope().childId`（读取 `app.globalData.activeChildId`）自动按当前孩子过滤。
 - **③ 功能菜单（`list-section`，iOS 风格纯列表）**：每项为「左圆形彩色图标 + 菜单文字 + 右灰色箭头 ›」——📁 成长档案（蓝）/ 📊 本周成长周报（橙）/ ☁️ 云同步（绿）/ ⚙️ 设置（灰，前置更明显分割线）。
@@ -293,7 +294,9 @@ lib/
 | `book_library` | **公共（无归属）** | 精选书库公共只读集合（分龄书单，含 `volumes[]`/`ageRange`/`type`/`isOfficial`/热度计数）；走 `db.listAllPublic` **不过滤归属** | ✅ 已实现（P0，`pages/library` + 加入书架 + 书架 join 水合） |
 | `weekly_reports` | ownerId+childId | 周报快照（自动生成+历史归档，含 editedText 编辑版） | ⏳ **P1（与 Flutter 对齐）**：generateWeeklyReport 云函数周日 20:00 自动生成；空周不生成；幂等键 childId+weekStart |
 
-字段与索引明细见架构文档 §2.3。权限：业务集合统一「仅创建者可读写」；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。
+字段与索引明细见架构文档 §2.3。
+
+**权限（自定义安全规则，见 [`miniprogram/docs/SECURITY_RULES.md`](../miniprogram/docs/SECURITY_RULES.md)）**：多家长共享以「孩子」为锚点，`children` 与 7 个业务集合统一走安全规则 `auth.openid in doc.members`（`members` = 有权访问该孩子的 **openid** 数组，冗余在每条文档上；孩子及 owner 成员关系由 `childShare.createChild` 创建，业务文档由 `db.create()` 盖初值，成员变更由 `childShare` 同步维护）。选用纯冗余而非跨集合 `get()`，因安全规则只有 `auth.openid`（拿不到 unionid）、且 `childId` 存 `uuid`≠`_id` 无法按 `_id` 寻址。`child_members` 只读自己（`doc.openid==auth.openid`）、`child_invites` 前端全禁、`users` 只读写自己、成员写操作与邀请全部走 `childShare` 云函数兜底；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。项目尚未上线，不保留历史数据迁移或 backfill 逻辑。
 
 ### 8.3 日历聚合口径（核心业务）
 

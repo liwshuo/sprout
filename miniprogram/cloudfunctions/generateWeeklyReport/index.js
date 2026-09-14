@@ -1,14 +1,19 @@
 // cloudfunctions/generateWeeklyReport/index.js —— 生成周度周报（纯统计聚合，V1 无 LLM）
 //
+// 【共享模型（2026-09）】周报以 childId 为聚合锚点（不再按 ownerId）：
+//   同一孩子被多位家长共享，业务数据（daily_records/reading_logs/books）
+//   可能来自不同 ownerId，但都属于同一 childId → 必须按 childId 聚合，
+//   否则协作家长录入的数据不会被统计。
+//
 // 触发方式：
 //   1. 定时触发器：每周日 20:00 CST（见 config.json "0 0 20 * * 0"）
-//      —— Cron 触发时，该函数会遍历当前环境**所有用户**（无 ownerId 过滤），
-//         取每个用户 ownerId 下的每个 childId，分别生成本周周报
-//   2. 手动触发（前端/测试事件）：传 { forceChildId, forceWeekStart?, forceOwnerId? }
-//      —— 只对指定 (ownerId, childId) 生成本周/指定周报告，返回生成了几份
+//      —— Cron 触发时，遍历当前环境**所有孩子档案**（children，无 ownerId 过滤），
+//         逐个 childId 生成本周周报
+//   2. 手动触发（前端/测试事件）：传 { forceChildId, forceWeekStart? }
+//      —— 只对指定 childId 生成本周/指定周报告
 //
 // 幂等保证：
-//   按 (ownerId, childId, weekStart) 先查 weekly_reports
+//   按 (childId, weekStart) 先查 weekly_reports
 //   → 存在则 update（刷新所有统计字段 + updatedAt）
 //   → 不存在则 create
 //   因此 Cron 或手动重复跑不会生成双份。
@@ -72,26 +77,16 @@ async function listAll(col, where, orderBy = null, cap = 500) {
   return out;
 }
 
-/** 分页遍历所有用户（Cron 触发时），支持 _nextCursor 做 100/批 chunk */
-async function listAllOwners(skip = 0, limit = 100) {
+/** 分页遍历所有孩子档案（Cron 触发时），支持 _nextCursor 做 100/批 chunk */
+async function listAllChildren(skip = 0, limit = 100) {
   const { data } = await db
-    .collection('users')
+    .collection('children')
     .where({ isDeleted: _.neq(true) })
     .orderBy('createdAt', 'asc')
     .skip(skip)
     .limit(limit)
     .get();
   return data || [];
-}
-
-/** 某 ownerId 下的全部孩子 */
-async function listChildrenOf(ownerId) {
-  return listAll(
-    'children',
-    { ownerId, isDeleted: _.neq(true) },
-    ['sortOrder', 'asc'],
-    20
-  );
 }
 
 /** 生成 uuid（与 utils/db.js genUuid 对齐） */
@@ -228,31 +223,36 @@ function aggregateWeekly(start, endExclusive, records, readingLogs, books) {
 }
 
 /**
- * 给某个 (ownerId, childId, weekStart) 生/刷新一份周报。
- * 执行：查询数据 → aggregateWeekly → 按 (ownerId, childId, weekStart) UPSERT。
- * @returns {boolean} true=created, false=updated
+ * 给某个 (childId, weekStart) 生/刷新一份周报。
+ * 【共享模型】数据按 childId 聚合（不再按 ownerId），同一孩子多位家长的录入
+ * 都会被纳入统计。执行：查询数据 → aggregateWeekly → 按 (childId, weekStart) UPSERT。
+ * @param {string} childId 孩子 uuid
+ * @param {number} weekStartMs 本周一 0 点毫秒
+ * @param {string} [ownerId] 孩子创建者（仅写入文档做溯源，不参与过滤）
+ * @param {string[]} [members] 有权访问该孩子的 openid 数组（供安全规则鉴权）
+ * @returns {object} { action: 'created'|'updated', uuid, weekStart, childId }
  */
-async function upsertFor(ownerId, childId, weekStartMs) {
-  if (!ownerId || !childId) throw new Error('missing ownerId or childId');
+async function upsertFor(childId, weekStartMs, ownerId = null, members = []) {
+  if (!childId) throw new Error('missing childId');
   const [start, endExclusive] = weekRange(weekStartMs);
 
-  // 并发查 3 个集合
+  // 并发查 3 个集合（仅按 childId 过滤）
   const [records, readingLogs, books, existing] = await Promise.all([
     listAll('daily_records', {
-      ownerId, childId,
+      childId,
       isDeleted: _.neq(true),
       eventDate: _.gte(start).and(_.lt(endExclusive)),
     }, ['eventDate', 'desc'], 500),
     listAll('reading_logs', {
-      ownerId, childId,
+      childId,
       isDeleted: _.neq(true),
       readDate: _.gte(start).and(_.lt(endExclusive)),
     }, ['readDate', 'desc'], 500),
-    listAll('books', { ownerId, childId, isDeleted: _.neq(true) }, ['updatedAt', 'desc'], 500),
-    // 查是否已有周报（按 unique 三元组）
+    listAll('books', { childId, isDeleted: _.neq(true) }, ['updatedAt', 'desc'], 500),
+    // 查是否已有周报（按 (childId, weekStart) 唯一）
     (async () => {
       const { data } = await db.collection('weekly_reports')
-        .where({ ownerId, childId, weekStart: start, isDeleted: _.neq(true) })
+        .where({ childId, weekStart: start, isDeleted: _.neq(true) })
         .limit(1)
         .get();
       return data && data[0];
@@ -264,14 +264,16 @@ async function upsertFor(ownerId, childId, weekStartMs) {
 
   if (existing) {
     await db.collection('weekly_reports').doc(existing._id).update({
-      data: Object.assign({}, aggregated, { updatedAt: now }),
+      data: Object.assign({}, aggregated, { members, updatedAt: now }),
     });
     return { action: 'updated', uuid: existing.uuid, weekStart: start, childId };
   }
   const doc = Object.assign({}, aggregated, {
     uuid: genUuid(),
-    ownerId,
+    // ownerId 仅作溯源字段（孩子创建者），共享模型下读取按 childId，不依赖它
+    ownerId: ownerId || null,
     childId,
+    members,
     createdAt: now,
     updatedAt: now,
     isDeleted: false,
@@ -281,49 +283,47 @@ async function upsertFor(ownerId, childId, weekStartMs) {
 }
 
 exports.main = async (event = {}) => {
-  const { forceOwnerId, forceChildId, forceWeekStart, _nextCursor = 0, _chunkSize = 100 } = event;
+  const { forceChildId, forceWeekStart, _nextCursor = 0, _chunkSize = 100 } = event;
   const results = [];
-  let owners = [];
 
-  // 手动模式：只处理指定 (ownerId, childId)
+  // 手动模式：只处理指定 childId（共享模型下无需 ownerId）
   if (forceChildId) {
-    const resolvedOwnerId = forceOwnerId || (() => {
-      const { OPENID, UNIONID } = cloud.getWXContext && cloud.getWXContext() || {};
-      return UNIONID || OPENID || null;
-    })();
-    if (!resolvedOwnerId) {
-      return { ok: false, error: '手动触发必须传 forceOwnerId，或由登录态触发' };
-    }
     const ws = forceWeekStart || thisWeekStart();
-    const r = await upsertFor(resolvedOwnerId, forceChildId, ws);
+    // 取孩子创建者写入溯源字段（查不到不阻断）
+    let ownerId = null;
+    let members = [];
+    try {
+      const { data } = await db.collection('children')
+        .where({ uuid: forceChildId, isDeleted: _.neq(true) })
+        .limit(1)
+        .get();
+      if (data && data[0]) {
+        ownerId = data[0].ownerId || null;
+        members = Array.isArray(data[0].members) ? data[0].members : [];
+      }
+    } catch (e) { /* ignore */ }
+    const r = await upsertFor(forceChildId, ws, ownerId, members);
     results.push(r);
     return { ok: true, mode: 'manual', results };
   }
 
-  // Cron 模式：按 chunk（默认 100）分批，最后一批通过 callFunction 自调用处理剩余用户
-  owners = await listAllOwners(_nextCursor, _chunkSize);
-  if (!owners.length && _nextCursor === 0) {
-    return { ok: true, mode: 'cron', ownersProcessed: 0, reports: 0, results: [] };
+  // Cron 模式：按 chunk（默认 100）分批遍历所有孩子，最后一批自调用处理剩余
+  const children = await listAllChildren(_nextCursor, _chunkSize);
+  if (!children.length && _nextCursor === 0) {
+    return { ok: true, mode: 'cron', childrenProcessed: 0, reports: 0, results: [] };
   }
 
   const ws = forceWeekStart || thisWeekStart();
-  for (let i = 0; i < owners.length; i++) {
-    const owner = owners[i];
-    const ownerId = owner.ownerId;
-    if (!ownerId) continue;
+  for (let i = 0; i < children.length; i++) {
+    const ch = children[i];
+    if (!ch || !ch.uuid) continue;
     // eslint-disable-next-line no-await-in-loop
-    const children = await listChildrenOf(ownerId);
-    for (let j = 0; j < children.length; j++) {
-      const ch = children[j];
-      if (!ch || !ch.uuid) continue;
-      // eslint-disable-next-line no-await-in-loop
-      const r = await upsertFor(ownerId, ch.uuid, ws);
-      results.push(r);
-    }
+    const r = await upsertFor(ch.uuid, ws, ch.ownerId || null, Array.isArray(ch.members) ? ch.members : []);
+    results.push(r);
   }
 
-  const nextCursor = _nextCursor + owners.length;
-  const hasMore = owners.length >= _chunkSize;
+  const nextCursor = _nextCursor + children.length;
+  const hasMore = children.length >= _chunkSize;
   if (hasMore) {
     try {
       await cloud.callFunction({
@@ -338,8 +338,8 @@ exports.main = async (event = {}) => {
   return {
     ok: true,
     mode: 'cron',
-    ownersProcessedFromThisChunk: owners.length,
-    ownersProcessedCumulative: nextCursor,
+    childrenProcessedFromThisChunk: children.length,
+    childrenProcessedCumulative: nextCursor,
     hasMore,
     nextCursor: hasMore ? nextCursor : null,
     reportsInThisChunk: results.length,

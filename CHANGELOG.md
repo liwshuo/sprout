@@ -4,6 +4,39 @@
 > 约定：每次功能改动都应同步更新本文件与 `docs/PRODUCT_SPEC.md`。最新变更置于顶部。
 
 ## [Unreleased]
+### Added
+- **数据库自定义安全规则（多家长共享鉴权收口）**：业务集合从「仅创建者可读写」升级为自定义安全规则，判定式 `auth.openid in doc.members`，实现「同一孩子的多位家长共享读写、非成员一律拒绝」
+  - 新增权限方案文档 [`miniprogram/docs/SECURITY_RULES.md`](miniprogram/docs/SECURITY_RULES.md)：各集合规则 JSON（可直接粘贴控制台）、两条 schema 硬约束说明、上线步骤与回归用例
+  - `members` = 有权访问该孩子的 **openid** 数组，冗余在 `children` 与 7 个业务集合每条文档上（规则里零 `get()`，绕开单规则 3 次 `get()` 上限）
+    - ⚠️ 存 openid 而非 ownerId：安全规则只有 `auth.openid`，拿不到 unionid；且 `childId` 存 `uuid`≠`_id`，跨集合 `get('database.children.${doc.childId}')` 按 `_id` 寻址无法命中，故只能纯冗余
+  - `childShare` 云函数新增 `members(openid)` 一致性维护：
+    - 新增 `createChild` action：受信端一次创建孩子档案与 owner 成员关系；`children`/`child_members` 前端创建权限关闭，避免伪造 owner 或孤儿档案
+    - 新增 `syncChildMembers(childId)`：重算成员 openid 集合 → 回写 `children.members` + 批量回填全部业务集合 → 顺带补齐 `child_members.openid`
+    - `acceptInvite`（加入）/ `removeMember`（移除）/ `leaveChild`（退出）后自动触发同步，成员变更即时反映到共享数据访问权
+  - `utils/db.js` 的业务查询统一显式携带 `members: '{openid}'`（CloudBase 服务端身份占位符），满足「查询条件必须是安全规则子集」约束；孩子创建改走 `childShare.createChild`，移除未上线项目不需要的历史回填分支
+  - `generateWeeklyReport` 创建/更新周报时同步写入所属孩子的 `members`，保证生成数据可被同孩子家长读取
+  - `child_members` 新增 `openid` 冗余字段（安全规则 `doc.openid == auth.openid` 读取自身成员记录所需）
+- **家庭共享（多家长共享同一孩子）**：以孩子为中心、`childId` 作为共享锚点，支持一个孩子被多位家长共同记录、读写同一份数据
+  - 新增 `child_members` 集合（孩子↔家长 多对多成员关系，`isOwner=true` 为创建者，可邀请/移除）
+  - 新增 `child_invites` 集合（6 位一次性邀请码，24h 过期，`usedBy` 单次使用）
+  - 新增 `childShare` 云函数，`action` 路由：`createInvite` / `acceptInvite` / `listMembers` / `removeMember` / `leaveChild` / `getQrCode`（小程序码 `wxacode.getUnlimited`）
+  - mine 页新增「家庭共享」入口与成员管理弹层：成员列表（创建者/我标签）、分享给家人（转发一次性邀请链接）、生成邀请二维码（可保存相册）、创建者移除成员、非创建者退出共享
+  - 支持两种加入方式：分享链接（`?invite=CODE`）与扫描小程序码（`scene=CODE`）；进入 mine 页自动识别并调用 `acceptInvite` 加入
+### Fixed
+- 修正“我的”页登录态展示：仅云端 `login` 成功后显示「退出登录」；未登录展示登录引导与「登录账号」，添加孩子时先登录并在成功后继续；用户主动退出后暂停自动静默登录
+- 修复开发者工具热重载后可能遗留原生 `showLoading(mask:true)`、导致页面点击被遮罩拦截而原生 Tab 仍可切换的问题：应用 `onShow` 兜底调用 `wx.hideLoading()`
+- 修复课表页 `dateUtil.todayStr is not a function`：在日期工具中补齐并导出 `todayStr()`，统一返回本地时区 `YYYY-MM-DD`
+- 优化共享数据查询的软删条件：新数据统一使用 `isDeleted:false`，避免 `neq(true)` 无法高效使用索引的开发者工具告警
+- 修复启用自定义安全规则后的 `DATABASE_PERMISSION_DENIED`：业务查询改用 CloudBase `'{openid}'` 身份占位符；登录用户 upsert 完全收口到 `login` 云函数，移除客户端重复访问 `users`
+- 修复开发者工具 `app.json` 无效字段警告：移除误放在 `app.json` 的 `cloudfunctionRoot` 与 `window.libVersion`（两者已在项目配置中维护）
+### Changed
+- `utils/db.js` 共享模型改造：
+  - `_buildWhere` 业务数据集合归属过滤由 `ownerId` 改为仅 `childId`（`ownerId` 仅作登录闸门；仍写入每条数据做「谁创建」溯源，但不参与过滤）
+  - `getByUuid` / `updateByUuid` 改为按全局唯一 `uuid` 定位（不再按 `ownerId`），加入该孩子的家长均可读写/编辑同一条数据
+  - `children.listAll` 改为成员表驱动：按 `child_members.openid='{openid}'` 反查可见孩子，不保留未上线项目不需要的历史回填分支
+  - `children.create` 改走 `childShare.createChild`，由受信端一次写入孩子档案和创建者成员关系
+- `generateWeeklyReport` 云函数改为按 `childId` 聚合（不再按 `ownerId`），确保多位家长录入的数据都纳入周报统计；Cron 触发改为直接遍历 `children` 集合逐个孩子生成；`weekly_reports` 幂等键由 `(ownerId, childId, weekStart)` 改为 `(childId, weekStart)`
+
 ### Changed
 - 底部导航「记录」Tab 替换为「待办」Tab（`pages/records/records` → `pages/todo/todo`）；原记录页降级为次级页面，仍可经日历「+ 记一笔」入口访问
 - 日历页（`pages/index`）升级为**课程 + 待办 + 成长记录 + 阅读打卡**四源综合视图：

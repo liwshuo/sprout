@@ -39,12 +39,19 @@ function ensureLogin() {
       name: 'login',
       data: {},
     })
-      .then(async (res) => {
-        const { openid, unionid } = (res && res.result) || {};
+      .then((res) => {
+        const result = (res && res.result) || {};
+        const { openid, unionid, userInfo } = result;
         if (!openid) throw new Error('login 云函数未返回 openid');
-        const ownerId = unionid || openid;
-        const user = await upsertUser({ ownerId, openid, unionid });
+        // users 的创建/更新已由 login 云函数在受信端完成；客户端不再重复直查/写 users，
+        // 避免与自定义安全规则发生权限冲突。
+        const user = Object.assign({}, userInfo || {}, {
+          ownerId: (userInfo && userInfo.ownerId) || unionid || openid,
+          openid,
+          unionid: unionid || (userInfo && userInfo.unionid) || null,
+        });
         wx.setStorageSync('currentUser', user);
+        try { wx.removeStorageSync('manualLoggedOut'); } catch (e) { /* ignore */ }
         resolve(user);
       })
       .catch((err) => {
@@ -59,35 +66,6 @@ function ensureLogin() {
         reject(err);
       });
   });
-}
-
-/**
- * upsert users 集合：以 ownerId 为唯一键，存在则更新，否则创建。
- */
-async function upsertUser({ ownerId, openid, unionid }) {
-  const db = wx.cloud.database();
-  const now = Date.now();
-  const col = db.collection('users');
-  const { data } = await col.where({ ownerId }).limit(1).get();
-  if (data && data.length) {
-    const doc = data[0];
-    await col.doc(doc._id).update({
-      data: { openid, unionid: unionid || doc.unionid || null, updatedAt: now },
-    });
-    return { ...doc, openid, unionid: unionid || doc.unionid || null };
-  }
-  const user = {
-    ownerId,
-    openid,
-    unionid: unionid || null,
-    phone: null,
-    nickname: null,
-    avatar: null,
-    createdAt: now,
-    updatedAt: now,
-  };
-  const addRes = await col.add({ data: user });
-  return { _id: addRes._id, ...user };
 }
 
 /**
@@ -120,6 +98,16 @@ function ownerId() {
 }
 
 /**
+ * 当前登录用户的原始 openid（未登录返回空串）。
+ * 用于给共享文档盖 members 数组 —— 安全规则只认 auth.openid，
+ * 故 members 必须存 openid 而非 ownerId(=unionid||openid)。
+ */
+function openid() {
+  const u = currentUser();
+  return (u && u.openid) || '';
+}
+
+/**
  * 更新家长角色：将 role 字段写入 users 集合当前用户文档，并更新本地缓存。
  * @param {string} role  dad | mom | grandpa | grandma | grandpa_m | grandma_m | other
  * @returns {Promise<Object>} 更新后的 user 对象
@@ -143,9 +131,12 @@ async function updateUserRole(role) {
 function logout() {
   try { wx.removeStorageSync('currentUser'); } catch (e) { /* ignore quota */ }
   try { wx.clearStorageSync && wx.clearStorageSync(); } catch (e) { /* ignore quota */ }
+  try { wx.setStorageSync('manualLoggedOut', true); } catch (e) { /* ignore quota */ }
   const app = getApp();
   if (app && app.globalData) {
     app.globalData.currentUser = null;
+    app.globalData.loginVerified = false;
+    app.globalData.manualLoggedOut = true;
     app.globalData.activeChildId = '';
     app._emit && app._emit('activeChildChanged', '');
     app._emit && app._emit('userChanged', null);
@@ -154,10 +145,10 @@ function logout() {
 
 module.exports = {
   ensureLogin,
-  upsertUser,
   bindPhone,
   currentUser,
   ownerId,
+  openid,
   isCloudFunctionMissing,
   updateUserRole,
   logout,

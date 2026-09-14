@@ -1,5 +1,4 @@
 {
-  "cloudfunctionRoot": "cloudfunctions/",
   "pages": [
     "pages/index/index",
     "pages/records/records",
@@ -17,8 +16,7 @@
     "navigationBarBackgroundColor": "#FF8C42",
     "navigationBarTitleText": "萌芽成长册",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#FFF8F3",
-    "libVersion": "2.14.0"
+    "backgroundColor": "#FFF8F3"
   },
   "tabBar": {
     "color": "#B0A79E",

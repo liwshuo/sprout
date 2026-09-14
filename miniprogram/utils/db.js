@@ -1,7 +1,15 @@
 // utils/db.js —— CloudBase 云数据库操作封装
-// 统一处理：ownerId + childId 归属过滤、软删（isDeleted）、同步三件套、
-// uuid 主键、毫秒时间戳。所有查询默认排除 isDeleted=true。
+// 统一处理：childId 归属过滤（多家长共享同一孩子）、软删（isDeleted）、
+// 同步三件套、uuid 主键、毫秒时间戳。所有查询默认排除 isDeleted=true。
 // 云不可用/查询失败时返回空集合，保证页面可渲染空态（MVP 友好）。
+//
+// 【共享模型（2026-09）】以「孩子」为中心，childId 作为共享锚点：
+//   - child_members：孩子↔家长 的成员关系（一个孩子可被多位家长共享）
+//   - 业务数据集合（daily_records/books/todos/schedule_items/reading_logs/
+//     series/weekly_reports）归属过滤只按 childId，不再按 ownerId ——
+//     凡加入该孩子的家长均可读写同一份数据。
+//   - children 集合不再按 ownerId 过滤，改由 child_members 反查可见孩子列表。
+//   - ownerId 仍写入每条业务数据（标记「谁创建的」，用于展示/审计），但不参与过滤。
 
 const auth = require('./auth');
 
@@ -9,6 +17,9 @@ const auth = require('./auth');
 const COLLECTIONS = {
   users: 'users',
   children: 'children',
+  // 共享：孩子↔家长 成员关系 & 邀请码
+  childMembers: 'child_members',
+  childInvites: 'child_invites',
   dailyRecords: 'daily_records',
   series: 'series',
   books: 'books',
@@ -19,6 +30,10 @@ const COLLECTIONS = {
   // 公共只读集合：官方/共建精选书库（无 ownerId/childId 归属，所有人可读）
   bookLibrary: 'book_library',
 };
+
+// CloudBase 安全规则查询身份占位符：服务端会替换成当前调用者 openid。
+// 必须在 where 中显式使用该值，规则引擎才能证明查询结果满足 auth.openid 约束。
+const AUTH_OPENID = '{openid}';
 
 function db() {
   if (!wx.cloud) throw new Error('云能力不可用');
@@ -54,16 +69,28 @@ const PAGE_CAP = 200;
 // getTempFileURL 单次最多解析 50 个 fileID。
 const TEMP_URL_BATCH = 50;
 
-/** 构造带归属过滤 + 排除软删的 where 条件 */
+/**
+ * 构造归属过滤 + 排除软删的 where 条件。
+ * 【共享模型】业务数据只按 childId 过滤，不再按 ownerId —— 加入该孩子的
+ * 所有家长共享同一份数据。ownerId 仅作登录闸门（未登录一律不允许查）。
+ * ⚠️ withChild:false（不带孩子归属）已无业务集合使用（children 走
+ *    listChildrenForUser 单独反查），此处保留兜底：无 childId 时按传入
+ *    where 过滤，若 where 也为空则返回 null 避免全表裸查泄露。
+ */
 function _buildWhere(opts = {}) {
   const { ownerId, childId } = scope();
+  const openid = auth.openid ? auth.openid() : '';
   // 未登录：一律不允许查
-  if (!ownerId) return null;
+  if (!ownerId || !openid) return null;
   // 要求带孩子归属（默认 true）但未选孩子：强制空结果，防止多孩子交叉泄露
   if (opts.withChild !== false && !childId) return null;
+  if (opts.withChild === false) {
+    // 防御：无额外 where 时不允许无条件全表查询
+    if (!opts.where || !Object.keys(opts.where).length) return null;
+    return Object.assign({ isDeleted: _().neq(true) }, opts.where);
+  }
   return Object.assign(
-    { ownerId, isDeleted: _().neq(true) },
-    opts.withChild === false ? {} : { childId },
+    { childId, members: AUTH_OPENID, isDeleted: false },
     opts.where || {}
   );
 }
@@ -137,7 +164,7 @@ async function listAllPaged(col, opts = {}, cap = PAGE_CAP) {
  */
 async function listAllPublic(col, where = {}, orderBy = null, cap = 500) {
   try {
-    const baseWhere = Object.assign({}, where, { isDeleted: _().neq(true) });
+    const baseWhere = Object.assign({ isDeleted: _().neq(true) }, where);
     const hasWhere = Object.keys(baseWhere).length > 0;
     const out = [];
     let skip = 0;
@@ -162,13 +189,15 @@ async function listAllPublic(col, where = {}, orderBy = null, cap = 500) {
   }
 }
 
-/** 按 uuid 取单条 */
+/** 按 uuid 取单条（uuid 全局唯一，共享模型下不再按 ownerId 过滤，
+ *  凡加入该孩子的家长均可读取同一条数据） */
 async function getByUuid(col, uuid) {
   try {
-    const { ownerId } = scope();
+    const openid = auth.openid ? auth.openid() : '';
+    if (!openid) return null;
     const { data } = await db()
       .collection(col)
-      .where({ ownerId, uuid })
+      .where({ uuid, members: AUTH_OPENID })
       .limit(1)
       .get();
     return (data && data[0]) || null;
@@ -192,6 +221,19 @@ async function create(col, doc, { withChild = true } = {}) {
     { ownerId },
     withChild && childId ? { childId } : {}
   );
+  // 共享鉴权：给文档盖 members(openid 数组)，供安全规则 "auth.openid in doc.members" 判定。
+  // 安全规则只认 auth.openid，故 members 存原始 openid（非 ownerId）。
+  //   - children：以创建者自身 openid 起步（后续成员由 childShare 云函数同步维护）
+  //   - 业务集合：从所属 children 文档复制 members，确保同孩子家长共享读写权
+  let members;
+  const myOpenid = auth.openid ? auth.openid() : '';
+  if (col === COLLECTIONS.children) {
+    members = myOpenid ? [myOpenid] : [];
+  } else if (withChild && childId) {
+    const child = await getByUuid(COLLECTIONS.children, childId);
+    members = (child && Array.isArray(child.members)) ? child.members.slice() : [];
+    if (myOpenid && members.indexOf(myOpenid) === -1) members.push(myOpenid);
+  }
   const payload = Object.assign(
     {
       uuid: genUuid(),
@@ -200,18 +242,21 @@ async function create(col, doc, { withChild = true } = {}) {
       isDeleted: false,
     },
     scopeFields,
+    members ? { members } : {},
     doc
   );
   await db().collection(col).add({ data: payload });
   return payload;
 }
 
-/** 按 uuid 更新（自动刷新 updatedAt） */
+/** 按 uuid 更新（自动刷新 updatedAt）。共享模型下按 uuid 定位（不再按
+ *  ownerId），加入该孩子的家长均可编辑同一条数据。 */
 async function updateByUuid(col, uuid, patch) {
-  const { ownerId } = scope();
+  const openid = auth.openid ? auth.openid() : '';
+  if (!openid) throw new Error('未登录，无法更新');
   const { data } = await db()
     .collection(col)
-    .where({ ownerId, uuid })
+    .where({ uuid, members: AUTH_OPENID })
     .limit(1)
     .get();
   if (!data || !data.length) throw new Error('记录不存在');
@@ -289,21 +334,64 @@ const books = {
   },
 };
 
-const children = {
-  /** 当前用户的孩子列表（不按 childId 过滤，分页拉全） */
-  listAll() {
-    return listAllPaged(COLLECTIONS.children, {
-      withChild: false,
-      orderBy: ['sortOrder', 'asc'],
-    });
+// ============================================================
+// 共享成员：child_members（孩子↔家长 多对多关系）
+// 一个孩子可被多位家长加入；创建者 isOwner=true（可邀请/移除他人）。
+// ============================================================
+const childMembers = {
+  /** 我（当前登录用户）加入的全部成员关系（未过滤 childId，反查可见孩子用） */
+  async listMine() {
+    const openid = auth.openid ? auth.openid() : '';
+    if (!openid) return [];
+    return listAllPublic(COLLECTIONS.childMembers, { openid: AUTH_OPENID, isDeleted: false }, ['createdAt', 'asc'], 200);
   },
-  create(child) {
-    // child: { name, birthDate, avatarFileId, sortOrder }
-    return create(
+  /** 我在某孩子下的成员记录（判断是否成员/是否 owner） */
+  async mineForChild(childId) {
+    const openid = auth.openid ? auth.openid() : '';
+    if (!openid || !childId) return null;
+    try {
+      const { data } = await db()
+        .collection(COLLECTIONS.childMembers)
+        .where({ openid: AUTH_OPENID, childId, isDeleted: false })
+        .limit(1)
+        .get();
+      return (data && data[0]) || null;
+    } catch (err) {
+      console.warn('[db] childMembers.mineForChild 失败', err);
+      return null;
+    }
+  },
+};
+
+const children = {
+  /**
+   * 当前用户可见的孩子列表（共享模型）：
+   *   1. 查 child_members 得到我加入的 childId 列表；
+   *   2. 按 uuid 批量拉取 children（安全规则会再次校验 doc.members）。
+   * 项目未上线，不保留历史数据回填分支。
+   */
+  async listAll() {
+    const { ownerId } = scope();
+    if (!ownerId) return [];
+    const mem = await childMembers.listMine();
+    const childIds = Array.from(new Set(mem.map((m) => m.childId).filter(Boolean)));
+    if (!childIds.length) return [];
+    return listAllPublic(
       COLLECTIONS.children,
-      Object.assign({ sortOrder: 0 }, child),
-      { withChild: false }
+      { uuid: _().in(childIds), members: AUTH_OPENID, isDeleted: false },
+      ['sortOrder', 'asc'],
+      200
     );
+  },
+  /** 新增孩子：通过 childShare 云函数原子化创建档案 + owner 成员关系 */
+  async create(child) {
+    const res = await wx.cloud.callFunction({
+      name: 'childShare',
+      data: { action: 'createChild', child: Object.assign({ sortOrder: 0 }, child) },
+    });
+    const result = (res && res.result) || {};
+    if (!result.ok || !result.child) throw new Error(result.error || '创建孩子档案失败');
+    return result.child;
   },
   update(uuid, patch) {
     return updateByUuid(COLLECTIONS.children, uuid, patch);
@@ -531,6 +619,7 @@ module.exports = {
   records,
   books,
   children,
+  childMembers,
   scheduleItems,
   readingLogs,
   series,

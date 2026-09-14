@@ -10,6 +10,10 @@ App({
     cloudReady: false,
     // 登录用户：{ ownerId, openid, unionid, phone, nickname, avatar }
     currentUser: null,
+    // 仅云端 login 成功后置 true；缓存用户不能直接视为本次会话已登录
+    loginVerified: false,
+    // 用户主动退出后暂停静默登录，直到明确点击登录
+    manualLoggedOut: false,
     // 当前选中孩子 uuid 与孩子列表（多孩子切换）
     activeChildId: '',
     children: [],
@@ -25,19 +29,25 @@ App({
     //    静默登录永远不触发，ownerId 一直为空，所有写操作走到「未登录」兜底错误。
     this._initCloud();
     // 恢复本地缓存的登录态与当前孩子，加速冷启动
-    this.globalData.activeChildId = wx.getStorageSync('activeChildId') || '';
-    this.globalData.currentUser = wx.getStorageSync('currentUser') || null;
+    const manualLoggedOut = wx.getStorageSync('manualLoggedOut') === true;
+    this.globalData.manualLoggedOut = manualLoggedOut;
+    this.globalData.activeChildId = manualLoggedOut ? '' : (wx.getStorageSync('activeChildId') || '');
+    this.globalData.currentUser = manualLoggedOut ? null : (wx.getStorageSync('currentUser') || null);
 
-    // 静默登录（非阻塞）：解析 openid/unionid 并 upsert users
-    if (this.globalData.cloudReady) {
+    // 静默登录（非阻塞）：用户主动退出后不自动登录，等待明确点击登录
+    if (this.globalData.cloudReady && !manualLoggedOut) {
       auth
         .ensureLogin()
         .then((user) => {
           this.globalData.currentUser = user;
+          this.globalData.loginVerified = true;
           try { wx.setStorageSync('currentUser', user); } catch (e) {}
           this._emit('userChanged', user);
         })
         .catch((err) => {
+          this.globalData.loginVerified = false;
+          this.globalData.currentUser = null;
+          this._emit('userChanged', null);
           if (auth.isCloudFunctionMissing && auth.isCloudFunctionMissing(err)) {
             console.warn(
               '[app] 静默登录失败：login 云函数未部署。请在微信开发者工具中右键 cloudfunctions/login →「上传并部署（云端安装依赖）」，bindPhone 同理。',
@@ -48,6 +58,12 @@ App({
           }
         });
     }
+  },
+
+  onShow() {
+    // 开发者工具热重载可能保留上一次异步操作产生的原生 loading mask，
+    // 该遮罩会拦截页面触摸但不影响原生 tabBar。应用回到前台时兜底清理。
+    try { wx.hideLoading(); } catch (e) { /* ignore */ }
   },
 
   _initCloud() {

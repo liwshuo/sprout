@@ -24,6 +24,8 @@ const ROLE_OPTIONS = [
   { value: 'grandma_m', label: '姥姥' },
   { value: 'other', label: '其他' },
 ];
+// 角色 value → 展示标签（成员列表用）
+const ROLE_LABEL = ROLE_OPTIONS.reduce((m, r) => { m[r.value] = r.label; return m; }, {});
 
 Page({
   data: {
@@ -63,12 +65,26 @@ Page({
     ],
     gradePickerIndex: 0,
 
+    // 家庭共享：成员管理弹层
+    showMembersSheet: false,
+    membersLoading: false,
+    members: [],           // [{ ownerId, role, roleLabel, isOwner, nickname, displayName, avatar, phoneTail, isSelf }]
+    selfIsOwner: false,    // 我是否为当前孩子的创建者（可邀请/移除）
+    membersChildName: '',  // 弹层标题用的孩子名
+    // 邀请二维码弹层
+    showQrSheet: false,
+    qrLoading: false,
+    qrImageUrl: '',
+    qrInviteCode: '',
+
     // 防抖提交锁（reading/library 同款）
     _lock: {},
   },
 
   // ==================== 生命周期 ====================
-  onLoad() {
+  onLoad(options) {
+    // 捕获邀请入口：分享链接 ?invite=CODE / 扫小程序码 scene=CODE
+    this._pendingInviteCode = this._extractInviteCode(options);
     // 订阅全局事件：用户/当前孩子变化时刷新
     this._onUser = (u) => {
       this.setData({ currentUser: u, isLoggedIn: !!u });
@@ -82,10 +98,21 @@ Page({
     app.on && app.on('activeChildChanged', this._onActiveChild);
   },
 
+  // 从页面启动参数解析邀请码（分享链接 invite / 扫码 scene 两种来源）
+  _extractInviteCode(options = {}) {
+    let code = options.invite || '';
+    if (!code && options.scene) {
+      try { code = decodeURIComponent(options.scene); } catch (e) { code = options.scene; }
+    }
+    return code ? String(code).trim().toUpperCase() : '';
+  },
+
   onShow() {
     // B（时序）：app.js 登录为异步，onShow 早于 ensureLogin 完成时 auth.currentUser() 仍为 null，
     // 会误判未登录 → 家长副区点击走 doLogin 分支。优先读全局已登录态，再 fallback。
-    const u = app.globalData.currentUser || auth.currentUser();
+    const u = app.globalData.loginVerified
+      ? (app.globalData.currentUser || auth.currentUser())
+      : null;
     this.setData({
       currentUser: u,
       isLoggedIn: !!u,
@@ -93,9 +120,11 @@ Page({
     });
     this.refresh();
     // 异步保底：缓存没有用户但云已就绪，静默补一次登录（解决冷启动时序问题）
-    if (!u && app.globalData.cloudReady) {
+    if (!u && app.globalData.cloudReady && !app.globalData.manualLoggedOut) {
       auth.ensureLogin().then((user) => {
         app.globalData.currentUser = user;
+        app.globalData.loginVerified = true;
+        app.globalData.manualLoggedOut = false;
         this.setData({ currentUser: user, isLoggedIn: true });
         this._deriveParentLabel();
         this.refresh();
@@ -129,6 +158,44 @@ Page({
     this._loadActiveChild();
     this._loadStats();
     this._deriveParentLabel();
+    // 若有待处理的邀请码（扫码/分享链接进入），登录就绪后尝试加入
+    this._maybeAcceptInvite();
+  },
+
+  // 处理待接受的邀请：需已登录 + 云就绪；成功后切到该孩子并刷新
+  async _maybeAcceptInvite() {
+    const code = this._pendingInviteCode;
+    if (!code) return;
+    if (this._acceptingInvite) return;
+    const user = app.globalData.currentUser || auth.currentUser();
+    if (!user || !app.globalData.cloudReady) return; // 等登录/云就绪后由下一次 refresh 触发
+    this._acceptingInvite = true;
+    this._pendingInviteCode = ''; // 先清空，避免重复触发
+    wx.showLoading({ title: '正在加入...', mask: true });
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'childShare',
+        data: { action: 'acceptInvite', inviteCode: code },
+      });
+      const r = (res && res.result) || {};
+      wx.hideLoading();
+      if (r.ok) {
+        if (r.childId) app.setActiveChild(r.childId);
+        wx.showToast({
+          title: r.alreadyMember ? '你已在共享中' : `已加入${r.childName || '孩子'}的成长圈`,
+          icon: 'success',
+        });
+        this.refresh();
+      } else {
+        wx.showModal({ title: '加入失败', content: r.error || '邀请无效', showCancel: false });
+      }
+    } catch (err) {
+      wx.hideLoading();
+      console.error('[mine] acceptInvite 失败', err);
+      wx.showModal({ title: '加入失败', content: '网络异常，请稍后重试', showCancel: false });
+    } finally {
+      this._acceptingInvite = false;
+    }
   },
 
   // 解析孩子派生字段（_displayName / _ageText / _grade / _ageRange / _avatarEmoji / _avatarUrl）
@@ -274,7 +341,14 @@ Page({
   },
 
   // ==================== 登录 / 手机号 ====================
-  doLogin() {
+  _requireLogin(afterLogin) {
+    if (this.data.isLoggedIn && app.globalData.loginVerified) return true;
+    this.doLogin(afterLogin);
+    return false;
+  },
+
+  doLogin(afterLogin) {
+    const onSuccess = typeof afterLogin === 'function' ? afterLogin : null;
     if (!app.globalData.cloudReady) {
       wx.showToast({ title: '云环境未配置', icon: 'none' });
       return;
@@ -284,12 +358,17 @@ Page({
       .ensureLogin()
       .then((u) => {
         app.globalData.currentUser = u;
+        app.globalData.loginVerified = true;
+        app.globalData.manualLoggedOut = false;
         wx.hideLoading();
         this.setData({ currentUser: u, isLoggedIn: true });
         this.refresh();
         wx.showToast({ title: '登录成功', icon: 'success' });
+        if (onSuccess) onSuccess();
       })
       .catch((err) => {
+        app.globalData.loginVerified = false;
+        app.globalData.currentUser = null;
         wx.hideLoading();
         console.error('[mine] 登录失败', err);
         const tip = auth.isCloudFunctionMissing(err)
@@ -329,6 +408,7 @@ Page({
 
   // ==================== 添加 / 编辑孩子 ====================
   openAddChild() {
+    if (!this._requireLogin(() => this.openAddChild())) return;
     this.setData({
       showChildSheet: true,
       editingChildUuid: '',
@@ -527,6 +607,202 @@ Page({
 
   onGradePickerCancel() {
     this.setData({ showGradePicker: false, pendingGradeChildUuid: '' });
+  },
+
+  // ==================== 家庭共享（多家长）====================
+  // 打开成员管理弹层：需登录 + 已选孩子
+  openMembersSheet() {
+    if (this._tryLock('membersSheet', 600)) return;
+    if (!this.data.isLoggedIn) { this.doLogin(); return; }
+    const child = this.data.activeChild;
+    if (!child || !this.data.activeChildId) {
+      wx.showToast({ title: '请先添加孩子', icon: 'none' });
+      return;
+    }
+    this.setData({
+      showMembersSheet: true,
+      membersChildName: child._displayName || child.name || '宝贝',
+    });
+    this.loadMembers();
+  },
+
+  closeMembersSheet() {
+    this.setData({ showMembersSheet: false });
+  },
+
+  // 加载当前孩子的家长成员列表
+  async loadMembers() {
+    const childId = this.data.activeChildId;
+    if (!childId) return;
+    this.setData({ membersLoading: true });
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'childShare',
+        data: { action: 'listMembers', childId },
+      });
+      const r = (res && res.result) || {};
+      if (!r.ok) {
+        this.setData({ membersLoading: false, members: [] });
+        wx.showToast({ title: r.error || '加载失败', icon: 'none' });
+        return;
+      }
+      const members = (r.members || []).map((m) => Object.assign({}, m, {
+        roleLabel: ROLE_LABEL[m.role] || '家长',
+        displayName: m.nickname || (ROLE_LABEL[m.role] || '家长'),
+      }));
+      this.setData({ members, selfIsOwner: !!r.selfIsOwner, membersLoading: false });
+    } catch (err) {
+      console.error('[mine] loadMembers 失败', err);
+      this.setData({ membersLoading: false });
+      wx.showToast({ title: '网络异常', icon: 'none' });
+    }
+  },
+
+  // 移除成员（仅创建者可操作）
+  onRemoveMember(e) {
+    const { owner, name } = e.currentTarget.dataset;
+    if (!owner) return;
+    wx.showActionSheet({
+      itemList: [`移除「${name || '该家长'}」`],
+      itemColor: '#FF4D4F',
+      success: async (res) => {
+        if (res.tapIndex !== 0) return;
+        wx.showLoading({ title: '处理中...', mask: true });
+        try {
+          const r = await wx.cloud.callFunction({
+            name: 'childShare',
+            data: { action: 'removeMember', childId: this.data.activeChildId, targetOwnerId: owner },
+          });
+          wx.hideLoading();
+          const rr = (r && r.result) || {};
+          if (rr.ok) {
+            wx.showToast({ title: '已移除', icon: 'success' });
+            this.loadMembers();
+          } else {
+            wx.showToast({ title: rr.error || '移除失败', icon: 'none' });
+          }
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: '网络异常', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  // 退出共享（非创建者）
+  onLeaveChild() {
+    const childId = this.data.activeChildId;
+    const name = this.data.membersChildName;
+    wx.showActionSheet({
+      itemList: [`退出「${name}」的共享`],
+      itemColor: '#FF4D4F',
+      success: async (res) => {
+        if (res.tapIndex !== 0) return;
+        wx.showLoading({ title: '处理中...', mask: true });
+        try {
+          const r = await wx.cloud.callFunction({
+            name: 'childShare',
+            data: { action: 'leaveChild', childId },
+          });
+          wx.hideLoading();
+          const rr = (r && r.result) || {};
+          if (rr.ok) {
+            wx.showToast({ title: '已退出共享', icon: 'success' });
+            this.setData({ showMembersSheet: false });
+            // 退出后当前孩子可能不再可见：清空选中并整体刷新
+            app.setActiveChild('');
+            this.refresh();
+          } else {
+            wx.showToast({ title: rr.error || '退出失败', icon: 'none' });
+          }
+        } catch (err) {
+          wx.hideLoading();
+          wx.showToast({ title: '网络异常', icon: 'none' });
+        }
+      },
+    });
+  },
+
+  // 生成邀请二维码（小程序码，扫码即加入）
+  async openQrCode() {
+    const childId = this.data.activeChildId;
+    if (!childId) return;
+    this.setData({ showQrSheet: true, qrLoading: true, qrImageUrl: '', qrInviteCode: '' });
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'childShare',
+        data: { action: 'getQrCode', childId },
+      });
+      const r = (res && res.result) || {};
+      if (!r.ok || !r.fileID) {
+        this.setData({ qrLoading: false });
+        wx.showModal({ title: '生成失败', content: r.error || '请稍后重试', showCancel: false });
+        return;
+      }
+      // fileID → 临时可访问 URL
+      let url = r.fileID;
+      try {
+        const map = await db.getTempUrls([r.fileID]);
+        url = map[r.fileID] || r.fileID;
+      } catch (e) { /* 直接用 fileID 兜底 */ }
+      this.setData({ qrLoading: false, qrImageUrl: url, qrInviteCode: r.inviteCode || '' });
+    } catch (err) {
+      console.error('[mine] getQrCode 失败', err);
+      this.setData({ qrLoading: false });
+      wx.showModal({ title: '生成失败', content: '网络异常，请稍后重试', showCancel: false });
+    }
+  },
+
+  closeQrSheet() {
+    this.setData({ showQrSheet: false });
+  },
+
+  // 保存二维码到相册
+  onSaveQr() {
+    const url = this.data.qrImageUrl;
+    if (!url) return;
+    wx.getImageInfo({
+      src: url,
+      success: (info) => {
+        wx.saveImageToPhotosAlbum({
+          filePath: info.path,
+          success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+          fail: (e) => {
+            if (e.errMsg && e.errMsg.indexOf('auth deny') > -1) {
+              wx.showModal({ title: '需要相册权限', content: '请在设置中允许保存图片', showCancel: false });
+            } else {
+              wx.showToast({ title: '保存失败', icon: 'none' });
+            }
+          },
+        });
+      },
+      fail: () => wx.showToast({ title: '图片加载失败', icon: 'none' }),
+    });
+  },
+
+  // 转发：邀请家长共享（点击 open-type="share" 按钮触发，异步生成一次性邀请码）
+  onShareAppMessage(e) {
+    const childId = this.data.activeChildId;
+    const childName = this.data.membersChildName
+      || (this.data.activeChild && (this.data.activeChild._displayName || this.data.activeChild.name))
+      || '宝贝';
+    // 仅「邀请家长」按钮触发时生成邀请码；右上角菜单转发走默认
+    if (e && e.from === 'button' && childId) {
+      const title = `邀请你一起记录${childName}的成长`;
+      const promise = wx.cloud
+        .callFunction({ name: 'childShare', data: { action: 'createInvite', childId } })
+        .then((res) => {
+          const code = (res && res.result && res.result.inviteCode) || '';
+          return {
+            title,
+            path: code ? `/pages/mine/mine?invite=${code}` : '/pages/mine/mine',
+          };
+        })
+        .catch(() => ({ title, path: '/pages/mine/mine' }));
+      return { title, path: '/pages/mine/mine', promise };
+    }
+    // 默认转发（右上角 ···）：不含邀请码
+    return { title: '萌芽成长册 · 记录每一次成长', path: '/pages/index/index' };
   },
 
   // ==================== 功能菜单 ====================

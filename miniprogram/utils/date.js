@@ -38,6 +38,11 @@ function ymd(d) {
   return `${x.getFullYear()}-${m}-${day}`;
 }
 
+/** 今天的 'YYYY-MM-DD' */
+function todayStr() {
+  return ymd(new Date());
+}
+
 /** 'HH:mm' */
 function hm(d) {
   const x = new Date(d);
@@ -217,6 +222,7 @@ module.exports = {
   endOfDay,
   weekdayOf,
   ymd,
+  todayStr,
   hm,
   mdCn,
   monthGrid,
