@@ -32,7 +32,7 @@ auth.openid in doc.members
 | 分组 | 集合 | 前端权限 | 规则要点 |
 | --- | --- | --- | --- |
 | 孩子档案 | `children` | 安全规则 | `auth.openid in doc.members` |
-| 业务数据 | `daily_records` `books` `todos` `schedule_items` `reading_logs` `series` `weekly_reports` | 安全规则 | `auth.openid in doc.members` |
+| 业务数据 | `daily_records` `books` `todos` `schedule_items` `course_templates` `reading_logs` `series` `weekly_reports` | 安全规则 | `auth.openid in doc.members` |
 | 成员关系 | `child_members` | 只读自己 + 写全禁 | 读 `doc.openid == auth.openid`；写走云函数 |
 | 邀请码 | `child_invites` | 全禁 | 读写全走云函数 |
 | 账号 | `users` | 只读写自己 | `doc.openid == auth.openid` |
@@ -56,9 +56,9 @@ auth.openid in doc.members
 - `create`：前端禁用，统一走 `childShare.createChild`，由云函数一次完成孩子档案与创建者成员关系写入，避免产生孤儿档案或伪造 owner 成员。
 - `delete`：物理删除一律禁止，删除走软删（`isDeleted=true` 的 `update`），可同步、可追溯。
 
-### 2.2 业务数据集合（7 个，规则完全一致）
+### 2.2 业务数据集合（8 个，规则完全一致）
 
-适用：`daily_records`、`books`、`todos`、`schedule_items`、`reading_logs`、`series`、`weekly_reports`
+适用：`daily_records`、`books`、`todos`、`schedule_items`、`course_templates`、`reading_logs`、`series`、`weekly_reports`
 
 ```json
 {
@@ -82,6 +82,8 @@ auth.openid in doc.members
 ```
 
 - 前端若直接查询，只能读到**自己的**成员记录；正式孩子列表统一调用 `childShare.listChildren`，待办列表调用 `childShare.listTodos`，其余共享业务集合列表调用 `childShare.listChildData`。云函数先校验成员身份再返回数据，避免复杂范围查询/排序无法通过前端规则证明而被静默降级为空。
+- **单条读取同样收口云函数**：`db.getByUuid()` 不再直查（`where members` 数组查询前端规则无法证明，会被 `DATABASE_PERMISSION_DENIED`），改为复用 `childShare.listChildData` 拉取当前孩子该集合后按 `uuid` 命中。
+- **写入前盖 `members`**：`db.create()` 需要把所属 `children.members` 复制到新业务文档，但前端不能直读 `children`，故通过 `childShare.getChildMembers` 取权威 members(openid)（云函数以管理员身份读取并校验调用者成员资格）后再写入。
 - `listChildren` 同时用 `ownerId` 校验创建者自己的孩子；发现孩子档案存在但 owner 成员关系或 `members` 缺失时自动补齐，用于修复异常中断产生的孤立数据。
 - **成员管理列表**（某孩子的全部成员）同样必须调用 `childShare` 的 `listMembers`（云函数以管理员身份读取，规则不拦）。
 - 所有写入（加入/移除/退出/删除孩子）一律走 `childShare` 云函数；`deleteChild` 仅允许档案创建者调用，并统一软删除档案、成员关系、邀请及关联业务数据。
@@ -141,6 +143,7 @@ auth.openid in doc.members
 | `removeMember` | 创建者移除成员（软删） | ✅ 是 |
 | `leaveChild` | 非创建者主动退出（软删） | ✅ 是 |
 | `listMembers` | 成员管理列表（管理员身份读取） | 否 |
+| `getChildMembers` | 返回某孩子权威 members(openid)，供 `db.create()` 写入前盖章（先校验成员资格） | 否 |
 
 > 云函数以管理员身份运行会**绕过安全规则**，因此每个写入动作内部都各自校验了调用者身份与成员资格（`ctxOwnerId` 取自登录态注入的 `UNIONID/OPENID`，不信任 `event` 传入的 id）。
 

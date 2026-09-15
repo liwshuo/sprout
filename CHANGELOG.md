@@ -5,6 +5,30 @@
 
 ## [Unreleased]
 ### Added
+- **独立「课程库」页面 + 拖拽排课（课表页最终方案）**：新增 `pages/schedule/course-library`（js/wxml/wxss/json，已注册 `app.json`），把课程分类管理从课表页收敛为独立入口：
+  - 新增云数据库集合 `course_templates`（课程模板：`name`/`type`〔`school` 校内 / `extra` 兴趣班〕/`color`/`isPreset`），纳入 `childShare` 业务集合白名单与安全规则 `auth.openid in doc.members`，多家长共享
+  - 首次进入课程库页自动 `ensureSeed()` 写入一批预置课程（语文/数学/英语/体育/科学/音乐/钢琴/游泳/美术/编程/篮球/舞蹈）；支持新增、编辑（名称 + 分类 + 颜色）、删除（含长按卡片快捷删除）自定义课程
+  - 课表页底部「课程库」面板 chips 改为读取 `course_templates`，面板顶部「管理 ›」跳转独立课程库页；拖拽 chip 落到网格即按分类默认时长（校内 40min / 兴趣班 60min）建课，`schedule_items` 新增 `templateId`（引用 `course_templates.uuid`）与 `color` 快照
+  - 触摸手势用 `touchstart/move/end` + `catchtouchmove` 实现（小程序无 HTML5 拖放），落点命中用 `selectorQuery` 取 `.daycol` 视口坐标反算星期与时间；手指停留在周视图左右边缘触发横向自动滚动
+
+### Changed
+- **课表页改为「周网格总览 + 日视图」**：`pages/schedule/index`（js/wxml/wxss）从纵向按星期分组的列表重构为可视化时间表：
+  - 周视图横轴为周一~周日、纵轴为时间轴，课程按真实起止时间比例渲染为色块（颜色取自课程模板），今天列高亮，进入时自动把当天列滚动到视口居中
+  - 新增「周 / 日」切换 segment；日视图顶部星期 tab 默认选中今天
+  - 时间轴范围按当前课程数据在默认 8:00–19:00 基础上动态外扩
+- **课表交互全面改为拖拽驱动，移除课表内加号与编辑弹层**：
+  - 去掉课表左下角「＋」FAB 与新增/编辑课程 `bottom-sheet`，加课统一走「课程库拖拽」；点空白格不再弹出添加
+  - 课程色块：**拖动**调整星期/开始时间（吸附到 30 分钟格，带时间冲突校验）、**长按**（~500ms）弹出删除确认、**点击不再进入编辑页**
+
+### Fixed
+- **「我的」页家长角色选择弹窗点击无反应**：`ROLE_OPTIONS` 有 7 项，超过 `wx.showActionSheet` 最多 6 项限制且原 `fail` 回调静默吞错，表现为「点了没弹窗」。改用自定义 `bottom-sheet` 角色网格承载 7 个角色选项，选中即保存
+- **共享数据前端直读被 `DATABASE_PERMISSION_DENIED` 拦截**：`where members` 数组查询前端安全规则无法证明，导致课表 `refresh`、`db.getByUuid`、成长记录去重查询等直读被拒（列表空/保存后不刷新，且新数据的 `members` 只盖到创建者、其他家长看不到）。改为统一收口 `childShare` 云函数：
+  - `pages/schedule/index.js` 课表列表改用 `db.scheduleItems.listAll()`（走 `listChildData`）
+  - `utils/db.js` `getByUuid()` 改为复用 `listChildData` 拉取当前孩子该集合后按 `uuid` 命中；`pages/records/add` 的成长记录去重查询改用 `db.records.listAll()` 本地筛
+  - `utils/db.js` `create()` 写入前改用新云函数 `childShare.getChildMembers` 取权威 members(openid) 盖章，确保同孩子其他家长立即可读写新数据
+  - 新增 `childShare.getChildMembers` action（校验调用者成员资格后返回 `children.members`），并补 3 个云函数单测（共 61 例通过）
+
+### Added
 - **小程序端单元测试工程（第一层：纯逻辑 + 鉴权）**：新增 `miniprogram/` Jest 测试工程（`npm test`），仅 `devDependencies`、不参与「构建 npm」；覆盖 58 个用例
   - `tests/utils/date.test.js`：日期工具（起止日、ISO 周几、月历矩阵、课表周展开的起止/排除日、年龄/年级推导）
   - `tests/utils/todo.test.js`：待办分类回落、`listAll` 登录/孩子守卫与 `childShare.listTodos` 收口

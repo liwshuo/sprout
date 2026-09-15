@@ -43,6 +43,11 @@ Page({
     parentLabelSet: false, // currentUser.role != null 时为 true
     phoneTail: '',         // 已绑定手机号时展示的末四位
 
+    // 家长角色选择弹层（7 个角色超过 wx.showActionSheet 的 6 项上限，改用自定义 bottom-sheet）
+    showRoleSheet: false,
+    roleOptions: ROLE_OPTIONS,
+    selectedRole: '',      // 当前已选角色 value，用于高亮
+
     // 添加/编辑孩子弹层
     showChildSheet: false,
     editingChildUuid: '',
@@ -283,31 +288,39 @@ Page({
     this.onRoleSelect();
   },
 
-  // 直接弹角色选择 ActionSheet（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他 + 取消），选完写库并重新派生
+  // 直接弹自定义角色选择弹层（爸爸/妈妈/爷爷/奶奶/姥爷/姥姥/其他）。
+  // 注意：wx.showActionSheet 的 itemList 最多 6 项，而角色有 7 个，旧实现会静默 fail、
+  // 表现为「点了没反应」；故改用 bottom-sheet 承载，点选即写库并关闭。
   onRoleSelect() {
     if (!this.data.isLoggedIn) {
       this.doLogin();
       return;
     }
-    wx.showActionSheet({
-      itemList: ROLE_OPTIONS.map((r) => r.label), // 7 项角色；ActionSheet 自带「取消」
-      success: async (res) => {
-        const opt = ROLE_OPTIONS[res.tapIndex];
-        if (!opt) return; // 取消或越界不落库
-        try {
-          const updated = await auth.updateUserRole(opt.value);
-          // 同步本页与全局，再重新派生称谓
-          app.globalData.currentUser = updated;
-          this.setData({ currentUser: updated, isLoggedIn: true });
-          this._deriveParentLabel();
-          wx.showToast({ title: '已设置', icon: 'success' });
-        } catch (e) {
-          console.error('[mine] updateUserRole 失败', e);
-          wx.showToast({ title: '保存失败', icon: 'none' });
-        }
-      },
-      fail: () => { /* 取消，忽略 */ },
+    const cur = this.data.currentUser;
+    this.setData({
+      showRoleSheet: true,
+      selectedRole: (cur && cur.role) || '',
     });
+  },
+
+  onRoleSheetClose() {
+    this.setData({ showRoleSheet: false });
+  },
+
+  // 点选某个角色：写库 → 同步本页与全局 → 重新派生称谓 → 关闭弹层
+  async onRoleOptionTap(e) {
+    const value = e.currentTarget.dataset.value;
+    if (!value) return;
+    try {
+      const updated = await auth.updateUserRole(value);
+      app.globalData.currentUser = updated;
+      this.setData({ currentUser: updated, isLoggedIn: true, selectedRole: value, showRoleSheet: false });
+      this._deriveParentLabel();
+      wx.showToast({ title: '已设置', icon: 'success' });
+    } catch (err) {
+      console.error('[mine] updateUserRole 失败', err);
+      wx.showToast({ title: '保存失败', icon: 'none' });
+    }
   },
 
   // 绑定/更换手机号：由独立按钮（bindtap）触发，不再走 ActionSheet。

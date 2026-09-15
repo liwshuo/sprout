@@ -1,0 +1,6 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "课程库",
+  "enablePullDownRefresh": true,
+  "backgroundColorTop": "#FFF8F3"
+}

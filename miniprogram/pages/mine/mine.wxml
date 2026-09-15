@@ -175,6 +175,26 @@
   <view class="btn-ghost sheet-btn phone-cancel-btn" bindtap="closePhoneSheet">取消</view>
 </bottom-sheet>
 
+<!-- 家长角色选择弹层（7 个角色，自定义 bottom-sheet 承载；点选即保存） -->
+<bottom-sheet
+  show="{{showRoleSheet}}"
+  title="我是 Ta 的…"
+  confirm-text="取消"
+  hide-cancel="{{true}}"
+  bind:cancel="onRoleSheetClose"
+  bind:confirm="onRoleSheetClose"
+>
+  <view class="role-grid">
+    <view
+      wx:for="{{roleOptions}}"
+      wx:key="value"
+      class="role-opt {{selectedRole === item.value ? 'role-opt-active' : ''}}"
+      data-value="{{item.value}}"
+      bindtap="onRoleOptionTap"
+    >{{item.label}}</view>
+  </view>
+</bottom-sheet>
+
 <!-- 年级确认弹层 -->
 <bottom-sheet
   show="{{showGradeConfirm}}"

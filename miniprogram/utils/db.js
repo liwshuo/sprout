@@ -25,6 +25,8 @@ const COLLECTIONS = {
   books: 'books',
   readingLogs: 'reading_logs',
   scheduleItems: 'schedule_items',
+  // 课程库模板（课程分类）：以孩子为锚点共享，schedule_items 引用其 uuid（templateId）
+  courseTemplates: 'course_templates',
   todos: 'todos',
   weeklyReports: 'weekly_reports',
   // 公共只读集合：官方/共建精选书库（无 ownerId/childId 归属，所有人可读）
@@ -174,6 +176,27 @@ async function listSharedData(col) {
   }
 }
 
+/**
+ * 通过受信云函数获取当前孩子权威的 members(openid) 数组。
+ * 前端不能直读 children（安全规则无法证明 members 数组查询），create() 写入前
+ * 用它盖 members，确保同孩子的其他家长也能读写这条新数据。
+ */
+async function fetchChildMembers(childId) {
+  if (!childId) return [];
+  try {
+    const response = await wx.cloud.callFunction({
+      name: 'childShare',
+      data: { action: 'getChildMembers', childId },
+    });
+    const result = (response && response.result) || {};
+    if (result.ok && Array.isArray(result.members)) return result.members.slice();
+  } catch (err) {
+    console.warn('[db] fetchChildMembers 失败', err);
+  }
+  return [];
+}
+
+
 function sortByField(items, field, direction = 'asc') {
   const factor = direction === 'desc' ? -1 : 1;
   return items.slice().sort((a, b) => {
@@ -223,17 +246,15 @@ async function listAllPublic(col, where = {}, orderBy = null, cap = 500) {
 }
 
 /** 按 uuid 取单条（uuid 全局唯一，共享模型下不再按 ownerId 过滤，
- *  凡加入该孩子的家长均可读取同一条数据） */
+ *  凡加入该孩子的家长均可读取同一条数据）。
+ *  ⚠️ 前端安全规则无法证明 members 数组查询，直读会被 DATABASE_PERMISSION_DENIED；
+ *  故统一走 childShare 云函数读取当前孩子的该集合数据后按 uuid 命中（与列表读取同源）。 */
 async function getByUuid(col, uuid) {
   try {
     const openid = auth.openid ? auth.openid() : '';
-    if (!openid) return null;
-    const { data } = await db()
-      .collection(col)
-      .where({ uuid, members: AUTH_OPENID })
-      .limit(1)
-      .get();
-    return (data && data[0]) || null;
+    if (!openid || !uuid) return null;
+    const items = await listSharedData(col);
+    return items.find((item) => item.uuid === uuid) || null;
   } catch (err) {
     console.warn(`[db] getByUuid(${col}) 失败`, err);
     return null;
@@ -263,8 +284,9 @@ async function create(col, doc, { withChild = true } = {}) {
   if (col === COLLECTIONS.children) {
     members = myOpenid ? [myOpenid] : [];
   } else if (withChild && childId) {
-    const child = await getByUuid(COLLECTIONS.children, childId);
-    members = (child && Array.isArray(child.members)) ? child.members.slice() : [];
+    // 前端不能直读 children，改由云函数返回权威 members(openid) 盖章，
+    // 确保同孩子的其他家长也能读写这条新数据。
+    members = await fetchChildMembers(childId);
     if (myOpenid && members.indexOf(myOpenid) === -1) members.push(myOpenid);
   }
   const payload = Object.assign(
@@ -461,6 +483,56 @@ const scheduleItems = {
   },
 };
 
+// 课程库模板（课程分类）：名称 + 分类(school/extra) + 颜色，供课表拖拽排课引用
+const COURSE_TEMPLATE_PRESETS = [
+  { name: '语文', type: 'school', color: '#6FB0E3' },
+  { name: '数学', type: 'school', color: '#6FB0E3' },
+  { name: '英语', type: 'school', color: '#6FB0E3' },
+  { name: '体育', type: 'school', color: '#7FC29B' },
+  { name: '科学', type: 'school', color: '#7FC29B' },
+  { name: '音乐', type: 'school', color: '#B79BE0' },
+  { name: '钢琴', type: 'extra', color: '#FF8C42' },
+  { name: '游泳', type: 'extra', color: '#4FB6D9' },
+  { name: '美术', type: 'extra', color: '#F0837E' },
+  { name: '编程', type: 'extra', color: '#5C6BC0' },
+  { name: '篮球', type: 'extra', color: '#FF8C42' },
+  { name: '舞蹈', type: 'extra', color: '#F06B9A' },
+];
+
+const courseTemplates = {
+  /** 全部课程模板，未删除，按创建时间升序 */
+  async listAll() {
+    const items = await listSharedData(COLLECTIONS.courseTemplates);
+    return sortByField(items, 'createdAt', 'asc');
+  },
+  create(tpl) {
+    // tpl: { name, type('school'|'extra'), color, emoji }
+    return create(COLLECTIONS.courseTemplates, Object.assign({ type: 'extra', color: '#FF8C42' }, tpl));
+  },
+  update(uuid, patch) {
+    return updateByUuid(COLLECTIONS.courseTemplates, uuid, patch);
+  },
+  remove(uuid) {
+    return softDelete(COLLECTIONS.courseTemplates, uuid);
+  },
+  /**
+   * 确保当前孩子已有课程库：若为空则写入一批预置课程。
+   * 返回最终的课程模板列表。首次进入课程库页调用。
+   */
+  async ensureSeed() {
+    const existing = await this.listAll();
+    if (existing.length > 0) return existing;
+    for (const p of COURSE_TEMPLATE_PRESETS) {
+      try {
+        await create(COLLECTIONS.courseTemplates, Object.assign({ isPreset: true }, p));
+      } catch (e) {
+        console.warn('[db] courseTemplates.ensureSeed 写入失败', p.name, e);
+      }
+    }
+    return this.listAll();
+  },
+};
+
 // 阅读打卡：日历第三源上游数据（补齐写入闭环）
 const readingLogs = {
   /** 某时间范围内的打卡（按 readDate 聚合） */
@@ -650,6 +722,7 @@ module.exports = {
   children,
   childMembers,
   scheduleItems,
+  courseTemplates,
   readingLogs,
   series,
   weeklyReports,

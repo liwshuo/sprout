@@ -558,3 +558,29 @@
   border-radius: 40rpx;
   font-size: 28rpx;
 }
+
+
+/* 家长角色选择弹层：三列自适应网格 */
+.role-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  padding: 8rpx 0 4rpx;
+}
+.role-opt {
+  width: calc((100% - 40rpx) / 3);
+  box-sizing: border-box;
+  text-align: center;
+  padding: 26rpx 0;
+  border-radius: 20rpx;
+  background: #F6F7FB;
+  border: 2rpx solid #EDEFF4;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #3A3F4A;
+}
+.role-opt-active {
+  background: #FFF3EB;
+  border-color: #FF8C42;
+  color: #E5702A;
+}

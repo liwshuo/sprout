@@ -1,0 +1,92 @@
+/* pages/schedule/course-library/index.wxss —— 课程库 */
+.cl-head { margin: 8rpx 4rpx 12rpx; }
+
+.cl-section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx 8rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+}
+.cl-sec-head {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #2E2722;
+  margin-bottom: 16rpx;
+}
+.cl-dot { width: 20rpx; height: 20rpx; border-radius: 6rpx; margin-right: 10rpx; }
+.dot-school { background: #8FC7F0; }
+.dot-hobby { background: #FF8C42; }
+
+.cl-grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
+.cl-card {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 22rpx;
+  border-radius: 16rpx;
+  background: #F7F4EF;
+  border: 2rpx solid #EDE6DC;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #3A3F4A;
+  margin-bottom: 16rpx;
+}
+.cl-color { width: 24rpx; height: 24rpx; border-radius: 50%; margin-right: 14rpx; }
+.cl-name { line-height: 1; }
+.cl-add {
+  color: #E5702A;
+  background: #FFF3EB;
+  border: 2rpx dashed #FFC49A;
+}
+
+.cl-tip {
+  font-size: 24rpx;
+  color: #B0A79E;
+  text-align: center;
+  padding: 8rpx 0 24rpx;
+}
+
+/* 弹层表单 */
+.fld { margin-bottom: 28rpx; }
+.fld-label { font-size: 26rpx; color: var(--ink-sub); margin-bottom: 14rpx; }
+.fld-input {
+  height: 84rpx;
+  background: #F6F7FB;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+}
+.type-seg {
+  display: flex;
+  background: #F0EBE4;
+  border-radius: 999rpx;
+  padding: 6rpx;
+}
+.type-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  color: var(--ink-sub);
+}
+.type-on { background: #fff; color: #FF8C42; font-weight: 700; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06); }
+
+.color-grid { display: flex; flex-wrap: wrap; gap: 22rpx; }
+.color-opt {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 6rpx solid transparent;
+}
+.color-on { border-color: #2E2722; }
+
+.sheet-delete {
+  text-align: center;
+  color: #C0392B;
+  font-size: 28rpx;
+  padding: 16rpx 0 8rpx;
+}

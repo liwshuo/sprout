@@ -33,7 +33,7 @@ const C_RECORDS = 'daily_records';
 // 受「以孩子为锚点」共享的业务集合：成员变更时需同步回填 members(openid) 数组
 const BIZ_COLLECTIONS = [
   'daily_records', 'books', 'todos', 'schedule_items',
-  'reading_logs', 'series', 'weekly_reports',
+  'reading_logs', 'series', 'weekly_reports', 'course_templates',
 ];
 
 const INVITE_TTL = 24 * 3600 * 1000; // 邀请码有效期 24h
@@ -619,6 +619,24 @@ async function leaveChild(childId, ownerId) {
   return { ok: true, childId, left: ownerId };
 }
 
+/**
+ * 返回某孩子权威的 members(openid) 数组，供前端 create() 写入前盖章。
+ * 前端不能直读 children（安全规则无法证明 members 数组查询），故由本函数以
+ * 管理员身份读取，并先校验调用者确为该孩子成员，避免越权拿到他人孩子的 members。
+ */
+async function getChildMembers(childId, ownerId) {
+  if (!childId) return { ok: false, error: '缺少 childId' };
+  const membership = await findMembership(childId, ownerId);
+  if (!membership) return { ok: false, error: '无权访问该孩子' };
+  const { data } = await db.collection(C_CHILDREN)
+    .where({ uuid: childId, isDeleted: _.neq(true) })
+    .limit(1)
+    .get();
+  const child = (data && data[0]) || null;
+  const members = child && Array.isArray(child.members) ? child.members : [];
+  return { ok: true, members, childId };
+}
+
 exports.main = async (event = {}) => {
   const ownerId = ctxOwnerId();
   if (!ownerId) return { ok: false, error: '未登录，无法操作' };
@@ -649,6 +667,8 @@ exports.main = async (event = {}) => {
         return await removeMember(event.childId, event.targetOwnerId, ownerId);
       case 'leaveChild':
         return await leaveChild(event.childId, ownerId);
+      case 'getChildMembers':
+        return await getChildMembers(event.childId, ownerId);
       default:
         return { ok: false, error: `未知 action: ${action}` };
     }

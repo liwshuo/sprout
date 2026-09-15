@@ -50,11 +50,11 @@ Page({
   async _loadTodoSource(sourceTodoId) {
     this.setData({ loading: true });
     try {
-      const [sourceTodo, existingRecords] = await Promise.all([
+      const [sourceTodo, allRecords] = await Promise.all([
         db.getByUuid(db.COLLECTIONS.todos, sourceTodoId),
-        db.list(db.COLLECTIONS.dailyRecords, { where: { sourceTodoId }, limit: 1 }),
+        db.records.listAll(),
       ]);
-      const existing = existingRecords && existingRecords[0];
+      const existing = (allRecords || []).find((r) => r.sourceTodoId === sourceTodoId);
       if (existing) {
         if (sourceTodo && sourceTodo.convertedRecordId !== existing.uuid) {
           todo.markConverted(sourceTodoId, existing.uuid).catch(() => {});
@@ -220,11 +220,8 @@ Page({
     wx.showLoading({ title: '保存中...', mask: true });
     try {
       if (!isEdit && sourceTodoId) {
-        const existingRecords = await db.list(db.COLLECTIONS.dailyRecords, {
-          where: { sourceTodoId },
-          limit: 1,
-        });
-        const existing = existingRecords && existingRecords[0];
+        const allRecords = await db.records.listAll();
+        const existing = (allRecords || []).find((r) => r.sourceTodoId === sourceTodoId);
         if (existing) {
           await todo.markConverted(sourceTodoId, existing.uuid).catch(() => {});
           wx.hideLoading();

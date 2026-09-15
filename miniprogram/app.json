@@ -6,6 +6,7 @@
     "pages/reading/reading",
     "pages/library/library",
     "pages/schedule/index",
+    "pages/schedule/course-library/index",
     "pages/todo/todo",
     "pages/mine/mine",
     "pages/mine/privacy/privacy",

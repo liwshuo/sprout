@@ -1,123 +1,154 @@
-<!-- pages/schedule/index.wxml —— 课表 -->
+<!-- pages/schedule/index.wxml —— 课表：周网格总览 / 日视图；课程库拖拽排课 -->
 <view class="container">
   <child-switcher />
-  <view class="page-title">课程表</view>
-  <view class="page-subtitle">孩子每周的课程与兴趣班安排</view>
 
-  <!-- 骨架屏 -->
-  <block wx:if="{{loading}}">
-    <view class="sk-day-block" wx:for="{{[1,2,3,4,5]}}" wx:key="*this">
-      <view class="sk-line short"></view>
-      <view class="sk-line"></view>
-      <view class="sk-line short"></view>
+  <!-- 标题 + 周/日切换 + 课程库入口 -->
+  <view class="sched-toolbar">
+    <view class="toolbar-titles">
+      <view class="page-title">课程表</view>
+      <view class="page-subtitle">从课程库长按拖到时间格排课 · 拖动课程块可调时间</view>
+    </view>
+    <view class="view-seg">
+      <view class="seg-item {{viewMode === 'week' ? 'seg-on' : ''}}" data-mode="week" bindtap="onSwitchView">周</view>
+      <view class="seg-item {{viewMode === 'day' ? 'seg-on' : ''}}" data-mode="day" bindtap="onSwitchView">日</view>
+    </view>
+  </view>
+
+  <!-- 图例 + 课程库开关 -->
+  <view class="legend">
+    <view class="legend-item"><view class="legend-dot dot-school"></view>校内课</view>
+    <view class="legend-item"><view class="legend-dot dot-hobby"></view>兴趣班</view>
+    <view class="legend-lib {{showLibrary ? 'on' : ''}}" bindtap="toggleLibrary">📚 课程库{{showLibrary ? ' ▾' : ' ▸'}}</view>
+  </view>
+
+  <!-- ========== 周视图 ========== -->
+  <scroll-view wx:if="{{viewMode === 'week'}}" class="week-scroll" scroll-x scroll-left="{{scrollLeft}}" bindscroll="onWeekScroll" enable-flex>
+    <view class="grid">
+      <view class="ghead">
+        <view class="gcorner"></view>
+        <view class="dhead {{c.isToday ? 'today' : ''}}" wx:for="{{week.cols}}" wx:for-item="c" wx:key="weekday">
+          <view class="dhead-wd">周{{c.wd}}</view>
+          <view class="dhead-dt">{{c.dateLabel}}</view>
+        </view>
+      </view>
+      <view class="gbody" style="height:{{week.gridHeight}}rpx">
+        <view class="timecol">
+          <view class="th" wx:for="{{week.hours}}" wx:key="label" style="top:{{item.top}}rpx">{{item.label}}</view>
+        </view>
+        <view
+          class="daycol {{c.isToday ? 'today' : ''}}"
+          id="col-{{c.weekday}}"
+          data-weekday="{{c.weekday}}"
+          wx:for="{{week.cols}}"
+          wx:for-item="c"
+          wx:key="weekday"
+        >
+          <view class="hline" wx:for="{{week.lines}}" wx:for-item="ln" wx:key="*this" style="top:{{ln}}rpx"></view>
+          <view class="drop-hint" wx:if="{{dropHint.show && dropHint.weekday === c.weekday}}" style="top:{{dropHint.top}}rpx;height:{{dropHint.height}}rpx">{{dropHint.timeText}}</view>
+          <view
+            class="ev {{ev.todayOff ? 'ev-off' : ''}}"
+            wx:for="{{c.events}}"
+            wx:for-item="ev"
+            wx:key="uuid"
+            style="top:{{ev.top}}rpx;height:{{ev.height}}rpx;background:{{ev.color}}"
+            data-uuid="{{ev.uuid}}"
+            bindtouchstart="onBlockTouchStart"
+            catchtouchmove="onBlockTouchMove"
+            bindtouchend="onBlockTouchEnd"
+            bindtouchcancel="onBlockTouchEnd"
+          >
+            <view class="ev-nm">{{ev.courseName}}</view>
+            <view class="ev-tm">{{ev.startTime}}-{{ev.endTime}}</view>
+            <view class="ev-off" wx:if="{{ev.todayOff}}">今日停</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- ========== 日视图 ========== -->
+  <block wx:if="{{viewMode === 'day'}}">
+    <view class="daytabs">
+      <view
+        class="daytab {{selectedWeekday === t.wd ? 'daytab-on' : ''}} {{t.isToday ? 'daytab-today' : ''}}"
+        wx:for="{{weekTabs}}"
+        wx:for-item="t"
+        wx:key="wd"
+        data-wd="{{t.wd}}"
+        bindtap="onSelectDay"
+      >周{{t.label}}</view>
+    </view>
+    <view class="day-empty" wx:if="{{!loading && day.events.length === 0}}">这一天暂无课程，展开课程库拖课过来</view>
+    <view class="gbody day-body" style="height:{{day.gridHeight}}rpx">
+      <view class="timecol">
+        <view class="th" wx:for="{{day.hours}}" wx:key="label" style="top:{{item.top}}rpx">{{item.label}}</view>
+      </view>
+      <view class="daycol daycol-full" id="col-day" data-weekday="{{selectedWeekday}}">
+        <view class="hline" wx:for="{{day.lines}}" wx:for-item="ln" wx:key="*this" style="top:{{ln}}rpx"></view>
+        <view class="drop-hint" wx:if="{{dropHint.show && dropHint.weekday === selectedWeekday}}" style="top:{{dropHint.top}}rpx;height:{{dropHint.height}}rpx">{{dropHint.timeText}}</view>
+        <view
+          class="ev {{ev.todayOff ? 'ev-off' : ''}}"
+          wx:for="{{day.events}}"
+          wx:for-item="ev"
+          wx:key="uuid"
+          style="top:{{ev.top}}rpx;height:{{ev.height}}rpx;background:{{ev.color}}"
+          data-uuid="{{ev.uuid}}"
+          bindtouchstart="onBlockTouchStart"
+          catchtouchmove="onBlockTouchMove"
+          bindtouchend="onBlockTouchEnd"
+          bindtouchcancel="onBlockTouchEnd"
+        >
+          <view class="ev-nm">{{ev.courseName}}</view>
+          <view class="ev-tm">{{ev.startTime}}-{{ev.endTime}}</view>
+          <view class="ev-off" wx:if="{{ev.todayOff}}">今日停</view>
+        </view>
+      </view>
     </view>
   </block>
 
-  <view class="day-block" wx:for="{{grouped}}" wx:key="weekday">
-    <view class="day-head">
-      <view class="day-label">{{item.label}}</view>
-      <view class="day-line"></view>
-    </view>
-
-    <empty-state
-      wx:if="{{!loading && item.items.length === 0}}"
-      icon="📅"
-      title="{{item.label}}没有安排"
-      subtitle=""
-      size="small"
-    />
-
-    <view class="course-card card {{course._todayOff ? 'course-card-off' : ''}}" wx:for="{{item.items}}" wx:for-item="course" wx:key="uuid">
-      <view class="time-col">
-        <view class="time-start">{{course.startTime}}</view>
-        <view class="time-end text-sub">{{course.endTime}}</view>
-      </view>
-      <view class="course-line" style="background:{{course.type === 'school' ? '#8FC7F0' : '#FF8C42'}}"></view>
-      <view class="flex-1">
-        <view class="row course-name-row">
-          <view class="course-name ellipsis">{{course.courseName}}</view>
-          <view class="off-badge" wx:if="{{course._todayOff}}">今天不上</view>
-        </view>
-        <view class="course-meta text-sub">
-          <text class="type-tag">{{course.type === 'school' ? '校内' : '兴趣班'}}</text>
-          <text wx:if="{{course.teacher}}"> · {{course.teacher}}老师</text>
-          <text wx:if="{{course.location}}"> · {{course.location}}</text>
-        </view>
-        <view class="course-range text-sub" wx:if="{{course.startDate || course.endDate}}">
-          {{course.startDate || '不限'}} — {{course.endDate || '不限'}}
-        </view>
-      </view>
-      <view class="course-actions">
-        <view class="edit-btn" data-uuid="{{course.uuid}}" catchtap="openEdit">编辑</view>
-        <view class="del-btn" data-uuid="{{course.uuid}}" catchtap="onDelete">删除</view>
-      </view>
-    </view>
-  </view>
   <view class="list-footer"></view>
 </view>
 
-<view class="fab" bindtap="openAdd">＋</view>
-
-<!-- 新增/编辑课程弹层（showAdd 与 showEdit 复用同一个 bottom-sheet） -->
-<bottom-sheet
-  show="{{showAdd || showEdit}}"
-  title="{{showEdit ? '编辑课程' : '添加课程'}}"
-  cancel-text="取消"
-  confirm-text="{{showEdit ? '保存修改' : '确认添加'}}"
-  confirm-disabled="{{submitting}}"
-  bind:cancel="closeAdd"
-  bind:confirm="saveCourse"
->
-  <input class="sheet-input" placeholder="课程名称 *" placeholder-class="ph" value="{{form.courseName}}" data-field="courseName" bindinput="onFormInput" />
-  <input class="sheet-input" placeholder="授课老师（选填）" placeholder-class="ph" value="{{form.teacher}}" data-field="teacher" bindinput="onFormInput" />
-  <input class="sheet-input" placeholder="地点（选填）" placeholder-class="ph" value="{{form.location}}" data-field="location" bindinput="onFormInput" />
-
-  <!-- 校内/课外 type chip -->
-  <view class="sheet-field-label text-sub row-label">课程类型</view>
-  <view class="type-chip-row">
-    <view class="type-chip {{form.type === 'school' ? 'type-chip-active type-chip-school' : ''}}" data-type="school" bindtap="onTypeSelect">校内课程</view>
-    <view class="type-chip {{form.type === 'extra' ? 'type-chip-active type-chip-extra' : ''}}" data-type="extra" bindtap="onTypeSelect">课外兴趣班</view>
-  </view>
-
-  <view class="row-between sheet-field">
-    <view class="sheet-field-label">星期</view>
-    <picker mode="selector" range="{{weekdays}}" value="{{form.weekday - 1}}" bindchange="onWeekdayChange">
-      <view class="picker-val">周{{weekdays[form.weekday - 1]}} ›</view>
-    </picker>
-  </view>
-
-  <view class="row-between sheet-field">
-    <view class="sheet-field-label">时间</view>
-    <view class="row">
-      <picker mode="time" value="{{form.startTime}}" bindchange="onStartChange">
-        <view class="picker-val">{{form.startTime}}</view>
-      </picker>
-      <text class="text-sub time-sep">—</text>
-      <picker mode="time" value="{{form.endTime}}" bindchange="onEndChange">
-        <view class="picker-val">{{form.endTime}}</view>
-      </picker>
+<!-- 课程库面板（固定底部，长按 chip 拖到课表加课） -->
+<view class="lib-panel {{showLibrary ? 'lib-open' : ''}}">
+  <view class="lib-head">
+    <view class="lib-tabs">
+      <view class="lib-tab {{libCategory === 'school' ? 'lib-tab-on' : ''}}" data-cat="school" bindtap="switchLibCategory">校内</view>
+      <view class="lib-tab {{libCategory === 'extra' ? 'lib-tab-on' : ''}}" data-cat="extra" bindtap="switchLibCategory">兴趣班</view>
     </view>
+    <view class="lib-manage" bindtap="goCourseLibrary">管理 ›</view>
   </view>
+  <view class="lib-tip">长按课程拖到课表松手加课（校内默认 40 分钟 / 兴趣班 60 分钟）</view>
 
-  <view class="row-between sheet-field">
-    <view class="sheet-field-label">开始日期</view>
-    <picker mode="date" value="{{form.startDate}}" start="{{minStartDate}}" bindchange="onStartDateChange">
-      <view class="picker-val">{{form.startDate || '不限'}} ›</view>
-    </picker>
+  <block wx:if="{{hasTemplates}}">
+    <scroll-view scroll-y class="lib-chips">
+      <view
+        class="chip"
+        wx:for="{{courseLib[libCategory]}}"
+        wx:key="templateId"
+        data-name="{{item.name}}"
+        data-type="{{item.type}}"
+        data-color="{{item.color}}"
+        data-tpl="{{item.templateId}}"
+        bindtouchstart="onChipTouchStart"
+        catchtouchmove="onChipTouchMove"
+        bindtouchend="onChipTouchEnd"
+        bindtouchcancel="onChipTouchEnd"
+      >
+        <view class="chip-dot" style="background:{{item.color}}"></view>{{item.name}}
+      </view>
+      <view wx:if="{{courseLib[libCategory].length === 0}}" class="lib-empty-cat">这个分类还没有课程，去「管理」添加</view>
+    </scroll-view>
+  </block>
+  <view wx:else class="lib-empty">
+    <view class="lib-empty-txt">还没有课程哦</view>
+    <view class="lib-empty-btn" bindtap="goCourseLibrary">去课程库添加</view>
   </view>
-  <view class="row-between sheet-field">
-    <view class="sheet-field-label">结束日期</view>
-    <picker mode="date" value="{{form.endDate}}" start="{{form.startDate || minStartDate}}" bindchange="onEndDateChange">
-      <view class="picker-val">{{form.endDate || '不限'}} ›</view>
-    </picker>
-  </view>
+</view>
 
-  <!-- 今天不上（excludedDates 简化入口） -->
-  <view class="today-off-row">
-    <view class="today-off-label">
-      <text class="today-off-title">今天不上课</text>
-      <text class="text-sub today-off-sub">仅本次（{{todayStr}}）临时停课</text>
-    </view>
-    <switch checked="{{form.excludedDates.indexOf(todayStr) >= 0}}" bindchange="onToggleTodayOff" color="#FF8C42" />
-  </view>
-</bottom-sheet>
+<!-- 拖拽跟随的浮层 -->
+<view
+  wx:if="{{dragGhost.show}}"
+  class="drag-ghost"
+  style="left:{{dragGhost.x}}px;top:{{dragGhost.y}}px;background:{{dragGhost.color}}"
+>{{dragGhost.label}}</view>

@@ -98,12 +98,13 @@ Sprout（暖橙小芽）是一款面向家长的**孩子成长记录**移动应�
 - **书籍详情**：`/reading/book/:id` 展示单本书打卡历史与进度。
 - **空态兜底**：各分区独立空态文案。
 
-### 4.4 课表管理（我的 → 课表）— 已实现
+### 4.4 课表管理（课表 Tab）— 已实现
 
-- **学校课表周网格**：上午 / 下午 × 工作日（默认周一~周五，有周末课程则并入）；格子内课程 Chip 按课程名稳定取色。
-- **课外班周期卡片**：圆形 emoji 头像（按课程名智能匹配）+ 课程名 + 周期规则（每周/隔周/每月/单次）+ 地点/老师 + ⋯ 删除菜单。
-- **添加课程**：全局复用底部弹层（课表页 + 中间 FAB 共用），支持类型（学校/课外班）、多选星期、起止时间、地点、老师；多选周几落库时拆成多行。
-- **空态兜底**：无课程时引导添加。
+- **周网格总览 + 日视图**：横轴周一~周日、纵轴时间轴，课程按真实起止时间比例渲染为色块（颜色取自课程模板），今天列高亮，进入自动把当天列滚到视口居中；顶部「周 / 日」切换，日视图默认选中今天。
+- **课程库（`pages/schedule/course-library`）**：独立管理页，预置一批默认课程（语文/数学/英语/钢琴/游泳/美术/体育…，首次进入自动 seed），支持增删改（名称 / 分类〔校内·兴趣班〕/ 颜色）；数据存 `course_templates` 集合，以孩子为锚点共享。
+- **拖拽排课**：课表页底部可展开「课程库」面板作为拖拽源，长按课程 chip 拾起、拖到时间格松手即建课（吸附到星期列 + 30 分钟格，校内默认 40min / 兴趣班 60min，带时间冲突校验，落库 `schedule_items` 并记 `templateId`）；拖到边缘停留自动横向滚动。
+- **课程块交互**：**拖动 = 调整时间/星期**（保持时长，冲突校验）；**长按 = 删除确认**；**点击不再弹编辑页**。原左下角「＋」新增入口已移除，新增/编辑课程统一收敛到课程库。
+- **空态兜底**：无课程模板时，面板引导「去课程库添加」。
 
 ### 4.5 我的 / 周报（我的 Tab）— 已实现
 
@@ -277,7 +278,7 @@ lib/
 
 依赖方向单向：`pages → components / services → utils → wx.cloud`。禁止 services 依赖 pages、utils 依赖 services。
 
-### 8.2 云数据库集合（10 个，CloudBase 文档型）
+### 8.2 云数据库集合（11 个，CloudBase 文档型）
 
 - 归属体系：`ownerId`（unionid 优先否则 openid）+ 业务集合加 `childId`（指向 `children.uuid`）。
 - 同步三件套：`uuid`（跨端业务主键）/ `updatedAt`（毫秒时间戳）/ `isDeleted`（软删）。
@@ -288,7 +289,8 @@ lib/
 | `users` | ownerId | 账号（新增 `role` 家长角色字段，枚举 `dad`/`mom`/`grandpa`/`grandma`/`grandpa_m`/`grandma_m`/`other`；首次进入引导选角色，选后点击家长行可修改） | ✅ 已实现 |
 | `children` | ownerId | 孩子档案（多孩子；字段 `name`〔大名或小名均可〕/`birthDate`/`avatarFileId`/`sortOrder`，P0 扩展新增 `gender`〔`boy`/`girl`/`unknown`〕/`gradeOverride`〔手动覆盖年级〕；年龄文字/年级/年龄段由 `utils/date.js` 的 `ageText`/`gradeOf`/`ageRangeOf` 派生） | ✅ 已实现 |
 | `daily_records` | ownerId+childId | 成长记录（日历/周报聚合主键 `eventDate`） | ✅ 已实现 |
-| `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间） | ✅ 已实现 |
+| `schedule_items` | ownerId+childId | 课表/课外班（weekday + recurrence 规则；weekly 周展开已落地，支持 startDate/endDate 生效区间；新增 `templateId`〔引用 `course_templates.uuid`〕/`color` 快照） | ✅ 已实现 |
+| `course_templates` | ownerId+childId | 课程库模板（课程分类：`name`/`type`〔`school`/`extra`〕/`color`/`isPreset`；首次进入课程库页自动 seed 一批预置课程；供课表拖拽排课引用） | ✅ 已实现 |
 | `todos` | ownerId+childId | 孩子待办（字段 `title`/`category`〔作业/生活/兴趣/其他〕/`done`/`dueDate`〔YYYY-MM-DD 选填〕/`remark`；`utils/todo.js` 封装 CRUD + 勾选完成） | ✅ 已实现 |
 | `books` | ownerId+childId | 书架（status 由打卡派生跃迁；新增 `isbn`/`seriesUuid`/`seriesIndex`/`coverExternalUrl`/`libraryUuid` 字段） | ✅ 已实现 |
 | `reading_logs` | ownerId+childId | 阅读打卡（日历第三源 `readDate`） | ✅ 已实现（打卡写入闭环 + 状态跃迁 + 进度派生） |
@@ -298,7 +300,7 @@ lib/
 
 字段与索引明细见架构文档 §2.3。
 
-**权限（自定义安全规则，见 [`miniprogram/docs/SECURITY_RULES.md`](../miniprogram/docs/SECURITY_RULES.md)）**：多家长共享以「孩子」为锚点，`children` 与 7 个业务集合统一走安全规则 `auth.openid in doc.members`（`members` = 有权访问该孩子的 **openid** 数组，冗余在每条文档上；孩子及 owner 成员关系由 `childShare.createChild` 创建，业务文档由 `db.create()` 盖初值，成员变更由 `childShare` 同步维护）。选用纯冗余而非跨集合 `get()`，因安全规则只有 `auth.openid`（拿不到 unionid）、且 `childId` 存 `uuid`≠`_id` 无法按 `_id` 寻址。`child_members` 只读自己（`doc.openid==auth.openid`）、`child_invites` 前端全禁、`users` 只读写自己、成员写操作与邀请全部走 `childShare` 云函数兜底；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。项目尚未上线，不保留历史数据迁移或 backfill 逻辑。
+**权限（自定义安全规则，见 [`miniprogram/docs/SECURITY_RULES.md`](../miniprogram/docs/SECURITY_RULES.md)）**：多家长共享以「孩子」为锚点，`children` 与 8 个业务集合（`daily_records`/`schedule_items`/`course_templates`/`todos`/`books`/`reading_logs`/`series`/`weekly_reports`）统一走安全规则 `auth.openid in doc.members`（`members` = 有权访问该孩子的 **openid** 数组，冗余在每条文档上；孩子及 owner 成员关系由 `childShare.createChild` 创建，业务文档由 `db.create()` 盖初值，成员变更由 `childShare` 同步维护）。选用纯冗余而非跨集合 `get()`，因安全规则只有 `auth.openid`（拿不到 unionid）、且 `childId` 存 `uuid`≠`_id` 无法按 `_id` 寻址。`child_members` 只读自己（`doc.openid==auth.openid`）、`child_invites` 前端全禁、`users` 只读写自己、成员写操作与邀请全部走 `childShare` 云函数兜底；`book_library` 为「所有人可读」的公共只读集合（写入由后台/控制台导入完成，见 `miniprogram/scripts/README.md`）。项目尚未上线，不保留历史数据迁移或 backfill 逻辑。
 
 ### 8.3 日历聚合口径（核心业务）
 

@@ -94,6 +94,19 @@ describe('childShare.listChildData', () => {
     expect(res.ok).toBe(true);
     expect(res.items).toHaveLength(150);
   });
+
+  test('course_templates 属于白名单，成员可读该孩子的课程模板', async () => {
+    setup(withOwnerMembership({
+      course_templates: [
+        { _id: 't1', uuid: 't1', childId: 'c1', isDeleted: false, name: '数学', type: 'school' },
+        { _id: 't2', uuid: 't2', childId: 'c1', isDeleted: true },   // 已删除 → 排除
+        { _id: 't3', uuid: 't3', childId: 'c2', isDeleted: false },  // 别的孩子 → 排除
+      ],
+    }), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'listChildData', collection: 'course_templates', childId: 'c1' });
+    expect(res.ok).toBe(true);
+    expect(res.items.map((x) => x.uuid)).toEqual(['t1']);
+  });
 });
 
 describe('childShare.listTodos', () => {
@@ -205,5 +218,32 @@ describe('childShare.convertTodoToRecord', () => {
     });
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/无权/);
+  });
+});
+
+describe('childShare.getChildMembers', () => {
+  test('成员可拿到该孩子权威 members(openid)', async () => {
+    setup(withOwnerMembership({
+      children: [
+        { _id: 'ch1', uuid: 'c1', ownerId: 'p1', name: '小明', members: ['p1', 'p2'], isDeleted: false },
+      ],
+    }), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'getChildMembers', childId: 'c1' });
+    expect(res.ok).toBe(true);
+    expect(res.members).toEqual(['p1', 'p2']);
+  });
+
+  test('非成员被拒，拿不到 members', async () => {
+    setup(withOwnerMembership(), { OPENID: 'stranger' });
+    const res = await childShare.main({ action: 'getChildMembers', childId: 'c1' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/无权/);
+  });
+
+  test('缺少 childId 时报错', async () => {
+    setup(withOwnerMembership(), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'getChildMembers' });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/childId/);
   });
 });

@@ -1,0 +1,100 @@
+<!-- pages/schedule/course-library/index.wxml —— 课程库 -->
+<view class="container">
+  <child-switcher />
+
+  <view class="cl-head">
+    <view>
+      <view class="page-title">课程库</view>
+      <view class="page-subtitle">在这里维护课程分类，回到课表长按拖到时间格排课</view>
+    </view>
+  </view>
+
+  <block wx:if="{{hasChild}}">
+    <!-- 校内课 -->
+    <view class="cl-section">
+      <view class="cl-sec-head"><view class="cl-dot dot-school"></view>校内课</view>
+      <view class="cl-grid">
+        <view
+          class="cl-card"
+          wx:for="{{schoolList}}"
+          wx:key="uuid"
+          data-tpl="{{item}}"
+          bindtap="openEdit"
+          bindlongpress="onCardLongPress"
+        >
+          <view class="cl-color" style="background:{{item.color}}"></view>
+          <view class="cl-name">{{item.name}}</view>
+        </view>
+        <view class="cl-card cl-add" bindtap="openAdd">＋ 新增</view>
+      </view>
+    </view>
+
+    <!-- 兴趣班 -->
+    <view class="cl-section">
+      <view class="cl-sec-head"><view class="cl-dot dot-hobby"></view>兴趣班</view>
+      <view class="cl-grid">
+        <view
+          class="cl-card"
+          wx:for="{{extraList}}"
+          wx:key="uuid"
+          data-tpl="{{item}}"
+          bindtap="openEdit"
+          bindlongpress="onCardLongPress"
+        >
+          <view class="cl-color" style="background:{{item.color}}"></view>
+          <view class="cl-name">{{item.name}}</view>
+        </view>
+        <view class="cl-card cl-add" bindtap="openAdd">＋ 新增</view>
+      </view>
+    </view>
+
+    <view class="cl-tip">轻点课程可编辑名称 / 分类 / 颜色，长按可删除</view>
+  </block>
+
+  <empty-state
+    wx:if="{{!hasChild}}"
+    icon="📚"
+    title="还没有孩子"
+    subtitle="先在「我的」里添加或选择一个孩子，再来维护课程库"
+  />
+</view>
+
+<!-- 新增 / 编辑课程模板 -->
+<bottom-sheet
+  show="{{showSheet}}"
+  title="{{editingUuid ? '编辑课程' : '新增课程'}}"
+  confirm-text="{{editingUuid ? '保存' : '添加'}}"
+  confirm-disabled="{{submitting}}"
+  bind:cancel="closeSheet"
+  bind:confirm="onSave"
+>
+  <view class="fld">
+    <view class="fld-label">课程名称</view>
+    <input class="fld-input" placeholder="如：数学、钢琴" value="{{form.name}}" bindinput="onNameInput" maxlength="12" />
+  </view>
+
+  <view class="fld">
+    <view class="fld-label">分类</view>
+    <view class="type-seg">
+      <view class="type-item {{form.type === 'school' ? 'type-on' : ''}}" data-type="school" bindtap="onTypeSelect">校内课</view>
+      <view class="type-item {{form.type === 'extra' ? 'type-on' : ''}}" data-type="extra" bindtap="onTypeSelect">兴趣班</view>
+    </view>
+  </view>
+
+  <view class="fld">
+    <view class="fld-label">颜色</view>
+    <view class="color-grid">
+      <view
+        class="color-opt {{form.color === c ? 'color-on' : ''}}"
+        wx:for="{{colors}}"
+        wx:for-item="c"
+        wx:key="*this"
+        style="background:{{c}}"
+        data-color="{{c}}"
+        bindtap="onColorSelect"
+      ></view>
+    </view>
+  </view>
+
+  <view wx:if="{{editingUuid}}" class="sheet-delete" bindtap="onDelete">删除这个课程</view>
+</bottom-sheet>
