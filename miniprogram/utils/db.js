@@ -37,6 +37,16 @@ const COLLECTIONS = {
 // 必须在 where 中显式使用该值，规则引擎才能证明查询结果满足 auth.openid 约束。
 const AUTH_OPENID = '{openid}';
 
+// 以孩子为锚点、走安全规则 "auth.openid in doc.members" 的共享业务集合。
+// 这些集合的写操作（更新 / 软删）统一经 childShare 受信端执行：前端 doc().update()
+// 仍受 update 规则限制，历史数据 / 其他家长创建的文档若 members 不含当前 openid，会被
+// -502003 DATABASE_PERMISSION_DENIED 拒绝（课表拖拽调时间、长按删除即命中）。
+// ⚠️ 必须与 cloudfunctions/childShare/index.js 的 BIZ_COLLECTIONS 保持一致。
+const SHARED_BIZ_COLLECTIONS = [
+  'daily_records', 'books', 'todos', 'schedule_items',
+  'reading_logs', 'series', 'weekly_reports', 'course_templates',
+];
+
 function db() {
   if (!wx.cloud) throw new Error('云能力不可用');
   return wx.cloud.database();
@@ -306,17 +316,33 @@ async function create(col, doc, { withChild = true } = {}) {
 
 /** 按 uuid 更新（自动刷新 updatedAt）。共享模型下按 uuid 定位（不再按
  *  ownerId），加入该孩子的家长均可编辑同一条数据。
- *  ⚠️ 前端安全规则无法证明 members 数组查询，直接 where 定位会被 DATABASE_PERMISSION_DENIED；
- *  故先复用 getByUuid（走 childShare.listChildData 云函数）拿到 _id，再按 _id 更新
- *  （doc(_id).update 的写权限由安全规则 auth.openid in doc.members 判定）。 */
+ *  ⚠️ 共享业务集合（SHARED_BIZ_COLLECTIONS）的写操作走 childShare 受信端：前端
+ *  doc().update() 仍受 update 安全规则限制，历史数据 / 其他家长创建的文档若 members 不含
+ *  当前 openid 会 -502003；受信端先校验成员身份再以管理员权限按 uuid 更新。
+ *  其余集合（children/users 等各有自身规则）仍在前端按 uuid 命中后按 _id 更新。 */
 async function updateByUuid(col, uuid, patch) {
   const openid = auth.openid ? auth.openid() : '';
   if (!openid) throw new Error('未登录，无法更新');
-  const doc = await getByUuid(col, uuid);
-  if (!doc || !doc._id) throw new Error('记录不存在');
+  if (SHARED_BIZ_COLLECTIONS.indexOf(col) !== -1) {
+    const { childId } = scope();
+    if (!childId) throw new Error('未选择孩子，无法更新');
+    const response = await wx.cloud.callFunction({
+      name: 'childShare',
+      data: { action: 'updateChildData', collection: col, childId, uuid, patch },
+    });
+    const result = (response && response.result) || {};
+    if (!result.ok) throw new Error(result.error || `更新 ${col} 失败`);
+    return true;
+  }
+  const { data } = await db()
+    .collection(col)
+    .where({ uuid, members: AUTH_OPENID })
+    .limit(1)
+    .get();
+  if (!data || !data.length) throw new Error('记录不存在');
   await db()
     .collection(col)
-    .doc(doc._id)
+    .doc(data[0]._id)
     .update({ data: Object.assign({}, patch, { updatedAt: Date.now() }) });
   return true;
 }

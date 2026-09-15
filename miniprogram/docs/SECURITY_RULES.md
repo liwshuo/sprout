@@ -84,6 +84,7 @@ auth.openid in doc.members
 - 前端若直接查询，只能读到**自己的**成员记录；正式孩子列表统一调用 `childShare.listChildren`，待办列表调用 `childShare.listTodos`，其余共享业务集合列表调用 `childShare.listChildData`。云函数先校验成员身份再返回数据，避免复杂范围查询/排序无法通过前端规则证明而被静默降级为空。
 - **单条读取同样收口云函数**：`db.getByUuid()` 不再直查（`where members` 数组查询前端规则无法证明，会被 `DATABASE_PERMISSION_DENIED`），改为复用 `childShare.listChildData` 拉取当前孩子该集合后按 `uuid` 命中。
 - **写入前盖 `members`**：`db.create()` 需要把所属 `children.members` 复制到新业务文档，但前端不能直读 `children`，故通过 `childShare.getChildMembers` 取权威 members(openid)（云函数以管理员身份读取并校验调用者成员资格）后再写入。
+- **共享业务集合的更新/软删同样收口云函数**：`db.updateByUuid()` / `softDelete()` 对 `SHARED_BIZ_COLLECTIONS`（8 个业务集合）改走 `childShare.updateChildData`。原因：前端 `doc(_id).update()` 仍受 `update` 规则 `auth.openid in doc.members` 限制，历史数据 / 其他家长创建的文档若 `members` 不含当前 openid 会被 `-502003 DATABASE_PERMISSION_DENIED` 拒绝（课表拖拽调时间、长按删除即命中）。`updateChildData` 先校验 `child_members` 成员身份，再以管理员权限按 `uuid`/`childId` 更新，并保护 `uuid`/`ownerId`/`childId`/`members`/`_id` 不被篡改。`children`/`users` 等非共享集合仍走前端按 `_id` 更新。
 - `listChildren` 同时用 `ownerId` 校验创建者自己的孩子；发现孩子档案存在但 owner 成员关系或 `members` 缺失时自动补齐，用于修复异常中断产生的孤立数据。
 - **成员管理列表**（某孩子的全部成员）同样必须调用 `childShare` 的 `listMembers`（云函数以管理员身份读取，规则不拦）。
 - 所有写入（加入/移除/退出/删除孩子）一律走 `childShare` 云函数；`deleteChild` 仅允许档案创建者调用，并统一软删除档案、成员关系、邀请及关联业务数据。

@@ -109,6 +109,75 @@ describe('childShare.listChildData', () => {
   });
 });
 
+describe('childShare.updateChildData', () => {
+  test('非白名单集合被拒', async () => {
+    setup(withOwnerMembership(), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'updateChildData', collection: 'users', childId: 'c1', uuid: 'x', patch: {} });
+    expect(res).toEqual({ ok: false, error: '不支持的集合' });
+  });
+
+  test('非成员被拒', async () => {
+    setup(withOwnerMembership({
+      schedule_items: [{ _id: 's1', uuid: 's1', childId: 'c1', isDeleted: false, startTime: '08:00' }],
+    }), { OPENID: 'stranger' });
+    const res = await childShare.main({ action: 'updateChildData', collection: 'schedule_items', childId: 'c1', uuid: 's1', patch: { startTime: '09:00' } });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/无权/);
+  });
+
+  test('成员按 uuid 更新课程时间（即便 members 不含自己也能改，绕过前端 update 规则）', async () => {
+    setup(withOwnerMembership({
+      // members 只有 p1，另一位成员 p2 也应能改（受信端只校验 child_members 成员身份）
+      child_members: [
+        { _id: 'm1', childId: 'c1', ownerId: 'p1', openid: 'p1', isOwner: true, isDeleted: false },
+        { _id: 'm2', childId: 'c1', ownerId: 'p2', openid: 'p2', isOwner: false, isDeleted: false },
+      ],
+      schedule_items: [
+        { _id: 's1', uuid: 's1', childId: 'c1', members: ['p1'], isDeleted: false, weekday: 1, startTime: '08:00', endTime: '08:40' },
+      ],
+    }), { OPENID: 'p2' });
+    const res = await childShare.main({ action: 'updateChildData', collection: 'schedule_items', childId: 'c1', uuid: 's1', patch: { weekday: 3, startTime: '09:10', endTime: '09:50' } });
+    expect(res.ok).toBe(true);
+    const doc = (await mockDb.collection('schedule_items').doc('s1').get()).data;
+    expect(doc.weekday).toBe(3);
+    expect(doc.startTime).toBe('09:10');
+    expect(typeof doc.updatedAt).toBe('number');
+  });
+
+  test('软删除：patch isDeleted=true 生效', async () => {
+    setup(withOwnerMembership({
+      schedule_items: [{ _id: 's1', uuid: 's1', childId: 'c1', members: ['p1'], isDeleted: false }],
+    }), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'updateChildData', collection: 'schedule_items', childId: 'c1', uuid: 's1', patch: { isDeleted: true } });
+    expect(res.ok).toBe(true);
+    const doc = (await mockDb.collection('schedule_items').doc('s1').get()).data;
+    expect(doc.isDeleted).toBe(true);
+  });
+
+  test('保护字段：不允许经本接口篡改 childId/ownerId/members', async () => {
+    setup(withOwnerMembership({
+      schedule_items: [{ _id: 's1', uuid: 's1', childId: 'c1', ownerId: 'p1', members: ['p1'], isDeleted: false, startTime: '08:00' }],
+    }), { OPENID: 'p1' });
+    const res = await childShare.main({
+      action: 'updateChildData', collection: 'schedule_items', childId: 'c1', uuid: 's1',
+      patch: { startTime: '10:00', childId: 'c2', ownerId: 'evil', members: ['evil'] },
+    });
+    expect(res.ok).toBe(true);
+    const doc = (await mockDb.collection('schedule_items').doc('s1').get()).data;
+    expect(doc.startTime).toBe('10:00');
+    expect(doc.childId).toBe('c1');
+    expect(doc.ownerId).toBe('p1');
+    expect(doc.members).toEqual(['p1']);
+  });
+
+  test('记录不存在时报错', async () => {
+    setup(withOwnerMembership(), { OPENID: 'p1' });
+    const res = await childShare.main({ action: 'updateChildData', collection: 'schedule_items', childId: 'c1', uuid: 'nope', patch: { startTime: '10:00' } });
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/不存在/);
+  });
+});
+
 describe('childShare.listTodos', () => {
   test('非成员被拒', async () => {
     setup(withOwnerMembership(), { OPENID: 'stranger' });

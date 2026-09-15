@@ -304,6 +304,36 @@ async function listChildData(collection, childId, ownerId) {
 }
 
 /**
+ * 当前成员更新指定孩子的共享业务集合单条文档（受信端，绕过前端 update 安全规则）。
+ * 背景：前端 doc().update() 受规则 "auth.openid in doc.members" 限制，历史数据 / 其他家长
+ *   创建的文档若 members 不含调用者 openid，会 -502003 DATABASE_PERMISSION_DENIED
+ *   （课表拖拽调时间、长按删除即命中此坑）。故写操作统一走此处：先校验成员身份，
+ *   再以云函数管理员权限按 uuid 更新，并顺带把该文档 members 补成权威成员数组自愈历史缺失。
+ * 保护字段：uuid/ownerId/childId/members/_id 不允许经本接口篡改。
+ */
+async function updateChildData(collection, childId, uuid, patch, ownerId) {
+  if (!BIZ_COLLECTIONS.includes(collection)) return { ok: false, error: '不支持的集合' };
+  if (!childId || !uuid) return { ok: false, error: '缺少 childId 或 uuid' };
+  const membership = await findMembership(childId, ownerId);
+  if (!membership) return { ok: false, error: '无权修改该孩子的数据' };
+  const res = await db.collection(collection)
+    .where({ uuid, childId })
+    .limit(1)
+    .get();
+  const doc = res.data && res.data[0];
+  if (!doc) return { ok: false, error: '记录不存在' };
+  const data = (patch && typeof patch === 'object') ? Object.assign({}, patch) : {};
+  delete data._id;
+  delete data.uuid;
+  delete data.ownerId;
+  delete data.childId;
+  delete data.members;
+  data.updatedAt = Date.now();
+  await db.collection(collection).doc(doc._id).update({ data });
+  return { ok: true, uuid };
+}
+
+/**
  * 把已完成待办原子转换为成长记录。
  * 事务同时校验待办、创建确定性 ID 的记录并回写 convertedRecordId；并发请求只会保留一条记录。
  */
@@ -651,6 +681,8 @@ exports.main = async (event = {}) => {
         return await listTodos(event.childId, ownerId);
       case 'listChildData':
         return await listChildData(event.collection, event.childId, ownerId);
+      case 'updateChildData':
+        return await updateChildData(event.collection, event.childId, event.uuid, event.patch, ownerId);
       case 'convertTodoToRecord':
         return await convertTodoToRecord(event, ownerId, ctxOpenid());
       case 'createInvite':
