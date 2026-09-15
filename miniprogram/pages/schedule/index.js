@@ -17,6 +17,8 @@ const GRID_W_RPX = TIME_W + 7 * COL_W;   // 1120
 const DEFAULT_DUR = { school: 40, extra: 60 };
 // 拖动课程块的长按删除阈值
 const LONGPRESS_MS = 500;
+// 拖拽时间吸附精度（分钟）
+const SNAP_MIN = 10;
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function toMin(t) { const [h, m] = String(t || '0:0').split(':').map(Number); return h * 60 + m; }
@@ -355,8 +357,8 @@ Page({
     const ratio = this._ratio || 0.5;
     const hourPx = HOUR_H * ratio;
     const span = (this._end - this._base) * 60;
-    let minutes = Math.round(((y - rect.top) / hourPx * 60) / 30) * 30;
-    minutes = clamp(minutes, 0, span - 30);
+    let minutes = Math.round(((y - rect.top) / hourPx * 60) / SNAP_MIN) * SNAP_MIN;
+    minutes = clamp(minutes, 0, span - SNAP_MIN);
     return { minutes, span };
   },
 
@@ -425,6 +427,7 @@ Page({
       wx.showToast({ title: `已移到周${WEEKDAYS[weekday - 1]} ${startTime}`, icon: 'none' });
       this.refresh();
     } catch (e) {
+      console.error('[schedule] 调整课程时间失败', e);
       wx.hideLoading();
       wx.showToast({ title: '调整失败', icon: 'none' });
     }
@@ -443,6 +446,7 @@ Page({
           wx.showToast({ title: '已删除', icon: 'success' });
           this.refresh();
         } catch (e) {
+          console.error('[schedule] 删除课程失败', e);
           wx.showToast({ title: '删除失败', icon: 'none' });
         }
       },

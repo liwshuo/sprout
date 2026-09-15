@@ -18,9 +18,12 @@
   - 时间轴范围按当前课程数据在默认 8:00–19:00 基础上动态外扩
 - **课表交互全面改为拖拽驱动，移除课表内加号与编辑弹层**：
   - 去掉课表左下角「＋」FAB 与新增/编辑课程 `bottom-sheet`，加课统一走「课程库拖拽」；点空白格不再弹出添加
-  - 课程色块：**拖动**调整星期/开始时间（吸附到 30 分钟格，带时间冲突校验）、**长按**（~500ms）弹出删除确认、**点击不再进入编辑页**
+  - 课程色块：**拖动**调整星期/开始时间（吸附到 10 分钟格，带时间冲突校验）、**长按**（~500ms）弹出删除确认、**点击不再进入编辑页**
 
 ### Fixed
+- **课表课程块「拖拽调时间」与「长按删除」均失败**：根因是 `utils/db.js` 的 `updateByUuid()` 仍用前端 `where({ uuid, members })` 数组查询定位记录，安全规则无法证明→ `DATABASE_PERMISSION_DENIED`（`scheduleItems.update` 调时间、`softDelete`→`remove` 删除都走它）。改为先复用 `getByUuid()`（走 `childShare.listChildData` 云函数）拿到 `_id`，再按 `doc(_id).update()` 更新/软删，与列表/单条读取同源收口
+- **课程库页「+ 新增」点击无反应**：`openAdd` 入口先调 `auth.openLoginPage()`，在 `navigateTo` 子页面上 `app.globalData.loginVerified` 未就绪（如 devtools 重新编译后）会误触发 `wx.switchTab` 跳「我的」，表现为「点了没反应」。已移除该 switchTab 拦截，改为仅校验是否已选中孩子（写入时安全规则仍校验登录态）
+- **课程库「校内 / 兴趣班」预置课程不显示**：DB 化后预置课程改由首次进入 `ensureSeed()` 写入 `course_templates`，依赖 `childShare` 云函数重新部署 + 集合安全规则；补充读取/写入失败的 `console.error` 明确提示（多为云函数未重新部署或规则未配置），便于定位
 - **「我的」页家长角色选择弹窗点击无反应**：`ROLE_OPTIONS` 有 7 项，超过 `wx.showActionSheet` 最多 6 项限制且原 `fail` 回调静默吞错，表现为「点了没弹窗」。改用自定义 `bottom-sheet` 角色网格承载 7 个角色选项，选中即保存
 - **共享数据前端直读被 `DATABASE_PERMISSION_DENIED` 拦截**：`where members` 数组查询前端安全规则无法证明，导致课表 `refresh`、`db.getByUuid`、成长记录去重查询等直读被拒（列表空/保存后不刷新，且新数据的 `members` 只盖到创建者、其他家长看不到）。改为统一收口 `childShare` 云函数：
   - `pages/schedule/index.js` 课表列表改用 `db.scheduleItems.listAll()`（走 `listChildData`）

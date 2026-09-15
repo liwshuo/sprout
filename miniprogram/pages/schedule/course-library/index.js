@@ -49,6 +49,7 @@ Page({
     try {
       list = seed ? await db.courseTemplates.ensureSeed() : await db.courseTemplates.listAll();
     } catch (e) {
+      console.error('[course-library] 读取/初始化课程库失败（多为 childShare 云函数未重新部署或 course_templates 安全规则未配置）', e);
       list = [];
     }
     this.setData({
@@ -59,7 +60,8 @@ Page({
   },
 
   openAdd() {
-    if (auth.openLoginPage()) return;
+    // 能进入本页并展示课程库即已选中孩子（写入时安全规则仍会校验登录态），
+    // 故不再用 openLoginPage 的 switchTab 拦截（子页面下会误跳「我的」导致「点了没反应」）。
     if (!app.globalData.activeChildId) {
       wx.showToast({ title: '请先添加/选择孩子', icon: 'none' });
       return;
@@ -113,6 +115,7 @@ Page({
       wx.showToast({ title: '已保存', icon: 'success' });
       this.refresh(false);
     } catch (err) {
+      console.error('[course-library] 保存课程失败（多为 childShare 云函数未重新部署或 course_templates 安全规则未配置）', err);
       wx.hideLoading();
       this.setData({ submitting: false });
       wx.showToast({ title: '保存失败', icon: 'none' });

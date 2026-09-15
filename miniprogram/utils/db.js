@@ -305,19 +305,18 @@ async function create(col, doc, { withChild = true } = {}) {
 }
 
 /** 按 uuid 更新（自动刷新 updatedAt）。共享模型下按 uuid 定位（不再按
- *  ownerId），加入该孩子的家长均可编辑同一条数据。 */
+ *  ownerId），加入该孩子的家长均可编辑同一条数据。
+ *  ⚠️ 前端安全规则无法证明 members 数组查询，直接 where 定位会被 DATABASE_PERMISSION_DENIED；
+ *  故先复用 getByUuid（走 childShare.listChildData 云函数）拿到 _id，再按 _id 更新
+ *  （doc(_id).update 的写权限由安全规则 auth.openid in doc.members 判定）。 */
 async function updateByUuid(col, uuid, patch) {
   const openid = auth.openid ? auth.openid() : '';
   if (!openid) throw new Error('未登录，无法更新');
-  const { data } = await db()
-    .collection(col)
-    .where({ uuid, members: AUTH_OPENID })
-    .limit(1)
-    .get();
-  if (!data || !data.length) throw new Error('记录不存在');
+  const doc = await getByUuid(col, uuid);
+  if (!doc || !doc._id) throw new Error('记录不存在');
   await db()
     .collection(col)
-    .doc(data[0]._id)
+    .doc(doc._id)
     .update({ data: Object.assign({}, patch, { updatedAt: Date.now() }) });
   return true;
 }
