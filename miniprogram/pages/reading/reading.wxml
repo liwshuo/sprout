@@ -1,10 +1,42 @@
-<!-- pages/reading/reading.wxml —— 阅读书架 -->
+<!-- pages/reading/reading.wxml —— 我的书架：概览统计 + 大封面卡片 + 阅读打卡 -->
 <view class="container">
   <child-switcher />
-  <view class="page-title">阅读书架</view>
-  <view class="page-subtitle">陪孩子一起读过的每一本好书</view>
 
-  <!-- 状态筛选 -->
+  <!-- 顶部标题 -->
+  <view class="shelf-head">
+    <view class="shelf-title">我的书架 📚</view>
+    <view class="shelf-sub">陪孩子一起读过的每一本好书</view>
+  </view>
+
+  <!-- 阅读概览：藏书 / 在读 / 读完 -->
+  <view class="stat-strip">
+    <view class="stat-cell">
+      <view class="stat-num">{{stats.total}}</view>
+      <view class="stat-label">藏书</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-cell">
+      <view class="stat-num stat-reading">{{stats.reading}}</view>
+      <view class="stat-label">在读</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-cell">
+      <view class="stat-num stat-done">{{stats.done}}</view>
+      <view class="stat-label">读完</view>
+    </view>
+  </view>
+
+  <!-- 去公共书库找书入口（区分「公共书库」与「我的书架」） -->
+  <view class="library-entry" bindtap="goLibrary">
+    <view class="entry-emoji">🔍</view>
+    <view class="entry-main">
+      <view class="entry-title">去公共书库找书</view>
+      <view class="entry-desc">分龄精选好书，一键加入书架</view>
+    </view>
+    <view class="entry-arrow">›</view>
+  </view>
+
+  <!-- 状态筛选（带计数） -->
   <view class="tab-bar">
     <view
       class="tab {{activeTab === item.key ? 'active' : ''}}"
@@ -12,51 +44,62 @@
       wx:key="key"
       data-key="{{item.key}}"
       bindtap="switchTab"
-    >{{item.label}}</view>
+    >
+      <text class="tab-label">{{item.label}}</text>
+      <text class="tab-count">{{tabCounts[item.key]}}</text>
+    </view>
   </view>
 
   <empty-state
     wx:if="{{!loading && renderList.length === 0}}"
     icon="📚"
-    title="书架还空着"
-    subtitle="点右下角 + 添加孩子的第一本绘本"
-    action-text="＋ 添加第一本书"
+    title="{{activeTab === 'all' ? '书架还空着' : '这个分类还没有书'}}"
+    subtitle="{{activeTab === 'all' ? '点右下角 + 或从公共书库添加第一本绘本' : '换个分类看看，或添加新书'}}"
+    action-text="＋ 添加一本书"
     bind:action="openAddChoice"
   />
 
-  <!-- 书籍/系列网格 -->
-  <view class="book-grid">
+  <!-- 书籍/系列网格（两列大卡） -->
+  <view class="book-grid" wx:if="{{renderList.length > 0}}">
     <block wx:for="{{renderList}}" wx:key="key">
       <!-- 系列卡片 -->
-      <view wx:if="{{item.isSeries}}" class="book-card" data-uuid="{{item.seriesUuid}}" bindtap="openSeries">
+      <view wx:if="{{item.isSeries}}" class="book-card series-card" data-uuid="{{item.seriesUuid}}" bindtap="openSeries">
         <view class="cover series-stack">
           <view class="stack-layer stack-3"></view>
           <view class="stack-layer stack-2"></view>
           <view class="stack-layer stack-1">
             <image wx:if="{{item.covers[0]}}" class="cover-img" src="{{item.covers[0]}}" mode="aspectFill" />
-            <view wx:else class="cover-placeholder">{{item.name}}</view>
+            <view wx:else class="cover-placeholder"><text class="ph-char">{{item.name}}</text></view>
           </view>
-          <view class="series-badge">系列</view>
+          <view class="corner-badge series-badge">系列 · {{item.progress.total}}册</view>
         </view>
-        <view class="book-title ellipsis">{{item.name}}</view>
+        <view class="book-title ellipsis-2">{{item.name}}</view>
         <view class="series-progress">
-          <view class="progress-track">
-            <view class="progress-fill" style="width:{{item.progress.total ? (item.progress.done * 100 / item.progress.total) : 0}}%"></view>
+          <view class="series-vol-line">
+            <text class="vol-lbl">已读 {{item.progress.done}} / 共 {{item.progress.total}} 册</text>
+            <text class="vol-pct">{{item.progressPct}}%</text>
           </view>
-          <view class="progress-text text-sub">已读 {{item.progress.done}}/{{item.progress.total}}</view>
+          <view class="progress-track">
+            <view class="progress-fill" style="width:{{item.progressPct}}%"></view>
+          </view>
         </view>
       </view>
 
       <!-- 单本书卡片 -->
       <view wx:else class="book-card">
-        <view class="cover" data-uuid="{{item.uuid}}" bindtap="cycleStatus">
+        <view class="cover" data-uuid="{{item.uuid}}" data-title="{{item.title}}" bindtap="openCheckin">
           <image wx:if="{{item.coverUrl}}" class="cover-img" src="{{item.coverUrl}}" mode="aspectFill" />
-          <view wx:else class="cover-placeholder">{{item.title}}</view>
-          <view class="status-badge status-{{item.status}}">{{item.statusLabel}}</view>
+          <view wx:else class="cover-placeholder"><text class="ph-char">{{item.title}}</text></view>
+          <view class="corner-badge status-badge status-{{item.status}}">{{item.statusLabel}}</view>
         </view>
-        <view class="book-title ellipsis">{{item.title}}</view>
-        <view class="book-author ellipsis text-sub" wx:if="{{item.author}}">{{item.author}}</view>
-        <view class="checkin-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" catchtap="openCheckin">📖 打卡</view>
+        <view class="book-title ellipsis-2">{{item.title}}</view>
+        <view class="book-author ellipsis" wx:if="{{item.author}}">{{item.author}}</view>
+        <view class="card-actions">
+          <view class="act-btn act-status" data-uuid="{{item.uuid}}" catchtap="cycleStatus">
+            <text class="act-dot status-dot-{{item.status}}"></text>{{item.statusLabel}}
+          </view>
+          <view class="act-btn act-checkin" data-uuid="{{item.uuid}}" data-title="{{item.title}}" catchtap="openCheckin">📖 打卡</view>
+        </view>
       </view>
     </block>
   </view>
@@ -72,11 +115,29 @@
   hide-cancel="{{true}}"
   bind:cancel="closeAddChoice"
 >
-  <view class="choice-item" bindtap="goLibrary">📚 精选书库</view>
-  <view class="choice-item" bindtap="chooseManual">✍️ 手动录入</view>
-  <view class="choice-item" bindtap="chooseScan">📷 扫码添加</view>
-  <view class="choice-item" bindtap="chooseCreateSeries">📚 新建系列</view>
-  <view class="choice-item choice-cancel" bindtap="closeAddChoice">取消</view>
+  <view class="choice-grid">
+    <view class="choice-item" bindtap="goLibrary">
+      <view class="choice-emoji">📚</view>
+      <view class="choice-name">公共书库</view>
+      <view class="choice-tip">分龄精选</view>
+    </view>
+    <view class="choice-item" bindtap="chooseScan">
+      <view class="choice-emoji">📷</view>
+      <view class="choice-name">扫码添加</view>
+      <view class="choice-tip">扫书背条码</view>
+    </view>
+    <view class="choice-item" bindtap="chooseManual">
+      <view class="choice-emoji">✍️</view>
+      <view class="choice-name">手动录入</view>
+      <view class="choice-tip">自己填写</view>
+    </view>
+    <view class="choice-item" bindtap="chooseCreateSeries">
+      <view class="choice-emoji">📕</view>
+      <view class="choice-name">新建系列</view>
+      <view class="choice-tip">整套丛书</view>
+    </view>
+  </view>
+  <view class="choice-cancel" bindtap="closeAddChoice">取消</view>
 </bottom-sheet>
 
 <!-- 手动新增书籍弹层 -->
@@ -89,6 +150,47 @@
 >
   <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{form.title}}" bindinput="onFormInput" />
   <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{form.author}}" bindinput="onFormInput" />
+
+  <!-- 书型：绘本 / 章节书 / 自由阅读 -->
+  <view class="sheet-field-label">书型</view>
+  <view class="seg-group">
+    <view
+      class="seg-item {{form.bookType === item.key ? 'on' : ''}}"
+      wx:for="{{bookTypeOptions}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="selectBookType"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- 总页数（选填，绘本/自由阅读用） -->
+  <input wx:if="{{form.bookType !== 'chapter'}}" class="sheet-input" type="number" placeholder="总页数（选填）" placeholder-class="ph" data-field="totalPages" value="{{form.totalPages}}" bindinput="onFormInput" />
+
+  <!-- 章节书：章节数 或 逐条章节名 -->
+  <block wx:if="{{form.bookType === 'chapter'}}">
+    <input class="sheet-input" type="number" placeholder="共几章（选填）" placeholder-class="ph" data-field="chapterCount" value="{{form.chapterCount}}" bindinput="onFormInput" />
+    <textarea class="sheet-input checkin-note" placeholder="章节名（每行一个，选填；填了以此为准）" placeholder-class="ph" data-field="chapterNames" value="{{form.chapterNames}}" bindinput="onFormInput" auto-height />
+  </block>
+
+  <!-- 方案 B：归入系列（系列面板内添加分册时隐藏，序号已定） -->
+  <block wx:if="{{!addInSeriesCtx}}">
+    <view class="row-between sheet-field series-toggle">
+      <view class="sheet-field-label no-mt">这本书属于某个系列</view>
+      <switch checked="{{form.belongsSeries}}" color="#FF8C42" bindchange="onBelongsSeriesChange" />
+    </view>
+    <block wx:if="{{form.belongsSeries}}">
+      <picker mode="selector" range="{{seriesOptions}}" range-key="label" value="{{seriesPickerIndex}}" bindchange="onSeriesPick">
+        <view class="sheet-input picker-input">
+          {{form.seriesChoice ? seriesOptions[seriesPickerIndex].label : '选择系列 ›'}}
+        </view>
+      </picker>
+      <block wx:if="{{form.seriesChoice === '__new__'}}">
+        <input class="sheet-input" placeholder="新系列名（如 神奇校车）" placeholder-class="ph" data-field="newSeriesName" value="{{form.newSeriesName}}" bindinput="onFormInput" />
+        <input class="sheet-input" type="number" placeholder="总册数（选填）" placeholder-class="ph" data-field="newSeriesTotal" value="{{form.newSeriesTotal}}" bindinput="onFormInput" />
+      </block>
+      <input class="sheet-input" type="number" placeholder="第几册（选填，留空自动排序）" placeholder-class="ph" data-field="seriesIndex" value="{{form.seriesIndex}}" bindinput="onFormInput" />
+    </block>
+  </block>
 </bottom-sheet>
 
 <!-- 扫码确认弹层 -->
@@ -102,7 +204,7 @@
   <view class="scan-preview">
     <image wx:if="{{scanForm.cover}}" class="scan-cover" src="{{scanForm.cover}}" mode="aspectFill" />
     <view wx:else class="scan-cover scan-cover-ph">无封面</view>
-    <view class="scan-isbn text-sub">ISBN：{{scanForm.isbn}}</view>
+    <view class="scan-isbn">ISBN：{{scanForm.isbn}}</view>
   </view>
   <input class="sheet-input" placeholder="书名" placeholder-class="ph" data-field="title" value="{{scanForm.title}}" bindinput="onScanInput" />
   <input class="sheet-input" placeholder="作者（选填）" placeholder-class="ph" data-field="author" value="{{scanForm.author}}" bindinput="onScanInput" />
@@ -131,10 +233,13 @@
   <view class="series-panel-head">
     <view class="series-panel-title ellipsis">{{seriesPanel.name}}</view>
     <view class="series-panel-progress">
-      <view class="progress-track">
-        <view class="progress-fill" style="width:{{seriesPanel.progress.total ? (seriesPanel.progress.done * 100 / seriesPanel.progress.total) : 0}}%"></view>
+      <view class="series-vol-line">
+        <text class="vol-lbl">已读 {{seriesPanel.progress.done}} / 共 {{seriesPanel.progress.total}} 册</text>
+        <text class="vol-pct">{{seriesPanel.progressPct}}%</text>
       </view>
-      <view class="progress-text text-sub">已读 {{seriesPanel.progress.done}}/{{seriesPanel.progress.total}}</view>
+      <view class="progress-track">
+        <view class="progress-fill" style="width:{{seriesPanel.progressPct}}%"></view>
+      </view>
     </view>
   </view>
 
@@ -145,7 +250,7 @@
       <view class="volume-status status-{{item.status}}">{{item.statusLabel}}</view>
       <view class="volume-btn" data-uuid="{{item.uuid}}" data-title="{{item.title}}" data-from="series" catchtap="openCheckin">打卡</view>
     </view>
-    <view class="volume-empty text-sub" wx:if="{{seriesPanel.volumes.length === 0}}">还没有分册，点下方添加</view>
+    <view class="volume-empty" wx:if="{{seriesPanel.volumes.length === 0}}">还没有分册，点下方添加</view>
   </scroll-view>
 
   <view class="btn-primary btn-block series-add-btn" data-uuid="{{seriesPanel.seriesUuid}}" bindtap="addVolume">＋ 添加分册</view>
@@ -159,34 +264,58 @@
   bind:cancel="closeCheckin"
   bind:confirm="saveCheckin"
 >
-  <view class="row checkin-row">
-    <input
-      class="sheet-input flex-1 checkin-half"
-      type="number"
-      placeholder="起始页（选填）"
-      placeholder-class="ph"
-      data-field="pageFrom"
-      bindinput="onCheckinInput"
-      value="{{checkinForm.pageFrom}}"
-    />
-    <input
-      class="sheet-input flex-1 checkin-half"
-      type="number"
-      placeholder="结束页（选填）"
-      placeholder-class="ph"
-      data-field="pageTo"
-      bindinput="onCheckinInput"
-      value="{{checkinForm.pageTo}}"
-    />
+  <!-- 绘本 / 短书：默认「读完整本」一键打卡，可切到只读一部分 -->
+  <block wx:if="{{checkinMode === 'picture'}}">
+    <view wx:if="{{!checkinPicturePartial}}" class="onetap-box">
+      <view class="onetap-emoji">📖</view>
+      <view class="onetap-title">今天读完整本啦！</view>
+      <view class="onetap-desc">绘本 / 短书，一键记录读完，无需填页码</view>
+      <view class="link-btn" bindtap="togglePicturePartial">只读了一部分 ›</view>
+    </view>
+    <block wx:else>
+      <view class="row checkin-row">
+        <input class="sheet-input flex-1 checkin-half" type="number" placeholder="起始页" placeholder-class="ph" data-field="pageFrom" bindinput="onCheckinInput" value="{{checkinForm.pageFrom}}" />
+        <input class="sheet-input flex-1 checkin-half" type="number" placeholder="结束页" placeholder-class="ph" data-field="pageTo" bindinput="onCheckinInput" value="{{checkinForm.pageTo}}" />
+      </view>
+      <view class="link-btn" bindtap="togglePicturePartial">‹ 改回「读完整本」</view>
+    </block>
+  </block>
+
+  <!-- 章节书：选「读到第几章」 -->
+  <block wx:elif="{{checkinMode === 'chapter'}}">
+    <block wx:if="{{checkinChapters.length}}">
+      <view class="sheet-field-label no-mt">读到第几章？</view>
+      <view class="chip-wrap">
+        <view
+          class="chip {{checkinSelChapter === item.idx ? 'on' : ''}} {{item.read ? 'read' : ''}}"
+          wx:for="{{checkinChapters}}"
+          wx:key="idx"
+          data-idx="{{item.idx}}"
+          bindtap="selectChapter"
+        >{{item.label}}</view>
+      </view>
+    </block>
+    <input wx:else class="sheet-input" placeholder="读到第几章（如 第3章）" placeholder-class="ph" data-field="chapter" bindinput="onCheckinInput" value="{{checkinForm.chapter}}" />
+  </block>
+
+  <!-- 自由阅读：起始页自动带上次进度，只填结束页 -->
+  <block wx:else>
+    <view wx:if="{{checkinCurrentPage > 0}}" class="free-hint">上次读到第 {{checkinCurrentPage}} 页，接着读吧～</view>
+    <view class="row checkin-row">
+      <input class="sheet-input flex-1 checkin-half" type="number" placeholder="起始页" placeholder-class="ph" data-field="pageFrom" bindinput="onCheckinInput" value="{{checkinForm.pageFrom}}" />
+      <input class="sheet-input flex-1 checkin-half" type="number" placeholder="读到第几页" placeholder-class="ph" data-field="pageTo" bindinput="onCheckinInput" value="{{checkinForm.pageTo}}" />
+    </view>
+    <input class="sheet-input" placeholder="章节（选填，如 第 3 章）" placeholder-class="ph" data-field="chapter" bindinput="onCheckinInput" value="{{checkinForm.chapter}}" />
+  </block>
+
+  <!-- 系列分册：「读完这册」勾选，勾选后系列已读册数 +1 -->
+  <view wx:if="{{checkinIsSeriesVol}}" class="check-row" bindtap="toggleMarkDone">
+    <view class="cbox {{checkinMarkDone ? 'on' : ''}}">{{checkinMarkDone ? '✓' : ''}}</view>
+    <view class="cbox-main">
+      <view class="cbox-title">读完这册</view>
+      <view class="cbox-desc">勾选后本册标记读完，系列已读册数自动 +1</view>
+    </view>
   </view>
-  <input
-    class="sheet-input"
-    placeholder="章节（选填，如 第 3 章）"
-    placeholder-class="ph"
-    data-field="chapter"
-    bindinput="onCheckinInput"
-    value="{{checkinForm.chapter}}"
-  />
   <textarea
     class="sheet-input checkin-note"
     placeholder="读书心得（选填）"

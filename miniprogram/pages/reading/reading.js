@@ -5,7 +5,7 @@ const auth = require('../../utils/auth');
 const dateUtil = require('../../utils/date');
 const readingService = require('../../services/reading-service');
 const seriesService = require('../../services/series-service');
-const { BOOK_STATUS } = require('../../utils/constants');
+const { BOOK_STATUS, BOOK_TYPES, PICTURE_MAX_PAGES } = require('../../utils/constants');
 
 Page({
   data: {
@@ -20,11 +20,31 @@ Page({
     loading: false,
     _lock: {},
 
+    // 书架概览统计（含系列分册）：藏书 / 在读 / 读完
+    stats: { total: 0, reading: 0, done: 0 },
+    // 各状态 tab 计数（与筛选口径一致）
+    tabCounts: { all: 0, reading: 0, want: 0, done: 0 },
+
     // 添加方式选择弹层（手动 / 扫码 / 新建系列）
     showAddChoice: false,
     // 手动添加书籍弹层
     showAdd: false,
-    form: { title: '', author: '' },
+    form: {
+      title: '', author: '', bookType: 'picture', totalPages: '',
+      chapterCount: '', chapterNames: '',
+      belongsSeries: false, seriesChoice: '', // '' 未选 | '__new__' 新建 | seriesUuid
+      newSeriesName: '', newSeriesTotal: '', seriesIndex: '',
+    },
+    // 书型选项（segmented picker）
+    bookTypeOptions: [
+      { key: 'picture', label: '绘本' },
+      { key: 'chapter', label: '章节书' },
+      { key: 'free', label: '自由阅读' },
+    ],
+    // 方案 B：加书时「归入系列」的可选系列（含末尾「＋ 新建系列」），refresh 时刷新
+    seriesOptions: [],
+    seriesPickerIndex: 0,
+    addInSeriesCtx: false, // true=从系列面板添加分册（方案A），隐藏「归入系列」区
     // 扫码确认弹层
     showScanConfirm: false,
     scanForm: { title: '', author: '', cover: '', totalPages: '', isbn: '' },
@@ -41,6 +61,17 @@ Page({
     checkinBookId: '',
     checkinBookTitle: '',
     checkinFrom: '', // '' | 'series'：来源，用于打卡后是否重开系列面板
+    // 分书型打卡上下文（openCheckin 计算）
+    checkinMode: 'free', // picture | chapter | free（历史书按有无章节推断）
+    checkinIsSeriesVol: false, // 是否系列分册（决定是否显示「读完这册」）
+    checkinOneTap: false, // 绘本/短书：默认一键读完整本
+    checkinPicturePartial: false, // 绘本切到「只读了一部分」
+    checkinTotalPages: 0,
+    checkinTotalChapters: 0,
+    checkinCurrentPage: 0, // 上次读到的页（自由阅读带进度用）
+    checkinChapters: [], // 章节书 chips：[{ idx, label, read }]
+    checkinSelChapter: -1, // 当前选中的章 index（0-based）
+    checkinMarkDone: false, // 系列分册「读完这册」勾选态
     checkinForm: { pageFrom: '', pageTo: '', chapter: '', note: '', date: '' },
   },
 
@@ -60,6 +91,16 @@ Page({
       .catch(() => wx.stopPullDownRefresh());
   },
 
+  // 手动加书表单的初始态（每次打开弹层重置）
+  _blankForm() {
+    return {
+      title: '', author: '', bookType: 'picture', totalPages: '',
+      chapterCount: '', chapterNames: '',
+      belongsSeries: false, seriesChoice: '',
+      newSeriesName: '', newSeriesTotal: '', seriesIndex: '',
+    };
+  },
+
   // ============ 取数 / 渲染 ============
   async refresh() {
     this.setData({ loading: true });
@@ -68,7 +109,12 @@ Page({
       this._all = [];
       this._seriesList = [];
       this._grouped = {};
-      this.setData({ renderList: [], loading: false });
+      this.setData({
+        renderList: [],
+        loading: false,
+        stats: { total: 0, reading: 0, done: 0 },
+        tabCounts: { all: 0, reading: 0, want: 0, done: 0 },
+      });
       return;
     }
     const [books, seriesList] = await Promise.all([
@@ -82,8 +128,44 @@ Page({
     this._all = await this._hydrateCovers(hydratedBooks);
     this._seriesList = seriesList;
     this._grouped = seriesService.groupBySeries(this._all, this._seriesList);
+    // 方案 B「归入系列」下拉：现有系列 + 末尾「＋ 新建系列」
+    const seriesOptions = (this._seriesList || []).map((s) => ({
+      label: s.name || '未命名系列',
+      value: s.uuid,
+    }));
+    seriesOptions.push({ label: '＋ 新建系列', value: '__new__' });
+    this._computeStats();
     this._applyFilter();
-    this.setData({ loading: false });
+    this.setData({ loading: false, seriesOptions });
+  },
+
+  /**
+   * 计算书架概览统计（含系列分册）+ 各状态 tab 计数。
+   * - stats：藏书总数 / 在读 / 读完（按所有单本书统计，口径直观）。
+   * - tabCounts：与 _applyFilter 的筛选口径一致（单本按 status；系列含 ≥1 本该状态分册即计入）。
+   */
+  _computeStats() {
+    const all = this._all || [];
+    const total = all.length;
+    let reading = 0;
+    let done = 0;
+    all.forEach((b) => {
+      if (b.status === 'reading') reading += 1;
+      else if (b.status === 'done') done += 1;
+    });
+    const g = this._grouped || { seriesCards: [], soloBooks: [] };
+    const cards = g.seriesCards || [];
+    const solos = g.soloBooks || [];
+    const countFor = (status) =>
+      solos.filter((b) => b.status === status).length +
+      cards.filter((c) => (c.volumes || []).some((v) => v.status === status)).length;
+    const tabCounts = {
+      all: cards.length + solos.length,
+      reading: countFor('reading'),
+      want: countFor('want'),
+      done: countFor('done'),
+    };
+    this.setData({ stats: { total, reading, done }, tabCounts });
   },
 
   /**
@@ -181,7 +263,7 @@ Page({
   },
   chooseManual() {
     this._volumeCtx = null; // 普通新增：无系列上下文
-    this.setData({ showAddChoice: false, showAdd: true, form: { title: '', author: '' } });
+    this.setData({ showAddChoice: false, showAdd: true, addInSeriesCtx: false, seriesPickerIndex: 0, form: this._blankForm() });
   },
   chooseScan() {
     this.setData({ showAddChoice: false });
@@ -203,7 +285,7 @@ Page({
         if (!/^97[89]\d{10}$/.test(isbn)) {
           wx.showToast({ title: '不是有效图书条码，请手动录入', icon: 'none' });
           this._volumeCtx = null;
-          this.setData({ showAdd: true, form: { title: '', author: '' } });
+          this.setData({ showAdd: true, addInSeriesCtx: false, seriesPickerIndex: 0, form: this._blankForm() });
           return;
         }
         this._lookupIsbn(isbn);
@@ -213,7 +295,7 @@ Page({
         if (errMsg.indexOf('cancel') < 0 && errMsg.indexOf('auth deny') >= 0) {
           wx.showToast({ title: '无法使用相机，请手动录入', icon: 'none' });
           this._volumeCtx = null;
-          this.setData({ showAdd: true, form: { title: '', author: '' } });
+          this.setData({ showAdd: true, addInSeriesCtx: false, seriesPickerIndex: 0, form: this._blankForm() });
         }
       },
     });
@@ -330,7 +412,7 @@ Page({
   // ============ 手动新增书籍 ============
   openAdd() {
     this._volumeCtx = null;
-    this.setData({ showAdd: true, form: { title: '', author: '' } });
+    this.setData({ showAdd: true, addInSeriesCtx: false, seriesPickerIndex: 0, form: this._blankForm() });
   },
   closeAdd() {
     this._volumeCtx = null;
@@ -340,29 +422,95 @@ Page({
     const field = e.currentTarget.dataset.field;
     this.setData({ [`form.${field}`]: e.detail.value });
   },
+  // 选择书型（绘本 / 章节书 / 自由阅读）
+  selectBookType(e) {
+    this.setData({ 'form.bookType': e.currentTarget.dataset.key });
+  },
+  // 方案 B：切换「这本书属于某个系列」
+  onBelongsSeriesChange(e) {
+    this.setData({ 'form.belongsSeries': !!e.detail.value });
+  },
+  // 方案 B：从下拉选择已有系列或「＋ 新建系列」
+  onSeriesPick(e) {
+    const idx = Number(e.detail.value);
+    const opt = (this.data.seriesOptions || [])[idx];
+    this.setData({ seriesPickerIndex: idx, 'form.seriesChoice': opt ? opt.value : '' });
+  },
   async saveBook() {
     if (!auth.ownerId()) {
       wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
       return;
     }
     if (this._tryLock('saveBook', 1500)) return;
-    const { title, author } = this.data.form;
-    if (!title.trim()) {
+    const f = this.data.form;
+    const title = (f.title || '').trim();
+    if (!title) {
       this._unlock('saveBook');
       wx.showToast({ title: '请填写书名', icon: 'none' });
       return;
     }
+    const ctx = this._volumeCtx; // 系列面板内「添加分册」时携带（方案 A）
+    // 方案 B 校验：勾选归入系列时必须选定系列 / 填新系列名
+    if (!ctx && f.belongsSeries) {
+      if (!f.seriesChoice) {
+        this._unlock('saveBook');
+        wx.showToast({ title: '请选择或新建系列', icon: 'none' });
+        return;
+      }
+      if (f.seriesChoice === '__new__' && !(f.newSeriesName || '').trim()) {
+        this._unlock('saveBook');
+        wx.showToast({ title: '请填写系列名', icon: 'none' });
+        return;
+      }
+    }
     wx.showLoading({ title: '添加中...', mask: true });
     try {
-      const ctx = this._volumeCtx; // 系列面板内「添加分册」时携带
+      const bookType = f.bookType || 'picture';
       const payload = {
-        title: title.trim(),
-        author: author.trim() || null,
+        title,
+        author: (f.author || '').trim() || null,
         status: 'want',
+        bookType,
       };
+      // 总页数（选填）
+      if (f.totalPages !== '' && f.totalPages != null) {
+        payload.totalPages = Number(f.totalPages) || null;
+      }
+      // 章节书：优先按「章节名（每行一个）」，否则按「章节数」生成 totalChapters
+      if (bookType === 'chapter') {
+        const names = (f.chapterNames || '')
+          .split('\n')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (names.length) {
+          payload.chapters = names;
+          payload.totalChapters = names.length;
+        } else if (f.chapterCount !== '' && f.chapterCount != null) {
+          const n = Number(f.chapterCount) || 0;
+          if (n > 0) payload.totalChapters = n;
+        }
+      }
+      // 系列归属：方案 A（系列面板上下文）优先；否则方案 B（表单勾选）
       if (ctx && ctx.seriesUuid) {
         payload.seriesUuid = ctx.seriesUuid;
         payload.seriesIndex = ctx.seriesIndex;
+      } else if (f.belongsSeries && f.seriesChoice) {
+        let seriesUuid = f.seriesChoice;
+        if (seriesUuid === '__new__') {
+          const created = await db.series.create({
+            name: (f.newSeriesName || '').trim(),
+            totalVolumes:
+              f.newSeriesTotal !== '' && f.newSeriesTotal != null ? Number(f.newSeriesTotal) || 0 : 0,
+          });
+          seriesUuid = created && created.uuid;
+        }
+        if (seriesUuid) {
+          payload.seriesUuid = seriesUuid;
+          payload.seriesIndex =
+            f.seriesIndex !== '' && f.seriesIndex != null
+              ? Number(f.seriesIndex) || seriesService.nextSeriesIndex(seriesUuid, this._all)
+              : seriesService.nextSeriesIndex(seriesUuid, this._all);
+        }
       }
       await db.books.create(payload);
       wx.hideLoading();
@@ -422,7 +570,8 @@ Page({
     const seriesUuid = e.currentTarget.dataset.uuid;
     const seriesIndex = seriesService.nextSeriesIndex(seriesUuid, this._all);
     this._volumeCtx = { seriesUuid, seriesIndex };
-    this.setData({ showAdd: true, form: { title: '', author: '' } });
+    // 方案 A：分册序号已由系列上下文决定，表单隐藏「归入系列」区
+    this.setData({ showAdd: true, showSeriesPanel: false, addInSeriesCtx: true, seriesPickerIndex: 0, form: this._blankForm() });
   },
 
   // ============ 新建系列 ============
@@ -471,13 +620,49 @@ Page({
   // ============ 阅读打卡 ============
   openCheckin(e) {
     const { uuid, title, from } = e.currentTarget.dataset;
+    const book = (this._all || []).find((b) => b.uuid === uuid) || {};
+    // 书型：显式 bookType 优先；历史书按「有 totalChapters → chapter，否则 free」推断
+    const bookType = book.bookType || (Number(book.totalChapters) > 0 ? 'chapter' : 'free');
+    const totalPages = Number(book.totalPages) || 0;
+    const totalChapters =
+      Number(book.totalChapters) || (Array.isArray(book.chapters) ? book.chapters.length : 0);
+    const currentPage = Number(book.currentPage) || 0;
+    const currentChapter = Number.isFinite(Number(book.currentChapter))
+      ? Number(book.currentChapter)
+      : -1;
+    const isSeriesVol = !!book.seriesUuid;
+    // 绘本/短书（总页数 ≤ 阈值）默认走「读完整本」一键打卡
+    const oneTap = bookType === 'picture' || (totalPages > 0 && totalPages <= PICTURE_MAX_PAGES);
+    // 章节书 chips（已知总章数时）：标注已读、默认选中「下一章」
+    let checkinChapters = [];
+    let selChapter = -1;
+    if (bookType === 'chapter' && totalChapters > 0) {
+      const names = Array.isArray(book.chapters) ? book.chapters : [];
+      for (let i = 0; i < totalChapters; i += 1) {
+        checkinChapters.push({ idx: i, label: names[i] || `第${i + 1}章`, read: i <= currentChapter });
+      }
+      selChapter = Math.min(currentChapter + 1, totalChapters - 1);
+      if (selChapter < 0) selChapter = 0;
+    }
+    // 自由阅读：起始页自动带上次进度（上次结束页 + 1）
+    const nextStartPage = currentPage > 0 ? currentPage + 1 : '';
     this.setData({
       showCheckin: true,
       checkinBookId: uuid,
-      checkinBookTitle: title || '',
+      checkinBookTitle: title || book.title || '',
       checkinFrom: from || '',
+      checkinMode: bookType,
+      checkinIsSeriesVol: isSeriesVol,
+      checkinOneTap: oneTap,
+      checkinPicturePartial: false,
+      checkinTotalPages: totalPages,
+      checkinTotalChapters: totalChapters,
+      checkinCurrentPage: currentPage,
+      checkinChapters,
+      checkinSelChapter: selChapter,
+      checkinMarkDone: false,
       checkinForm: {
-        pageFrom: '',
+        pageFrom: nextStartPage === '' ? '' : String(nextStartPage),
         pageTo: '',
         chapter: '',
         note: '',
@@ -487,6 +672,18 @@ Page({
   },
   closeCheckin() {
     this.setData({ showCheckin: false });
+  },
+  // 章节书：选中「读到第几章」
+  selectChapter(e) {
+    this.setData({ checkinSelChapter: Number(e.currentTarget.dataset.idx) });
+  },
+  // 绘本：在「读完整本」与「只读了一部分」之间切换
+  togglePicturePartial() {
+    this.setData({ checkinPicturePartial: !this.data.checkinPicturePartial });
+  },
+  // 系列分册：切换「读完这册」勾选
+  toggleMarkDone() {
+    this.setData({ checkinMarkDone: !this.data.checkinMarkDone });
   },
   onCheckinInput(e) {
     const field = e.currentTarget.dataset.field;
@@ -501,10 +698,56 @@ Page({
       return;
     }
     if (this._tryLock('saveCheckin', 1500)) return;
-    const { checkinBookId, checkinForm } = this.data;
+    const { checkinBookId, checkinForm, checkinMode } = this.data;
     if (!checkinBookId) { this._unlock('saveCheckin'); return; }
-    const hasContent =
-      checkinForm.pageFrom || checkinForm.pageTo || checkinForm.chapter || checkinForm.note;
+
+    // 按书型组装打卡数据 + 判定是否有内容
+    const note = (checkinForm.note || '').trim() || null;
+    const data = { note };
+    let hasContent = !!note;
+    let markDone = false;
+
+    if (checkinMode === 'picture') {
+      if (this.data.checkinPicturePartial) {
+        // 只读了一部分：记录页码区间
+        data.pageFrom = checkinForm.pageFrom;
+        data.pageTo = checkinForm.pageTo;
+        hasContent = hasContent || !!checkinForm.pageFrom || !!checkinForm.pageTo;
+      } else {
+        // 读完整本：一键打卡
+        markDone = true;
+        if (this.data.checkinTotalPages) data.pageTo = this.data.checkinTotalPages;
+        hasContent = true;
+      }
+    } else if (checkinMode === 'chapter') {
+      if (this.data.checkinTotalChapters > 0 && this.data.checkinSelChapter >= 0) {
+        const idx = this.data.checkinSelChapter;
+        const ch = (this.data.checkinChapters || [])[idx];
+        data.chapterIndex = idx;
+        data.chapter = (ch && ch.label) || `第${idx + 1}章`;
+        hasContent = true;
+        // 读到最后一章 → 视为读完
+        if (idx >= this.data.checkinTotalChapters - 1) markDone = true;
+      } else {
+        // 无章节元信息：手填章节文本
+        data.chapter = (checkinForm.chapter || '').trim() || null;
+        hasContent = hasContent || !!data.chapter;
+      }
+    } else {
+      // 自由阅读：起始页 + 结束页（+ 选填章节）
+      data.pageFrom = checkinForm.pageFrom;
+      data.pageTo = checkinForm.pageTo;
+      data.chapter = (checkinForm.chapter || '').trim() || null;
+      hasContent = hasContent || !!checkinForm.pageFrom || !!checkinForm.pageTo || !!data.chapter;
+    }
+
+    // 系列分册「读完这册」：显式勾选则强制完成（幂等，已 done 不重复计数）
+    if (this.data.checkinIsSeriesVol && this.data.checkinMarkDone) {
+      markDone = true;
+      hasContent = true;
+    }
+    if (markDone) data.markDone = true;
+
     if (!hasContent) {
       this._unlock('saveCheckin');
       wx.showToast({ title: '填点内容再打卡吧～', icon: 'none' });
@@ -521,13 +764,8 @@ Page({
         wx.showToast({ title: '打卡日期不能晚于今天', icon: 'none' });
         return;
       }
-      await readingService.addReadingLog(app.globalData.activeChildId, checkinBookId, {
-        readDate,
-        pageFrom: checkinForm.pageFrom,
-        pageTo: checkinForm.pageTo,
-        chapter: checkinForm.chapter.trim() || null,
-        note: checkinForm.note.trim() || null,
-      });
+      data.readDate = readDate;
+      await readingService.addReadingLog(app.globalData.activeChildId, checkinBookId, data);
       wx.hideLoading();
       this.setData({ showCheckin: false });
       wx.showToast({ title: '打卡成功', icon: 'success' });

@@ -5,6 +5,20 @@
 
 ## [Unreleased]
 ### Added
+- **阅读书架全面升级：书型化打卡 + 系列进度可视化（阅读 Tab 重点优化）**：围绕「书架交互与 UI」重构，新增书型驱动的差异化打卡与系列册数进度：
+  - 书籍新增 `bookType`（`picture` 绘本 / `chapter` 章节书 / `free` 自由阅读，`utils/constants.js` 新增 `BOOK_TYPES` + `PICTURE_MAX_PAGES`）；历史书无 `bookType` 时按「有 `totalChapters` → 章节书，否则自由阅读」推断，向后兼容
+  - **分书型打卡**（`pages/reading` 打卡弹层按 `checkinMode` 分支）：绘本默认「读完整本」一键打卡（可切「只读了一部分」填页码，总页数 ≤ 80 也走一键）；章节书以 chips 选「读到第几章」（标注已读、默认选下一章，选到末章视为读完）；自由阅读起始页自动带上次进度（`currentPage + 1`），只填结束页
+  - **手动加书表单扩展**：书型 segmented；绘本/自由阅读填总页数，章节书填「共几章」或逐行章节名（`chapters` 数组，填了以此为准）；**方案 B「归入系列」**——可勾选属于某系列，选已有系列或「＋ 新建系列」（系列名 + 总册数），指定册序（留空自动排序）
+  - **系列进度可视化**：系列卡片 / 面板显示「已读 x / 共 x 册」文字 + 百分比 + 进度条；打卡弹层为系列分册提供「读完这册」勾选，勾选后该册标记读完、系列已读册数 +1
+  - 新增 `tests/services/series-service.test.js`、`tests/services/reading-service.test.js` 共 10 个单测（进度口径、`markDone` 强制读完、读完这册幂等、页码派生回归）
+
+### Changed
+- **系列进度口径改为「totalVolumes 分母 + 派生已读」**：`services/series-service.js` `deriveProgress(seriesUuid, books, seriesMeta)` 的 `total` 优先取 `series.totalVolumes`（运营声明「共 x 册」），未设置时回退已归属分册数；`done` 仍由分册 `status==='done'` **派生**，`groupBySeries`/`buildPanelVM` 输出 `progressPct`。**已读册数不冗余存储**，故「读完这册」重复勾选不会重复计数（幂等）
+- **`services/reading-service.js` 打卡支持显式完成**：`addReadingLog(childId, bookUuid, { markDone })` 新增 `markDone` → `_syncBookProgress(bookUuid, { forceDone })`，把「读完整本 / 读完这册 / 章节读到末章」强制置 `done`；复用既有幂等护栏（仅 `prevStatus !== 'done' && status === 'done'` 时才触发 `book_library.readFinishCount +1`），重复完成不重复计数
+- **精选书库加入书架携带书型**：`pages/library/library.js` 新增 `type → bookType` 映射（绘本→picture、桥梁书/章节书→chapter、科普/其他→free），单本与系列分册加入时写入 `bookType`
+- **`utils/db.js`**：`books.create` 注释补充 `bookType`/`chapters` 等透传字段说明（字段随 generic create 整体写入，进度快照 `currentPage`/`currentChapter`/`lastReadDate` 由 reading-service 派生回写）
+
+### Added
 - **独立「课程库」页面 + 拖拽排课（课表页最终方案）**：新增 `pages/schedule/course-library`（js/wxml/wxss/json，已注册 `app.json`），把课程分类管理从课表页收敛为独立入口：
   - 新增云数据库集合 `course_templates`（课程模板：`name`/`type`〔`school` 校内 / `extra` 兴趣班〕/`color`/`isPreset`），纳入 `childShare` 业务集合白名单与安全规则 `auth.openid in doc.members`，多家长共享
   - 首次进入课程库页自动 `ensureSeed()` 写入一批预置课程（语文/数学/英语/体育/科学/音乐/钢琴/游泳/美术/编程/篮球/舞蹈）；支持新增、编辑（名称 + 分类 + 颜色）、删除（含长按卡片快捷删除）自定义课程

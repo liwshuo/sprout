@@ -17,16 +17,21 @@ function _decorate(b) {
 }
 
 /**
- * 计算系列进度：已读(done)册数 / 现有分册数。
- * total 取当前已归属该系列的书籍数量（分册数），done 取其中 status==='done' 的数量。
+ * 计算系列进度：已读(done)册数 / 总册数。
+ * - done：取分册中 status==='done' 的数量（**由打卡派生**，重复「读完这册」不会重复计数）。
+ * - total：优先取系列元信息的 totalVolumes（「共 x 册」的运营口径）；
+ *          未设置(0/空)时回退为当前已归属的分册数量 vols.length。
  * @param {string} seriesUuid
  * @param {Array} books 全量书籍
+ * @param {object} [seriesMeta] 系列元信息（含 totalVolumes），可选
  * @returns {{done:number, total:number}}
  */
-function deriveProgress(seriesUuid, books) {
+function deriveProgress(seriesUuid, books, seriesMeta) {
   const vols = (books || []).filter((b) => b && b.seriesUuid === seriesUuid);
   const done = vols.filter((b) => b.status === 'done').length;
-  return { done, total: vols.length };
+  const metaTotal = seriesMeta && Number(seriesMeta.totalVolumes) > 0 ? Number(seriesMeta.totalVolumes) : 0;
+  const total = metaTotal || vols.length;
+  return { done, total };
 }
 
 /**
@@ -77,7 +82,10 @@ function groupBySeries(books, seriesList) {
       const volumes = grouped[s.uuid]
         .slice()
         .sort((a, b) => (Number(a.seriesIndex) || 0) - (Number(b.seriesIndex) || 0));
-      const progress = deriveProgress(s.uuid, list);
+      const progress = deriveProgress(s.uuid, list, s);
+      const progressPct = progress.total
+        ? Math.min(100, Math.round((progress.done * 100) / progress.total))
+        : 0;
       // 叠层封面：取前 3 本的展示封面（外链或已水合链接），供卡片伪装堆叠
       const covers = volumes.slice(0, 3).map((v) => v.coverUrl || '');
       return {
@@ -89,6 +97,7 @@ function groupBySeries(books, seriesList) {
         volumes,
         covers,
         progress,
+        progressPct,
         updatedAt: Math.max.apply(null, [0].concat(volumes.map((v) => v.updatedAt || 0))),
       };
     });
@@ -115,7 +124,7 @@ function buildPanelVM(seriesUuid, books, seriesList) {
         indexLabel: `第${b.seriesIndex || '?'}册`,
       });
     });
-  const progress = deriveProgress(seriesUuid, books);
+  const progress = deriveProgress(seriesUuid, books, meta);
   const progressPct = progress.total ? Math.min(100, Math.round((progress.done * 100) / progress.total)) : 0;
   return {
     seriesUuid,

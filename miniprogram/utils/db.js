@@ -397,10 +397,12 @@ const books = {
     return getByUuid(COLLECTIONS.books, uuid);
   },
   create(book) {
-    // book: { title, author, cover, coverExternalUrl, isbn, status, totalPages,
-    //         totalChapters, seriesUuid, seriesIndex }
-    // 说明：coverExternalUrl（扫码外链封面）/ isbn / seriesUuid / seriesIndex 均随
-    //       book 透传写入，无需在此逐字段列举（generic create 会整体展开）。
+    // book: { title, author, cover, coverExternalUrl, isbn, status, bookType,
+    //         totalPages, totalChapters, chapters, seriesUuid, seriesIndex }
+    // 说明：coverExternalUrl（扫码外链封面）/ isbn / bookType（绘本/章节书/自由阅读）/
+    //       chapters（章节名数组）/ seriesUuid / seriesIndex 均随 book 透传写入，
+    //       无需在此逐字段列举（generic create 会整体展开）。
+    //       进度快照 currentPage / currentChapter / lastReadDate 由 reading-service 派生回写。
     return create(COLLECTIONS.books, Object.assign({ status: 'want' }, book));
   },
   update(uuid, patch) {

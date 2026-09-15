@@ -4,6 +4,7 @@
 //           分册以 seriesUuid + seriesIndex 落库，供书架页 series-service 分组复用。
 const app = getApp();
 const db = require('../../utils/db');
+const auth = require('../../utils/auth');
 
 // 年龄段 Tab（含「官方精选」聚合视图）
 const AGE_TABS = [
@@ -30,6 +31,20 @@ const TYPE_LABEL = {
   chapter: '章节书',
   science: '科普',
 };
+
+// 书库 type → 书架 bookType（打卡交互形态）：
+//  picture 绘本 → picture（一键读完整本）
+//  bridge 桥梁书 / chapter 章节书 → chapter（按章打卡）
+//  science 科普 / 其他 → free（自由阅读，按页打卡）
+const TYPE_TO_BOOKTYPE = {
+  picture: 'picture',
+  bridge: 'chapter',
+  chapter: 'chapter',
+  science: 'free',
+};
+function bookTypeOf(type) {
+  return TYPE_TO_BOOKTYPE[type] || 'free';
+}
 
 Page({
   data: {
@@ -195,6 +210,7 @@ Page({
 
     // 前置登录态：防止 ownerId 空导致写库抛「未登录，无法写入」
     if (!auth.ownerId()) {
+      this._unlock('onAddToShelf');
       wx.showToast({ title: '请先到「我的」登录', icon: 'none' });
       return;
     }
@@ -207,6 +223,7 @@ Page({
       console.warn('[library] 拉取孩子列表失败', err);
     }
     if (!children || !children.length) {
+      this._unlock('onAddToShelf');
       wx.showToast({ title: '请先在「我的」创建孩子档案', icon: 'none' });
       return;
     }
@@ -308,6 +325,7 @@ Page({
       totalPages: book.totalPages || null,
       ageRange: book.ageRange || null,
       type: book.type || null,
+      bookType: bookTypeOf(book.type),
       description: book.description || null,
       libraryUuid: book.uuid,
       status: 'want',
@@ -359,6 +377,7 @@ Page({
         totalPages: v.totalPages || null,
         ageRange: book.ageRange || null,
         type: book.type || null,
+        bookType: bookTypeOf(book.type),
         description: book.description || null,
         libraryUuid: book.uuid,
         seriesUuid,

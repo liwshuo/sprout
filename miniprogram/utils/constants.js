@@ -49,6 +49,20 @@ const BOOK_STATUS = {
   done: { key: 'done', label: '读完' },
 };
 
+// 书型（决定打卡交互形态）：
+//  picture = 绘本 / 短书  → 默认「读完整本」一键打卡（也支持读一部分）
+//  chapter = 章节书       → 打卡时选「读到第几章」（含系列分册「读完这册」）
+//  free    = 自由阅读     → 起始页自动带上次进度，只填结束页
+// 兼容：历史书无 bookType 时按「有 totalChapters → chapter，否则 free」推断。
+const BOOK_TYPES = {
+  picture: { key: 'picture', label: '绘本' },
+  chapter: { key: 'chapter', label: '章节书' },
+  free: { key: 'free', label: '自由阅读' },
+};
+
+// 绘本/短书判定阈值：总页数 ≤ 此值可走「读完整本」一键打卡
+const PICTURE_MAX_PAGES = 80;
+
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
 // 日历事件四源 → 主题色（日历彩色圆点 / 事件卡片色条），对齐设计方案 P0-b
@@ -83,6 +97,8 @@ module.exports = {
   MOODS,
   moodEmoji,
   BOOK_STATUS,
+  BOOK_TYPES,
+  PICTURE_MAX_PAGES,
   WEEKDAYS,
   EVENT_TYPE_COLORS,
   EVENT_TYPE_LABELS,

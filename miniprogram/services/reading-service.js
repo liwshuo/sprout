@@ -9,7 +9,9 @@ const dateUtil = require('../utils/date');
  * 新增一条阅读打卡，并同步派生书籍状态/进度。
  * @param {string} childId 目标孩子 uuid（db 层已按 activeChild 归属过滤，此处作语义标识）
  * @param {string} bookUuid 书籍 uuid
- * @param {object} data { readDate?, chapter?, chapterIndex?, pageFrom?, pageTo?, durationMinutes?, mood?, note? }
+ * @param {object} data { readDate?, chapter?, chapterIndex?, pageFrom?, pageTo?, durationMinutes?, mood?, note?, markDone? }
+ *   markDone=true 表示「读完整本 / 读完这册」显式完成（绘本一键打卡、章节读到末章、系列分册读完），
+ *   会把书籍状态直接置为 done（幂等：已 done 再次打卡不会重复触发书库计数）。
  * @returns {Promise} 创建结果
  */
 async function addReadingLog(childId, bookUuid, data = {}) {
@@ -55,7 +57,8 @@ async function addReadingLog(childId, bookUuid, data = {}) {
   };
   const res = await db.readingLogs.create(log);
   // 派生更新书籍状态与进度快照（失败不阻断打卡本身）
-  await _syncBookProgress(bookUuid);
+  // markDone → forceDone：显式「读完整本 / 读完这册」，把状态直接置 done
+  await _syncBookProgress(bookUuid, { forceDone: !!data.markDone });
   return res;
 }
 
@@ -72,9 +75,10 @@ function getBookLogs(bookUuid) {
  * 由打卡历史派生书籍状态与进度：
  *  - 有任意打卡 → 至少「在读(reading)」（want 自动跃迁）
  *  - 读到最后一页/最后一章 → 「读完(done)」
+ *  - opts.forceDone=true（读完整本/读完这册）→ 直接置「读完(done)」
  *  - 回写 currentPage / currentChapter / lastReadDate 进度快照
  */
-async function _syncBookProgress(bookUuid) {
+async function _syncBookProgress(bookUuid, opts = {}) {
   try {
     const [book, logs] = await Promise.all([
       db.books.getByUuid(bookUuid),
@@ -96,6 +100,8 @@ async function _syncBookProgress(bookUuid) {
     let status = prevStatus !== 'want' ? prevStatus : 'reading';
     if (totalPages && finalMaxPage >= totalPages) status = 'done';
     if (totalChapters && finalMaxChapter >= totalChapters - 1) status = 'done';
+    // 显式「读完整本 / 读完这册」：无论有无页/章元信息都置 done
+    if (opts.forceDone) status = 'done';
 
     const patch = { status };
     if (lastReadDate) patch.lastReadDate = lastReadDate;
