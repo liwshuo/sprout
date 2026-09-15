@@ -274,3 +274,44 @@
 .sk-line.short {
   width: 40%;
 }
+
+
+/* ==================== 完成提示 toast（方案B） ==================== */
+/* 底部悬浮轻提示，2.6s 自动消失；不遮挡列表操作，可点「记录成长 →」 */
+.complete-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 180rpx;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  max-width: 86%;
+  padding: 22rpx 34rpx;
+  background: rgba(30, 30, 34, 0.92);
+  border-radius: 48rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.22);
+  z-index: 9999;
+  animation: ctFadeIn 0.22s ease;
+}
+.ct-text {
+  color: #fff;
+  font-size: 28rpx;
+  white-space: nowrap;
+}
+.ct-action {
+  color: #ffc978;
+  font-size: 28rpx;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@keyframes ctFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

@@ -4,6 +4,7 @@ const db = require('../../utils/db');
 const auth = require('../../utils/auth');
 const dateUtil = require('../../utils/date');
 const { TODO_CATEGORIES, DEFAULT_CATEGORY, categoryMeta, todo } = require('../../utils/todo');
+const settings = require('../../utils/settings');
 
 // 分类筛选 tab：「全部」+ 4 个业务分类
 const FILTER_ALL = '全部';
@@ -34,6 +35,10 @@ Page({
     form: { title: '', category: DEFAULT_CATEGORY, dueDate: '', remark: '' },
 
     todayStr: '',
+
+    // 完成提示 toast（方案B）：勾选完成后底部短暂出现，2.6s 自动消失
+    // showAction=true 时展示可点的「记录成长 →」；开启自动记录后 showAction=false
+    completeToast: { show: false, text: '', showAction: false, todoUuid: '' },
   },
 
   // ==================== 生命周期 ====================
@@ -58,6 +63,10 @@ Page({
 
   onUnload() {
     app.off && app.off('activeChildChanged', this._onChild);
+    if (this._toastTimer) {
+      clearTimeout(this._toastTimer);
+      this._toastTimer = null;
+    }
   },
 
   onPullDownRefresh() {
@@ -182,7 +191,7 @@ Page({
     this.setData({ todos: sorted, stats: this._buildStats(sorted) }, () => this._applyFilter());
     try {
       await todo.toggleDone(uuid, next);
-      if (next) this._offerGrowthRecord(item);
+      if (next) this._onTodoCompleted(item);
     } catch (err) {
       console.error('[todo] toggleDone 失败', err);
       wx.showToast({ title: '操作失败', icon: 'none' });
@@ -190,26 +199,56 @@ Page({
     }
   },
 
-  async _offerGrowthRecord(item) {
-    if (item.convertedRecordId) {
-      const existing = await db.getByUuid(db.COLLECTIONS.dailyRecords, item.convertedRecordId);
-      if (existing && !existing.isDeleted) {
-        wx.showToast({ title: '已记录到成长档案', icon: 'none' });
-        return;
-      }
-      await todo.markConverted(item.uuid, null).catch(() => {});
+  // 完成待办后（方案B）：不强制弹窗，只在底部弹出短暂 toast。
+  // - 关闭「自动记录成长」（默认）：toast「✅ 已完成！」+ 可点「记录成长 →」跳手动记录页。
+  // - 开启「自动记录成长」：静默生成一条成长记录，toast「✅ 已完成并记录成长」（无操作项）。
+  async _onTodoCompleted(item) {
+    const autoRecord = settings.get('autoTodoToRecord');
+    if (!autoRecord) {
+      this._showCompleteToast({ text: '✅ 已完成！', showAction: true, todoUuid: item.uuid });
+      return;
     }
-    wx.showModal({
-      title: '完成啦 🎉',
-      content: '要把这次完成记录到成长档案吗？',
-      confirmText: '记录成长',
-      cancelText: '暂不记录',
-      success: (res) => {
-        if (!res.confirm) return;
-        wx.navigateTo({
-          url: `/pages/records/add/add?sourceTodoId=${encodeURIComponent(item.uuid)}`,
-        });
-      },
+    // 自动记录：已转过则不重复创建；云函数本身按 sourceTodoId 幂等，这里再做一层前置判断
+    try {
+      if (item.convertedRecordId) {
+        const existing = await db.getByUuid(db.COLLECTIONS.dailyRecords, item.convertedRecordId);
+        if (existing && !existing.isDeleted) {
+          this._showCompleteToast({ text: '✅ 已完成并记录成长', showAction: false });
+          return;
+        }
+        await todo.markConverted(item.uuid, null).catch(() => {});
+      }
+      await todo.convertToRecord(item);
+      this._showCompleteToast({ text: '✅ 已完成并记录成长', showAction: false });
+      this.refresh(); // 刷新 convertedRecordId 等派生态
+    } catch (err) {
+      console.error('[todo] 自动转成长记录失败', err);
+      // 失败降级：完成态已落库，仅记录成长失败，给出手动补录入口
+      this._showCompleteToast({ text: '✅ 已完成（记录成长失败，可手动补录）', showAction: true, todoUuid: item.uuid });
+    }
+  },
+
+  // 展示完成 toast：重置计时器，2.6s 后自动收起
+  _showCompleteToast({ text, showAction, todoUuid }) {
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this.setData({
+      completeToast: { show: true, text, showAction: !!showAction, todoUuid: todoUuid || '' },
+    });
+    this._toastTimer = setTimeout(() => {
+      this.setData({ 'completeToast.show': false });
+      this._toastTimer = null;
+    }, 2600);
+  },
+
+  // 点击 toast 里的「记录成长 →」：收起 toast 并跳转手动记录页（带 sourceTodoId 幂等）
+  onCompleteToastAction() {
+    const uuid = this.data.completeToast.todoUuid;
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this.setData({ 'completeToast.show': false });
+    this._toastTimer = null;
+    if (!uuid) return;
+    wx.navigateTo({
+      url: `/pages/records/add/add?sourceTodoId=${encodeURIComponent(uuid)}`,
     });
   },
 

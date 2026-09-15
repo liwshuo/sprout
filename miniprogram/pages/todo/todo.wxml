@@ -134,3 +134,9 @@
   <!-- 备注 -->
   <textarea class="sheet-textarea" placeholder="备注（选填）" placeholder-class="ph" value="{{form.remark}}" bindinput="onRemarkInput" maxlength="200" />
 </bottom-sheet>
+
+<!-- 完成提示 toast（方案B）：勾选完成后底部短暂出现，2.6s 自动消失，不强制弹窗 -->
+<view wx:if="{{completeToast.show}}" class="complete-toast">
+  <text class="ct-text">{{completeToast.text}}</text>
+  <text wx:if="{{completeToast.showAction}}" class="ct-action" catchtap="onCompleteToastAction">记录成长 →</text>
+</view>

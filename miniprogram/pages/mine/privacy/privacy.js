@@ -1,12 +1,15 @@
-// pages/mine/privacy/privacy.js —— 隐私设置：撤回同意 / 清缓存 / 申请删除账号
+// pages/mine/privacy/privacy.js —— 隐私设置：撤回同意 / 清缓存 / 申请删除账号 + 使用偏好
 const app = getApp();
 const auth = require('../../../utils/auth');
+const settings = require('../../../utils/settings');
 
 Page({
   data: {
     isLoggedIn: false,
     showPolicy: false,
     showDeleteRequest: false,
+    // 使用偏好：完成待办后自动转为成长记录（本地开关，默认关闭）
+    autoTodoToRecord: false,
     policyText: [
       '• 家长身份（openid/unionid）：用于登录与多端同步；',
       '• 手机号（可选）：账号找回；',
@@ -19,7 +22,18 @@ Page({
 
   onLoad() {
     const u = (app && app.globalData && app.globalData.currentUser) || auth.currentUser();
-    this.setData({ isLoggedIn: !!u });
+    this.setData({
+      isLoggedIn: !!u,
+      autoTodoToRecord: !!settings.get('autoTodoToRecord'),
+    });
+  },
+
+  // 切换「完成待办后自动转为成长记录」——本地存储，即时生效
+  onToggleAutoTodoToRecord(e) {
+    const on = !!(e && e.detail && e.detail.value);
+    settings.set('autoTodoToRecord', on);
+    this.setData({ autoTodoToRecord: on });
+    wx.showToast({ title: on ? '已开启自动记录' : '已关闭', icon: 'none' });
   },
 
   onViewPolicy() {

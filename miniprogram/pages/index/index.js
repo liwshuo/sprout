@@ -1,6 +1,8 @@
 // pages/index/index.js —— 日历首页：月历「四源聚合」打点 + 当天事件卡片列表
 // 数据来自 services/calendar-service（成长记录 + 课表周展开 + 待办 + 阅读打卡），
 // 每天最多 4 个彩色圆点，点击某天在下方展示统一事件卡片（record/schedule/todo/reading）。
+// 注意：课表源仅展示兴趣班；学校常规课不在日历（详见 calendar-service）。
+// 待办在日历上只读：点击待办卡片仅查看详情，勾选完成/编辑/删除统一回到「待办」tab。
 const app = getApp();
 const dateUtil = require('../../utils/date');
 const auth = require('../../utils/auth');
@@ -17,10 +19,10 @@ Page({
     selectedLabel: '',
     dayEvents: [], // 当天四源事件（CalendarEvent[]）
     loading: false,
-    // 图例：橙=成长记录 / 蓝=课程 / 紫=待办 / 绿=阅读打卡
+    // 图例：橙=成长记录 / 蓝=兴趣班 / 紫=待办 / 绿=阅读打卡（校内常规课不展示）
     legend: [
       { color: '#FF8C42', label: '成长记录' },
-      { color: '#8FC7F0', label: '课程' },
+      { color: '#8FC7F0', label: '兴趣班' },
       { color: '#B7A5F0', label: '待办' },
       { color: '#7ED9C3', label: '阅读打卡' },
     ],
@@ -101,6 +103,30 @@ Page({
     const date = e.currentTarget.dataset.date;
     if (!date) return;
     this._loadDay(date);
+  },
+
+  // 点击事件卡片：待办在日历上「只读」——仅弹只读详情，勾选完成/编辑/删除统一回到「待办」Tab。
+  // record/schedule/reading 保持纯展示，不做额外交互。
+  onEventTap(e) {
+    const idx = e.currentTarget.dataset.index;
+    const ev = (this.data.dayEvents || [])[idx];
+    if (!ev || ev.type !== 'todo') return;
+    const t = ev.raw || {};
+    const lines = [];
+    if (t.category) lines.push(`分类：${t.category}`);
+    lines.push(`截止：${t.dueDate || '不限'}`);
+    lines.push(`状态：${t.done ? '已完成 ✅' : '未完成'}`);
+    if (t.remark) lines.push(`备注：${t.remark}`);
+    wx.showModal({
+      title: ev.title || '待办',
+      content: lines.join('\n'),
+      confirmText: '去待办处理',
+      cancelText: '关闭',
+      confirmColor: '#FF8C42',
+      success: (res) => {
+        if (res.confirm) wx.switchTab({ url: '/pages/todo/todo' });
+      },
+    });
   },
 
   prevMonth() {

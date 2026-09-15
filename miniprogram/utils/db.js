@@ -518,6 +518,7 @@ const COURSE_TEMPLATE_PRESETS = [
   { name: '体育', type: 'school', color: '#7FC29B' },
   { name: '科学', type: 'school', color: '#7FC29B' },
   { name: '音乐', type: 'school', color: '#B79BE0' },
+  { name: '美术', type: 'school', color: '#B79BE0' },
   { name: '钢琴', type: 'extra', color: '#FF8C42' },
   { name: '游泳', type: 'extra', color: '#4FB6D9' },
   { name: '美术', type: 'extra', color: '#F0837E' },

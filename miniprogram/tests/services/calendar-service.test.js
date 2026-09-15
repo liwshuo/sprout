@@ -60,6 +60,21 @@ describe('calendar.fetchMonthEvents 聚合', () => {
     expect(todoTitles).toEqual(['数学作业']);
   });
 
+  test('课表源仅展示兴趣班：校内常规课(type=school)被过滤，兴趣班(type=extra)保留', async () => {
+    routeCloud({
+      scheduleItems: [
+        { uuid: 'sc1', weekday: 1, courseName: '语文', type: 'school', startTime: '08:00', endTime: '08:40' },
+        { uuid: 'sx1', weekday: 2, courseName: '钢琴', type: 'extra', startTime: '16:00', endTime: '17:00' },
+      ],
+    });
+    const events = await calendar.fetchMonthEvents('c1', 2026, 8);
+    const schedule = events.filter((e) => e.type === 'schedule');
+    // 校内「语文」全部过滤，仅剩兴趣班「钢琴」（9 月 5 个周二）
+    expect(schedule.every((e) => e.title === '钢琴')).toBe(true);
+    expect(schedule.length).toBeGreaterThan(0);
+    expect(schedule.some((e) => e.title === '语文')).toBe(false);
+  });
+
   test('事件按 ts 升序、同日按 类型顺序 排列', async () => {
     routeCloud({
       // 同一天（9/14）既有记录又有待办，记录应排在待办前

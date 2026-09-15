@@ -62,8 +62,8 @@
     bind:action="goAdd"
   />
 
-  <!-- 统一事件卡片列表（record / schedule / reading，按类型分色） -->
-  <event-card wx:for="{{dayEvents}}" wx:key="sourceId" event="{{item}}" />
+  <!-- 统一事件卡片列表（record / schedule / todo / reading，按类型分色）；待办点击仅查看详情（只读） -->
+  <event-card wx:for="{{dayEvents}}" wx:key="sourceId" event="{{item}}" data-index="{{index}}" bindtap="onEventTap" />
 
   <view class="list-footer"></view>
 </view>

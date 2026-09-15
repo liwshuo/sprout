@@ -3,6 +3,21 @@
   <view class="page-title">隐私与账号安全</view>
   <view class="page-subtitle text-sub">按《个人信息保护法》(PIPL) 及 COPPA 儿童信息保护处理</view>
 
+  <!-- 使用偏好 -->
+  <view class="card">
+    <view class="card-title">⚙️ 使用偏好</view>
+    <view class="row list-row">
+      <view class="row grow-1">
+        <view class="row-icon icon-orange">🌱</view>
+        <view>
+          <view class="list-label">完成待办后自动转为成长记录</view>
+          <view class="list-desc text-sub">开启后勾选完成即静默生成一条成长记录，无需再手动记录</view>
+        </view>
+      </view>
+      <switch checked="{{autoTodoToRecord}}" color="#FF8C42" bindchange="onToggleAutoTodoToRecord" />
+    </view>
+  </view>
+
   <view class="card">
     <view class="card-title">📋 信息与权限</view>
     <view class="row list-row" bindtap="onViewPolicy">

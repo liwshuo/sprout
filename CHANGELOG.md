@@ -4,6 +4,19 @@
 > 约定：每次功能改动都应同步更新本文件与 `docs/PRODUCT_SPEC.md`。最新变更置于顶部。
 
 ## [Unreleased]
+### Changed
+- **待办完成交互改为「方案 B」轻提示**：勾选完成后不再弹「记录成长」确认框（移除 `_offerGrowthRecord` 模态），改为底部短暂 toast「✅ 已完成！」+ 可点「记录成长 →」，约 2.6s 自动消失（`pages/todo/todo` 新增 `completeToast` 自定义悬浮提示 + 计时器清理）。
+
+### Added
+- **设置「完成待办后自动转为成长记录」开关**：新增本地偏好模块 `utils/settings.js`（key `sprout_local_settings`，默认关闭）；「我的 → 设置」页新增「使用偏好」卡片开关。开启后勾选完成即静默调用 `todo.convertToRecord`（复用 `childShare.convertTodoToRecord`，幂等）生成一条成长记录，toast 文案变为「✅ 已完成并记录成长」。
+- **日历待办只读**：日历（`pages/index`）事件卡片点击新增 `onEventTap`——待办卡片仅弹只读详情（分类/截止/状态/备注），确认后 `switchTab` 回到「待办」Tab 处理；不在日历上勾选完成/编辑/删除，操作口径统一。
+
+### Changed
+- **日历课表源仅展示「兴趣班」**：`services/calendar-service.js` `fetchMonthEvents` 在聚合前过滤 `schedule_items`，仅保留 `type !== 'school'` 的兴趣班课程；学校常规课（`type === 'school'`）不再进日历，避免月历每天被校内课铺满（完整周课表仍在课表 Tab）。首页 `pages/index` 图例「课程」→「兴趣班」。新增 `tests/services/calendar-service.test.js` 校内过滤用例。
+
+### Added
+- **课程库预置补齐校内「美术」**：`utils/db.js` `COURSE_TEMPLATE_PRESETS` 在校内分类（`type: 'school'`）补上「美术」，与语文/数学/英语/体育/科学/音乐并列为学校常规课（兴趣班分类原有的「美术」保留，二者互不影响）。
+
 ### Added
 - **阅读书架全面升级：书型化打卡 + 系列进度可视化（阅读 Tab 重点优化）**：围绕「书架交互与 UI」重构，新增书型驱动的差异化打卡与系列册数进度：
   - 书籍新增 `bookType`（`picture` 绘本 / `chapter` 章节书 / `free` 自由阅读，`utils/constants.js` 新增 `BOOK_TYPES` + `PICTURE_MAX_PAGES`）；历史书无 `bookType` 时按「有 `totalChapters` → 章节书，否则自由阅读」推断，向后兼容

@@ -102,6 +102,40 @@ const todo = {
     return db.updateByUuid(COL, uuid, { convertedRecordId: recordUuid });
   },
 
+  /**
+   * 静默把「已完成待办」转成一条成长记录（供「完成后自动记录成长」开关使用）。
+   * 复用 childShare.convertTodoToRecord 云函数：与手动记录同一写入口径，
+   * 云端按 sourceTodoId 幂等（已转过返回 { alreadyConverted: true }），可安全重复调用。
+   * @param {object} item 待办文档（至少含 uuid / title / category / remark）
+   * @returns {Promise<{ ok:boolean, alreadyConverted?:boolean, recordUuid?:string }>}
+   */
+  async convertToRecord(item) {
+    const startOfDay = (d) => {
+      const x = new Date(d);
+      x.setHours(0, 0, 0, 0);
+      return x.getTime();
+    };
+    const response = await wx.cloud.callFunction({
+      name: 'childShare',
+      data: {
+        action: 'convertTodoToRecord',
+        sourceTodoId: item.uuid,
+        record: {
+          title: item.title || '完成待办',
+          note: item.remark || null,
+          tags: item.category ? [item.category] : [],
+          category: null,
+          mood: null,
+          imageFileIds: [],
+          eventDate: startOfDay(item.completedAt || Date.now()),
+        },
+      },
+    });
+    const result = (response && response.result) || {};
+    if (!result.ok) throw new Error(result.error || '待办转成长记录失败');
+    return result;
+  },
+
   /** 软删除 */
   remove(uuid) {
     return db.softDelete(COL, uuid);

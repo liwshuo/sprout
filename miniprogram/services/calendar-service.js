@@ -2,6 +2,9 @@
 // 把「成长记录 daily_records」「课表 schedule_items（周展开）」「待办 todos」「阅读打卡 reading_logs」
 // 四个上游数据源，聚合为统一的 CalendarEvent[] 结构，供日历首页打点 / 事件卡片消费。
 //
+// 课表源过滤：仅展示「兴趣班」(type !== 'school')；学校常规课(type === 'school')不在日历展示——
+// 校内课天天铺满会淹没成长记录/待办，课表页有专门的完整周视图，故日历只保留兴趣班课程。
+//
 // CalendarEvent = {
 //   date,       // 'YYYY-MM-DD'（归属日）
 //   ts,         // 当天 0 点时间戳（排序/定位用）
@@ -150,9 +153,10 @@ async function fetchMonthEvents(childId, year, month) {
   const events = [];
   // 源①：成长记录
   (records || []).forEach((r) => events.push(_toRecordEvent(r)));
-  // 源②：课表（周展开到当月）
+  // 源②：课表（周展开到当月）——仅保留「兴趣班」(type !== 'school')，学校常规课不进日历
+  const extraScheduleItems = (scheduleItems || []).filter((it) => it && it.type !== 'school');
   dateUtil
-    .expandWeeklySchedule(scheduleItems, year, month)
+    .expandWeeklySchedule(extraScheduleItems, year, month)
     .forEach((x) => events.push(_toScheduleEvent(x)));
   // 源③：待办（仅带 dueDate 且落在当月区间的待办按截止日落点）
   (todos || []).forEach((t) => {
