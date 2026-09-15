@@ -76,9 +76,6 @@ Page({
     this._clearDragTimers();
     app.off && app.off('activeChildChanged', this._onChild);
   },
-  onPullDownRefresh() {
-    this.refresh().then(() => wx.stopPullDownRefresh()).catch(() => wx.stopPullDownRefresh());
-  },
 
   async refresh() {
     this.setData({ loading: true });
